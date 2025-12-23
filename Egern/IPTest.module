@@ -18,8 +18,6 @@ DOMAIN-SUFFIX,ip-api.com,{{{Proxy}}}
 DOMAIN-SUFFIX,ippure.com,{{{Proxy}}}
 DOMAIN-SUFFIX,maxmind.com,{{{Proxy}}}
 DOMAIN-SUFFIX,ip2location.com,{{{Proxy}}}
-
-
 DOMAIN-SUFFIX,scamalytics.com,{{{Proxy}}}
 
 DOMAIN-KEYWORD,skk,{{{Proxy}}}
