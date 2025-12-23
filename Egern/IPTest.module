@@ -2,29 +2,29 @@
 #!desc=所有检测工具统一走 'CheckPolicy' 策略组，只需在主界面修改该组的节点，即可全量生效。
 #!category=Rules
 
-rules:
-  # --- IP检测 ---
-  - DOMAIN-SUFFIX,ip.im,CheckPolicy
-  - DOMAIN-SUFFIX,ip.plus,CheckPolicy
-  - DOMAIN-SUFFIX,ipapi.is,CheckPolicy
-  - DOMAIN-SUFFIX,ipapi.co,CheckPolicy
-  - DOMAIN-SUFFIX,ping0.cc,CheckPolicy
-  - DOMAIN-SUFFIX,db-ip.com,CheckPolicy
-  - DOMAIN-SUFFIX,whoer.net,CheckPolicy
-  - DOMAIN-SUFFIX,ipwhois.io,CheckPolicy
-  - DOMAIN-SUFFIX,ip.skk.moe,CheckPolicy
-  - DOMAIN-SUFFIX,ip-api.com,CheckPolicy
-  - DOMAIN-SUFFIX,ippure.com,CheckPolicy
-  - DOMAIN-SUFFIX,scamalytics.com,CheckPolicy
+[Rule]
+# --- IP检测 ---
+DOMAIN-SUFFIX,ip.im,CheckPolicy
+DOMAIN-SUFFIX,ip.plus,CheckPolicy
+DOMAIN-SUFFIX,ipapi.is,CheckPolicy
+DOMAIN-SUFFIX,ipapi.co,CheckPolicy
+DOMAIN-SUFFIX,ping0.cc,CheckPolicy
+DOMAIN-SUFFIX,db-ip.com,CheckPolicy
+DOMAIN-SUFFIX,whoer.net,CheckPolicy
+DOMAIN-SUFFIX,ipwhois.io,CheckPolicy
+DOMAIN-SUFFIX,ip.skk.moe,CheckPolicy
+DOMAIN-SUFFIX,ip-api.com,CheckPolicy
+DOMAIN-SUFFIX,ippure.com,CheckPolicy
+DOMAIN-SUFFIX,scamalytics.com,CheckPolicy
 
-  # --- 测网速 ---
-  - DOMAIN-SUFFIX,fast.com,CheckPolicy
-  - DOMAIN-SUFFIX,speedtest.cn,CheckPolicy
-  - DOMAIN-SUFFIX,speedtest.net,CheckPolicy
-  - DOMAIN-SUFFIX,fiber.google.com,CheckPolicy
+# --- 测网速 ---
+DOMAIN-SUFFIX,fast.com,CheckPolicy
+DOMAIN-SUFFIX,speedtest.cn,CheckPolicy
+DOMAIN-SUFFIX,speedtest.net,CheckPolicy
+DOMAIN-SUFFIX,fiber.google.com,CheckPolicy
 
-  # --- IPv6 ---
-  - DOMAIN-SUFFIX,test-ipv6.com,CheckPolicy
+# --- IPv6 ---
+DOMAIN-SUFFIX,test-ipv6.com,CheckPolicy
 
-  # --- DNS检测 ---
-  - DOMAIN-SUFFIX,dnsleaktest.com,CheckPolicy
+# --- DNS检测 ---
+DOMAIN-SUFFIX,dnsleaktest.com,CheckPolicy
