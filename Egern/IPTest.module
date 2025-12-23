@@ -22,7 +22,6 @@ DOMAIN-SUFFIX,maxmind.com,{{{Proxy}}}
 DOMAIN-SUFFIX,ip2location.com,{{{Proxy}}}
 DOMAIN-SUFFIX,scamalytics.com,{{{Proxy}}}
 
-
 # --- 测网速 ---
 DOMAIN-SUFFIX,fast.com,{{{Proxy}}}
 DOMAIN-SUFFIX,speedtest.cn,{{{Proxy}}}
