@@ -1,0 +1,38 @@
+name: Wise Direct Rules
+desc: Wise (TransferWise) 完整直连规则，包含核心业务、验证及支付网关，防止风控。
+author: Gemini
+icon: https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Wise.png
+
+rules:
+  # --- Wise (TransferWise) 合并互补完整版 ---
+  
+  # > 核心业务域名
+  - DOMAIN-SUFFIX,wise.com,DIRECT
+  - DOMAIN-SUFFIX,transferwise.com,DIRECT
+  - DOMAIN-SUFFIX,transferwise.tech,DIRECT
+  - DOMAIN-SUFFIX,wise-capsule.com,DIRECT
+  - DOMAIN-SUFFIX,wise-static.com,DIRECT
+  
+  # > 身份验证与登录 (Okta)
+  - DOMAIN-SUFFIX,wise.okta.com,DIRECT
+  
+  # > 技术、合规与基础设施
+  - DOMAIN-SUFFIX,tw-icp.com,DIRECT
+  - DOMAIN-SUFFIX,wise.cloud,DIRECT
+  - DOMAIN-SUFFIX,wise.engineering,DIRECT
+  - DOMAIN-SUFFIX,wise.jobs,DIRECT
+  - DOMAIN-SUFFIX,wise.social,DIRECT
+  
+  # > 3D Secure 支付安全验证 (解决入金/刷卡验证失败)
+  - DOMAIN-SUFFIX,cardinalcommerce.com,DIRECT
+  - DOMAIN-SUFFIX,arkoselabs.com,DIRECT
+  
+  # > 支付网关关联 (可选，保障支付链路稳定)
+  - DOMAIN-SUFFIX,stripe.com,DIRECT
+  - DOMAIN-SUFFIX,adyen.com,DIRECT
+  - DOMAIN-SUFFIX,plaid.com,DIRECT
+  
+  # > 关键词匹配 (防漏捕捉)
+  - DOMAIN-KEYWORD,transferwise,DIRECT
+  - DOMAIN-KEYWORD,wise-bank,DIRECT
+  - DOMAIN-KEYWORD,wise,DIRECT
