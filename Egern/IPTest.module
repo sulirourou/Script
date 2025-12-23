@@ -14,10 +14,11 @@ DOMAIN-SUFFIX,ping0.cc,{{{Proxy}}}
 DOMAIN-SUFFIX,db-ip.com,{{{Proxy}}}
 DOMAIN-SUFFIX,whoer.net,{{{Proxy}}}
 DOMAIN-SUFFIX,ipwhois.io,{{{Proxy}}}
-DOMAIN-KEYWORD,skk.moe,{{{Proxy}}}
 DOMAIN-SUFFIX,ip-api.com,{{{Proxy}}}
 DOMAIN-SUFFIX,ippure.com,{{{Proxy}}}
 DOMAIN-SUFFIX,scamalytics.com,{{{Proxy}}}
+
+DOMAIN-KEYWORD,skk.moe,{{{Proxy}}}
 
 # --- 测网速 ---
 DOMAIN-SUFFIX,fast.com,{{{Proxy}}}
