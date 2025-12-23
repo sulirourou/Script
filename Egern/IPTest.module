@@ -1,28 +1,32 @@
 #!name=网络检测工具
-#!desc=所有检测工具统一走 'CheckPolicy' 策略组，在主界面直接点选节点即可全量生效。
+#!desc=所有检测工具统一分流。请在模块参数内设置你想要使用的策略组（默认走 CheckPolicy）。
 #!category=Rules
+#!arguments=Proxy:CheckPolicy
+#!arguments-desc=Proxy: 请输入你想使用的策略组名称 (例如: CheckPolicy, Proxy, 美国节点)
 
 [Rule]
 # --- IP检测 ---
-DOMAIN-SUFFIX,ip.im,CheckPolicy
-DOMAIN-SUFFIX,ip.plus,CheckPolicy
-DOMAIN-SUFFIX,ipapi.is,CheckPolicy
-DOMAIN-SUFFIX,ipapi.co,CheckPolicy
-DOMAIN-SUFFIX,ping0.cc,CheckPolicy
-DOMAIN-SUFFIX,db-ip.com,CheckPolicy
-DOMAIN-SUFFIX,whoer.net,CheckPolicy
-DOMAIN-SUFFIX,ipwhois.io,CheckPolicy
-DOMAIN-SUFFIX,ip.skk.moe,CheckPolicy
-DOMAIN-SUFFIX,ip-api.com,CheckPolicy
-DOMAIN-SUFFIX,ippure.com,CheckPolicy
-DOMAIN-SUFFIX,scamalytics.com,CheckPolicy
+DOMAIN-SUFFIX,ip.im,{{{Proxy}}}
+DOMAIN-SUFFIX,ip.plus,{{{Proxy}}}
+DOMAIN-SUFFIX,ipapi.is,{{{Proxy}}}
+DOMAIN-SUFFIX,ipapi.co,{{{Proxy}}}
+DOMAIN-SUFFIX,ping0.cc,{{{Proxy}}}
+DOMAIN-SUFFIX,db-ip.com,{{{Proxy}}}
+DOMAIN-SUFFIX,whoer.net,{{{Proxy}}}
+DOMAIN-SUFFIX,ipwhois.io,{{{Proxy}}}
+DOMAIN-SUFFIX,ip.skk.moe,{{{Proxy}}}
+DOMAIN-SUFFIX,ip-api.com,{{{Proxy}}}
+DOMAIN-SUFFIX,ippure.com,{{{Proxy}}}
+DOMAIN-SUFFIX,scamalytics.com,{{{Proxy}}}
 
 # --- 测网速 ---
-DOMAIN-SUFFIX,fast.com,CheckPolicy
-DOMAIN-SUFFIX,speedtest.cn,CheckPolicy
-DOMAIN-SUFFIX,speedtest.net,CheckPolicy
-DOMAIN-SUFFIX,fiber.google.com,CheckPolicy
+DOMAIN-SUFFIX,fast.com,{{{Proxy}}}
+DOMAIN-SUFFIX,speedtest.cn,{{{Proxy}}}
+DOMAIN-SUFFIX,speedtest.net,{{{Proxy}}}
+DOMAIN-SUFFIX,fiber.google.com,{{{Proxy}}}
 
-# --- IPv6 & DNS检测 ---
-DOMAIN-SUFFIX,test-ipv6.com,CheckPolicy
-DOMAIN-SUFFIX,dnsleaktest.com,CheckPolicy
+# --- IPv6 ---
+DOMAIN-SUFFIX,test-ipv6.com,{{{Proxy}}}
+
+# --- DNS检测 ---
+DOMAIN-SUFFIX,dnsleaktest.com,{{{Proxy}}}
