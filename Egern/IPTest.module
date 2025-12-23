@@ -6,11 +6,13 @@
 
 [Rule]
 # --- IP检测 ---
+DOMAIN-KEYWORD,skk,{{{Proxy}}}
 DOMAIN-SUFFIX,ip.im,{{{Proxy}}}
 DOMAIN-SUFFIX,ip.plus,{{{Proxy}}}
 DOMAIN-SUFFIX,ipapi.is,{{{Proxy}}}
 DOMAIN-SUFFIX,ipapi.co,{{{Proxy}}}
 DOMAIN-SUFFIX,ping0.cc,{{{Proxy}}}
+DOMAIN-SUFFIX,ipinfo.io,{{{Proxy}}}
 DOMAIN-SUFFIX,db-ip.com,{{{Proxy}}}
 DOMAIN-SUFFIX,whoer.net,{{{Proxy}}}
 DOMAIN-SUFFIX,ipwhois.io,{{{Proxy}}}
@@ -20,7 +22,6 @@ DOMAIN-SUFFIX,maxmind.com,{{{Proxy}}}
 DOMAIN-SUFFIX,ip2location.com,{{{Proxy}}}
 DOMAIN-SUFFIX,scamalytics.com,{{{Proxy}}}
 
-DOMAIN-KEYWORD,skk,{{{Proxy}}}
 
 # --- 测网速 ---
 DOMAIN-SUFFIX,fast.com,{{{Proxy}}}
