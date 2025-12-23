@@ -14,7 +14,7 @@ DOMAIN-SUFFIX,ping0.cc,{{{Proxy}}}
 DOMAIN-SUFFIX,db-ip.com,{{{Proxy}}}
 DOMAIN-SUFFIX,whoer.net,{{{Proxy}}}
 DOMAIN-SUFFIX,ipwhois.io,{{{Proxy}}}
-DOMAIN-SUFFIX,ip.skk.moe,{{{Proxy}}}
+DOMAIN-SUFFIX,skk.moe,{{{Proxy}}}
 DOMAIN-SUFFIX,ip-api.com,{{{Proxy}}}
 DOMAIN-SUFFIX,ippure.com,{{{Proxy}}}
 DOMAIN-SUFFIX,scamalytics.com,{{{Proxy}}}
