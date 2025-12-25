@@ -11,7 +11,7 @@
 #!date=2024-08-15 00:00:00
 
 [Script]
-Github = type=http-response, pattern=https://api.github.com/graphql, script-path=https://raw.githubusercontent.com/Game-2020/Loon/main/Script/GitHub.js, requires-body=true, timeout=60
+Github = type=http-response, pattern=https://raw.githubusercontent.com/sulirourou/Script/refs/heads/main/js/GitHub.js, requires-body=true, timeout=60
 
 [MITM]
 hostname = %APPEND% api.github.com
