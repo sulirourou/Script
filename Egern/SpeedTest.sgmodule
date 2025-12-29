@@ -1,8 +1,9 @@
 #!name=Network Speed Test
 #!desc=网络测速网站分流
 #!author=Gemini
-#!arguments=Policy
-#!arguments-desc=Policy: 请输入你想使用的策略组名称 (例如: Proxy, DIRECT, 或自定义组名)
+#!category=Rules
+#!arguments=Proxy:CheckPolicy
+#!arguments-desc=Proxy: 请输入你想使用的策略组名称 (例如: CheckPolicy, Proxy, 美国节点)
 
 [Rule]
 # > Ookla Speedtest
