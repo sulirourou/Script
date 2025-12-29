@@ -1,25 +1,31 @@
-#!name=IP 查询服务分流（支持参数自定义）
-#!desc=为 IPPure、IP-API、IPAPI 分别指定策略组。请在模块参数中设置三个策略组名称。
+#!name=IP 查询服务分流（参数自定义·加强版）
+#!desc=IPPure、IP-API、IPAPI 分别走独立策略组，支持模块添加时自定义
 #!author=自定义
 #!category=Rules
 #!icon=https://raw.githubusercontent.com/orz-3/mini/master/Color/Location.png
 
-#!arguments=IPPurePolicy:US
-#!arguments-desc=IPPurePolicy: 输入 IPPure 想要使用的策略组名称（例如：US、美国节点、Proxy）
-#!arguments=IPAPIPolicy:HK
-#!arguments-desc=IPAPIPolicy: 输入 IP-API 想要使用的策略组名称（例如：HK、香港节点、CheckPolicy）
-#!arguments=IPAPICOPolicy:JP
-#!arguments-desc=IPAPICOPolicy: 输入 IPAPI (ipapi.co) 想要使用的策略组名称（例如：JP、日本节点、Proxy）
+#!arguments=IPPurePolicy:Proxy
+#!arguments-desc=IPPurePolicy: IPPure (ippure.com) 使用的策略组名（默认 Proxy）
+#!arguments=IPAPIPolicy:Proxy
+#!arguments-desc=IPAPIPolicy: IP-API (ip-api.com) 使用的策略组名（默认 Proxy）
+#!arguments=IPAPICOPolicy:Proxy
+#!arguments-desc=IPAPICOPolicy: IPAPI (ipapi.co) 使用的策略组名（默认 Proxy）
+
+[Proxy Group]
+# 通过参数动态创建三个专用策略组（避免规则直接引用不存在的组）
+IPPure专用 = select, policy={{IPPurePolicy}}, include-all-proxies=true
+IPAPI专用 = select, policy={{IPAPIPolicy}}, include-all-proxies=true
+IPAPICO专用 = select, policy={{IPAPICOPolicy}}, include-all-proxies=true
 
 [Rule]
-# > IPPure (ippure.com)
-DOMAIN-SUFFIX,ippure.com,{{IPPurePolicy}}
-DOMAIN,api.ippure.com,{{IPPurePolicy}}
+# IPPure 走自定义策略
+DOMAIN-SUFFIX,ippure.com,IPPure专用
+DOMAIN,api.ippure.com,IPPure专用
 
-# > IP-API (ip-api.com)
-DOMAIN-SUFFIX,ip-api.com,{{IPAPIPolicy}}
-DOMAIN,ip-api.com,{{IPAPIPolicy}}
+# IP-API 走自定义策略
+DOMAIN-SUFFIX,ip-api.com,IPAPI专用
+DOMAIN,ip-api.com,IPAPI专用
 
-# > IPAPI (ipapi.co)
-DOMAIN-SUFFIX,ipapi.co,{{IPAPICOPolicy}}
-DOMAIN,ipapi.co,{{IPAPICOPolicy}}
+# IPAPI (ipapi.co) 走自定义策略
+DOMAIN-SUFFIX,ipapi.co,IPAPICO专用
+DOMAIN,ipapi.co,IPAPICO专用
