@@ -1,14 +1,17 @@
-#!name=IP分流终极版
-#!desc=IPPure/IP-API/IPAPI分流
+#!name=IP分流(稳定版)
+#!desc=直接指定策略组：谷歌服务 / 香港节点 / 漏网之鱼
 #!category=Rules
-#!icon=arrow.triangle.branch
-
-# 稳妥起见，逗号后加了空格，变量名简化
-#!arguments=ArgIPPure:Proxy, ArgIPAPI:Proxy, ArgIPCo:Proxy
-#!arguments-desc=ArgIPPure: IPPure 策略(谷歌服务), ArgIPAPI: IP-API 策略(香港节点), ArgIPCo: IPAPI 策略(日本节点)
+#!icon=checkmark.shield
 
 [Rule]
-# 这里的变量名 {{Arg...}} 必须和上面定义的完全一致
-DOMAIN-SUFFIX,ippure.com,{{ArgIPPure}}
-DOMAIN-SUFFIX,ip-api.com,{{ArgIPAPI}}
-DOMAIN-SUFFIX,ipapi.co,{{ArgIPCo}}
+# --- 使用说明 ---
+# 如果您以后改了策略组名字，请直接修改下面对应的中文名称即可
+
+# IPPure -> 强制走 谷歌服务
+DOMAIN-SUFFIX,ippure.com,谷歌服务
+
+# IP-API -> 强制走 香港节点
+DOMAIN-SUFFIX,ip-api.com,香港节点
+
+# IPAPI -> 强制走 漏网之鱼 (或者您可以改成 日本节点)
+DOMAIN-SUFFIX,ipapi.co,漏网之鱼
