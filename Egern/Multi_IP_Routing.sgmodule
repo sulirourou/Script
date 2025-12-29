@@ -5,7 +5,7 @@
 
 # 变量名您可以随意起，比如这里我直接用了 US, HK, JP
 # 意思就是：定义一个叫 US 的变量，默认值是 Proxy
-#!arguments=US:Proxy, HK:Proxy, JP:Proxy
+#!arguments=IPPure:Proxy, IP-API:Proxy, IPAPI:Proxy
 
 # 描述部分：告诉用户 US 这个空是用来填哪里的
 #!arguments-desc=IPPure: IPPure (填美国策略), IP-API: IP-API (填香港策略), IPAPI: IPAPI (填日本策略)
