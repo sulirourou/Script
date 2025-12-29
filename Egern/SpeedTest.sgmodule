@@ -1,27 +1,26 @@
-name: "Network Speed Test"
-desc: "网络测速网站分流，包含 Speedtest, Fast, Google Fiber, Cloudflare 等"
-author: "Gemini"
+#!name=Network Speed Test
+#!desc=网络测速网站分流
+#!author=Gemini
+#!arguments=Policy
+#!arguments-desc=Policy: 请输入你想使用的策略组名称 (例如: Proxy, DIRECT, 或自定义组名)
 
-# 建议在主配置中创建一个名为 "SpeedTest" 的策略组，类型选 "Select"
-# 这样你可以在测速前手动切换该组的节点
+[Rule]
+# > Ookla Speedtest
+DOMAIN-SUFFIX,speedtest.net,{{Policy}}
+DOMAIN-SUFFIX,speedtestcustom.com,{{Policy}}
+DOMAIN-SUFFIX,ooklaserver.net,{{Policy}}
 
-rules:
-  # > Ookla Speedtest (最常用的测速)
-  - domain_suffix: speedtest.net, SpeedTest
-  - domain_suffix: speedtestcustom.com, SpeedTest
-  - domain_suffix: ooklaserver.net, SpeedTest
-  
-  # > Fast.com (Netflix 出品，主要测试视频流速度)
-  - domain_suffix: fast.com, SpeedTest
-  - domain_suffix: nflxvideo.net, SpeedTest
-  
-  # > Google Fiber Speedtest
-  - domain_suffix: fiber.google.com, SpeedTest
-  - domain_suffix: speedtest.googlefiber.net, SpeedTest
-  
-  # > Cloudflare Speed (推荐！数据非常详细)
-  - domain_suffix: speed.cloudflare.com, SpeedTest
-  
-  # > 其他优质测速源
-  - domain_suffix: testmy.net, SpeedTest
-  - domain_suffix: openspeedtest.com, SpeedTest
+# > Fast.com
+DOMAIN-SUFFIX,fast.com,{{Policy}}
+DOMAIN-SUFFIX,nflxvideo.net,{{Policy}}
+
+# > Google Fiber Speedtest
+DOMAIN-SUFFIX,fiber.google.com,{{Policy}}
+DOMAIN-SUFFIX,speedtest.googlefiber.net,{{Policy}}
+
+# > Cloudflare Speed
+DOMAIN-SUFFIX,speed.cloudflare.com,{{Policy}}
+
+# > 其他优质测速源
+DOMAIN-SUFFIX,testmy.net,{{Policy}}
+DOMAIN-SUFFIX,openspeedtest.com,{{Policy}}
