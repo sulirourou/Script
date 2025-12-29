@@ -1,21 +1,21 @@
 #!name=IP查询多路分流
-#!desc=自定义分流：IPPure / IP-API / IPAPI.co
+#!desc=自定义分流：IPPure / IP-API / IPAPI.co。请在参数中填入对应的策略组名称（如: Proxy, US, HK）。
 #!category=Custom
-#!icon=gear
+#!icon=arrow.branch
 
-# 修正点：Egern/Surge 标准格式是 "变量名 = 默认值"
-# 如果您的默认策略组不叫 Proxy，可以在这里改为您常用的组名（如 "US" 或 "HK"）
-#!arguments=Rule_IPPure=Proxy, Rule_IPAPI_COM=Proxy, Rule_IPAPI_CO=Proxy
+# 这里定义三个独立的变量，默认值都设为 Proxy
+# 格式 strictly following: Variable:DefaultValue
+#!arguments=Pol_IPPure:Proxy,Pol_IPAPI_COM:Proxy,Pol_IPAPI_CO:Proxy
 
-# 添加参数描述（如果 Egern 版本支持显示描述）
-#!arguments-desc=Rule_IPPure: IPPure.com 的策略, Rule_IPAPI_COM: IP-API.com 的策略, Rule_IPAPI_CO: IPAPI.co 的策略
+# 这里定义对应的描述，让您知道哪个框对应哪个网站
+#!arguments-desc=Pol_IPPure: IPPure.com 走哪个策略组?, Pol_IPAPI_COM: IP-API.com 走哪个策略组?, Pol_IPAPI_CO: IPAPI.co 走哪个策略组?
 
 [Rule]
-# IPPure -> 引用 Rule_IPPure 变量
-DOMAIN-SUFFIX,ippure.com,{{Rule_IPPure}}
+# IPPure -> 引用 Pol_IPPure
+DOMAIN-SUFFIX,ippure.com,{{Pol_IPPure}}
 
-# IP-API -> 引用 Rule_IPAPI_COM 变量
-DOMAIN-SUFFIX,ip-api.com,{{Rule_IPAPI_COM}}
+# IP-API -> 引用 Pol_IPAPI_COM
+DOMAIN-SUFFIX,ip-api.com,{{Pol_IPAPI_COM}}
 
-# IPAPI -> 引用 Rule_IPAPI_CO 变量
-DOMAIN-SUFFIX,ipapi.co,{{Rule_IPAPI_CO}}
+# IPAPI.co -> 引用 Pol_IPAPI_CO
+DOMAIN-SUFFIX,ipapi.co,{{Pol_IPAPI_CO}}
