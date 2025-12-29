@@ -1,8 +1,8 @@
 #!name=IP查询多路分流
 #!desc=自定义分流：IPPure / IP-API / IPAPI.co
-#!category=Custom
 #!icon=arrow.branch
-#!arguments=IPPure:Proxy,IPAPICom:Proxy,IPAPICo:Proxy
+#!category=Rules
+#!arguments-desc=IPPure:Proxy,IPAPICom:Proxy,IPAPICo:Proxy
 #!arguments-desc=IPPure: 填 ippure.com 的策略组, IPAPICom: 填 ip-api.com 的策略组, IPAPICo: 填 ipapi.co 的策略组
 
 [Rule]
