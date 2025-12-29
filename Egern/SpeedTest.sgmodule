@@ -1,5 +1,5 @@
 #!name=网络测速网站
-#!desc=网络测速网站分流
+#!desc=网络测速网站统一分流。请在模块参数内设置你想要使用的策略组（默认走 CheckPolicy）。
 #!author=Gemini
 #!category=Rules
 #!arguments=Proxy:CheckPolicy
