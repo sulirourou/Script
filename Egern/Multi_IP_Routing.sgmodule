@@ -1,0 +1,17 @@
+#!name=IP查询多路分流
+#!desc=分别为IPPure、IP-API、IPAPI.co自定义策略组。
+#!category=Custom
+#!icon=gear
+
+# 参数定义：去除了地区标签，直接对应网站，您可以选任意策略（直连、代理、特定国家等）
+#!arguments=Rule_IPPure:select:IPPure.com 走什么策略?,Rule_IPAPI_COM:select:IP-API.com 走什么策略?,Rule_IPAPI_CO:select:IPAPI.co 走什么策略?
+
+[Rule]
+# IPPure -> 对应第一个选项
+DOMAIN-SUFFIX,ippure.com,{{Rule_IPPure}}
+
+# IP-API -> 对应第二个选项
+DOMAIN-SUFFIX,ip-api.com,{{Rule_IPAPI_COM}}
+
+# IPAPI.co -> 对应第三个选项
+DOMAIN-SUFFIX,ipapi.co,{{Rule_IPAPI_CO}}
