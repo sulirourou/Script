@@ -3,9 +3,7 @@
 #!category=Custom
 #!icon=arrow.branch
 
-# 注意：下面这一行必须紧凑，不能换行
 #!arguments=IPPure:Proxy,IPAPICom:Proxy,IPAPICo:Proxy
-
 #!arguments-desc=IPPure: 填 ippure.com 的策略组, IPAPICom: 填 ip-api.com 的策略组, IPAPICo: 填 ipapi.co 的策略组
 
 [Rule]
