@@ -1,0 +1,14 @@
+#!name=IP分流终极版
+#!desc=IPPure/IP-API/IPAPI分流
+#!category=Rules
+#!icon=arrow.triangle.branch
+
+# 稳妥起见，逗号后加了空格，变量名简化
+#!arguments=ArgIPPure:Proxy, ArgIPAPI:Proxy, ArgIPCo:Proxy
+#!arguments-desc=ArgIPPure: IPPure 策略(谷歌服务), ArgIPAPI: IP-API 策略(香港节点), ArgIPCo: IPAPI 策略(日本节点)
+
+[Rule]
+# 这里的变量名 {{Arg...}} 必须和上面定义的完全一致
+DOMAIN-SUFFIX,ippure.com,{{ArgIPPure}}
+DOMAIN-SUFFIX,ip-api.com,{{ArgIPAPI}}
+DOMAIN-SUFFIX,ipapi.co,{{ArgIPCo}}
