@@ -1,25 +1,25 @@
-#!name=IP-Check-Services-Separate
-#!desc=IPPure / IP-API / IPAPI 独立策略分流模块（可自定义）
-#!author=ChatGPT
-#!category=Network
-#!version=1.1.1
-#!arguments=IPPURE_POLICY:DIRECT,IP_API_POLICY:DIRECT,IPAPI_POLICY:DIRECT
+#!name=IPPure/IP-API/IPAPI 独立分流（模块内自定义组）
+#!desc=模块内部创建三个独立 select 策略组，每个域名路由到专属组，可在 Egern 手动选择节点。无需参数，完全自定义。
+
+[Proxy Group]
+# IPPure 专属组：包含所有节点，手动选择
+IPPure = select, policy-regex=.*, available, img-url=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Location.png
+
+# IP-API 专属组：包含所有节点，手动选择
+IP-API = select, policy-regex=.*, available, img-url=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Location.png
+
+# IPAPI 专属组：包含所有节点，手动选择
+IPAPI = select, policy-regex=.*, available, img-url=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Location.png
 
 [Rule]
-# ======================
-# IPPure
-# ======================
-DOMAIN,ippure.com,{{IPPURE_POLICY}}
-DOMAIN,www.ippure.com,{{IPPURE_POLICY}}
+# IPPure 域名路由到其专属组
+DOMAIN-SUFFIX,ippure.com,IPPure
 
-# ======================
-# IP-API
-# ======================
-DOMAIN,ip-api.com,{{IP_API_POLICY}}
-DOMAIN,pro.ip-api.com,{{IP_API_POLICY}}
+# IP-API 域名路由到其专属组
+DOMAIN-SUFFIX,ip-api.com,IP-API
 
-# ======================
-# IPAPI
-# ======================
-DOMAIN,ipapi.co,{{IPAPI_POLICY}}
-DOMAIN,ipapi.com,{{IPAPI_POLICY}}
+# IPAPI 域名路由到其专属组
+DOMAIN-SUFFIX,ipapi.co,IPAPI
+
+# 其余流量（可选改成你的默认组，如 Proxy 或 DIRECT）
+FINAL,DIRECT
