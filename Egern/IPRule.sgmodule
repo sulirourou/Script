@@ -1,0 +1,29 @@
+#!name=IP-Check-Services-Separate
+#!desc=IPPure / IP-API / IPAPI 独立策略分流模块（可自定义）
+#!author=ChatGPT
+#!category=Network
+#!version=1.1.0
+
+#!arguments
+IPPURE_POLICY=DIRECT
+IPAPI_POLICY=DIRECT
+IP_API_POLICY=DIRECT
+
+[Rule]
+# ======================
+# IPPure
+# ======================
+DOMAIN,ippure.com,{{IPPURE_POLICY}}
+DOMAIN,www.ippure.com,{{IPPURE_POLICY}}
+
+# ======================
+# IP-API
+# ======================
+DOMAIN,ip-api.com,{{IP_API_POLICY}}
+DOMAIN,pro.ip-api.com,{{IP_API_POLICY}}
+
+# ======================
+# IPAPI
+# ======================
+DOMAIN,ipapi.co,{{IPAPI_POLICY}}
+DOMAIN,ipapi.com,{{IPAPI_POLICY}}
