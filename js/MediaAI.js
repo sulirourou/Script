@@ -74,7 +74,7 @@ async function checkNetflix() {
     let res = await fetch("https://www.netflix.com/title/81215561");
     if (res.status === 200) return "✅ 完整";
     if (res.status === 403) return "⚠️ 自制";
-    return "❌ 失败";
+    return "❌";
   } catch { return "🚫"; }
 }
 
