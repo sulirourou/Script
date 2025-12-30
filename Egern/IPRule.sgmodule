@@ -1,25 +1,24 @@
-#!name=IPPure/IP-API/IPAPI 独立分流（模块内自定义组）
-#!desc=模块内部创建三个独立 select 策略组，每个域名路由到专属组，可在 Egern 手动选择节点。无需参数，完全自定义。
+#!name=IP独立分流 (自选版)
+#!desc=支持 IPPure, IP-API, IPAPI 独立选择策略。导入后请在策略组页面手动选择节点。
 
-[Proxy Group]
-# IPPure 专属组：包含所有节点，手动选择
-IPPure = select, policy-regex=.*, available, img-url=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Location.png
+# 1. 定义分流规则，分别指向三个不同的虚拟策略组
+rule:
+  - DOMAIN-SUFFIX,ippure.com,IPPure_Select
+  - DOMAIN-SUFFIX,ip-api.com,IP_API_Select
+  - DOMAIN-SUFFIX,ipapi.co,IPAPI_Select
+  - DOMAIN-SUFFIX,ipapi.com,IPAPI_Select
 
-# IP-API 专属组：包含所有节点，手动选择
-IP-API = select, policy-regex=.*, available, img-url=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Location.png
+# 2. 在模块内直接定义这三个策略组
+# 这样你导入模块后，Egern 的策略组列表就会多出这三个组，实现“手动自选”
+policy_group:
+  - name: IPPure_Select
+    type: select
+    proxies: [DIRECT, Proxy, 香港节点, 美国节点, 自动选择] # 这里的名字需和你主配置中的组名一致
 
-# IPAPI 专属组：包含所有节点，手动选择
-IPAPI = select, policy-regex=.*, available, img-url=https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Location.png
+  - name: IP_API_Select
+    type: select
+    proxies: [DIRECT, Proxy, 香港节点, 美国节点, 自动选择]
 
-[Rule]
-# IPPure 域名路由到其专属组
-DOMAIN-SUFFIX,ippure.com,IPPure
-
-# IP-API 域名路由到其专属组
-DOMAIN-SUFFIX,ip-api.com,IP-API
-
-# IPAPI 域名路由到其专属组
-DOMAIN-SUFFIX,ipapi.co,IPAPI
-
-# 其余流量（可选改成你的默认组，如 Proxy 或 DIRECT）
-FINAL,DIRECT
+  - name: IPAPI_Select
+    type: select
+    proxies: [DIRECT, Proxy, 香港节点, 美国节点, 自动选择]
