@@ -1,4 +1,4 @@
-#!name=IP检测独立分流
+#!name=IP检测网站分流
 #!desc=支持 IPPure, IPAPI.CO, IP-API.COM 独立自定义策略。请在模块参数中手动输入策略名。
 #!category=网络检测
 #!arguments=IPPure:DIRECT,IPAPI.CO:DIRECT,IP-API.COM:DIRECT
