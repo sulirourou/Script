@@ -45,7 +45,7 @@
   content += ` └ Gemini: ${info.ai.Gemini}`;
 
   $done({
-    title: "节点解锁检测 (Pro)",
+    title: "节点解锁检测",
     content: content,
     icon: "network",
     "icon-color": "#007AFF"
