@@ -1,6 +1,6 @@
 #!url=https://raw.githubusercontent.com/fangkuia/XPTV/main/X/xptv.sgmodule
-#!name=XPTV规则
-#!desc=仅直连
+#!name=XPTV
+#!desc=网站直连规则
 
 [Rule]
 DOMAIN-SUFFIX, xptvhelper.link, DIRECT
