@@ -1,8 +1,8 @@
 #!url=https://raw.githubusercontent.com/fangkuia/XPTV/main/X/xptv.sgmodule
-#!name=XPTV规则(增强耐用版)
-#!desc=仅直连|保留注释|修复错误|去重|DOMAIN-SUFFIX增强
-[Rule]
+#!name=XPTV
+#!desc=网站直连规则
 
+[Rule]
 DOMAIN-SUFFIX, xptvhelper.link, DIRECT
 #已标注了大部分可直连的地址,遇到无法直连的情况自行调整
 
