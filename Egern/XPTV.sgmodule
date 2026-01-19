@@ -1,8 +1,8 @@
 #!url=https://raw.githubusercontent.com/fangkuia/XPTV/main/X/xptv.sgmodule
-#!name=XPTV
-#!desc=网站直连规则
-
+#!name=XPTV规则(增强耐用版)
+#!desc=仅直连|保留注释|修复错误|去重|DOMAIN-SUFFIX增强
 [Rule]
+
 DOMAIN-SUFFIX, xptvhelper.link, DIRECT
 #已标注了大部分可直连的地址,遇到无法直连的情况自行调整
 
@@ -46,13 +46,13 @@ DOMAIN-SUFFIX, mogg.top, DIRECT
 #玩偶
 DOMAIN-SUFFIX, wogg.one, DIRECT
 #雷鲸
-DOMAIN, www.leijing.xyz, DIRECT
+DOMAIN-SUFFIX, leijing.xyz, DIRECT
 #校长
-DOMAIN, xzys.fun, DIRECT
+DOMAIN-SUFFIX, xzys.fun, DIRECT
 #蜡笔
 DOMAIN-SUFFIX, duopan.fun, DIRECT
 #南风
-DOMAIN, www.nanf.cc, DIRECT
+DOMAIN-SUFFIX, nanf.cc, DIRECT
 #多多
 DOMAIN, yydsys.top, DIRECT
 #欧歌
@@ -79,7 +79,7 @@ DOMAIN-SUFFIX, ddys.pro, DIRECT
 DOMAIN-SUFFIX, agedm.org, DIRECT
 
 #ギリギリ主页
-DOMAIN, anime.girigirilove.com, DIRECT
+DOMAIN-SUFFIX, girigirilove.com, DIRECT
 #播放
 DOMAIN, love.girigirilove.com, DIRECT
 DOMAIN, m3u8.girigirilove.com, DIRECT
@@ -90,7 +90,7 @@ DOMAIN, api.9cec79d.com, DIRECT
 DOMAIN, wjm.kemfsj.com, DIRECT
 
 #4k-av播放
-DOMAIN, www.4k-av.com, DIRECT
+DOMAIN-SUFFIX, 4k-av.com, DIRECT
 
 #囧动漫主页
 IP-CIDR, 43.142.232.217/32, DIRECT, no-resolve
@@ -108,7 +108,7 @@ DOMAIN-SUFFIX, bdxiguastatic.com, DIRECT
 DOMAIN-SUFFIX, zshtys888.com, DIRECT
 
 #libvio主页
-DOMAIN, www.libvio.cc, DIRECT
+DOMAIN-SUFFIX, libvio.cc, DIRECT
 #播放
 DOMAIN-SUFFIX, mcloud.139.com, DIRECT
 DOMAIN-SUFFIX, libvio.cloud, DIRECT
@@ -121,20 +121,17 @@ DOMAIN, image.zhihuishu.com, DIRECT
 DOMAIN, presale.111.com.cn, DIRECT
 
 #hdmoli主页
-DOMAIN, hdmoli.pro, DIRECT
+DOMAIN-SUFFIX, hdmoli.pro, DIRECT
 #播放
-DOMAIN, v.damoli.pro, DIRECT
+DOMAIN-SUFFIX, damoli.pro, DIRECT
 
 #哔嘀影视主页
-DOMAIN, www.xlys01.com, DIRECT
-#播放
-#（你原规则这里写了 bytetos.com，我已在上面保留过一次，不再重复写）
+DOMAIN-SUFFIX, xlys01.com, DIRECT
 
 #烧火影视主页
-DOMAIN, saohuo.tv, DIRECT
+DOMAIN-SUFFIX, saohuo.tv, DIRECT
 #播放
 #❌ 原错误：DOMAIN, hhjx.hhplayer.comundefined, DIRECT
-#✅ 修复为正常域名（且下面本来就有）
 DOMAIN-SUFFIX, video.iqiyi.com, DIRECT
 DOMAIN-SUFFIX, qitu-zuida.com, DIRECT
 DOMAIN, om.tc.qq.com, DIRECT
@@ -145,13 +142,11 @@ DOMAIN, cme-video.vod-qcloud.com, DIRECT
 DOMAIN, hhjx.hhplayer.com, DIRECT
 
 #NO視頻主页
-DOMAIN, www.novipnoad.net, DIRECT
-#播放
 DOMAIN-SUFFIX, novipnoad.net, DIRECT
 
 #韩剧看看主页
-DOMAIN, www.hanjukankan.com, DIRECT
-DOMAIN, glzx.thekutv.com, DIRECT
+DOMAIN-SUFFIX, hanjukankan.com, DIRECT
+DOMAIN-SUFFIX, thekutv.com, DIRECT
 #播放
 DOMAIN-SUFFIX, thehanju.com, DIRECT
 DOMAIN-SUFFIX, vvddoo.com, DIRECT
@@ -183,25 +178,25 @@ IP-CIDR, 163.123.192.17/32, DIRECT, no-resolve
 DOMAIN, c.xpgtv.net, DIRECT
 
 #厂长主页
-DOMAIN, www.czzyvideo.com, DIRECT
+DOMAIN-SUFFIX, czzyvideo.com, DIRECT
 #播放
 DOMAIN, qimgs.qunarzz.com, DIRECT
 DOMAIN, lf16-fe.resso.me, DIRECT
 DOMAIN-SUFFIX, akamaized.net, DIRECT
-DOMAIN, t001.czzy.fun, DIRECT
-DOMAIN, vunyundun.czys.art, DIRECT
+DOMAIN-SUFFIX, czzy.fun, DIRECT
+DOMAIN-SUFFIX, czys.art, DIRECT
 DOMAIN-SUFFIX, larksuitecdn.com, DIRECT
 DOMAIN, dc.xhscdn.com, DIRECT
 DOMAIN, mdn.alipayobjects.com, DIRECT
 
 #天天主页
-DOMAIN, op.ysdqjs.cn, DIRECT
+DOMAIN-SUFFIX, ysdqjs.cn, DIRECT
 
 #在线之家主页--播放地址是ctyunxs.cn,在天翼里有
 DOMAIN-SUFFIX, zxzja.com, DIRECT
 
 #素白白主页--播放地址是dc.xhscdn.com,在厂长里有
-DOMAIN, www.subaibaiys.com, DIRECT
+DOMAIN-SUFFIX, subaibaiys.com, DIRECT
 
 #CMS源
 #360主页
@@ -219,7 +214,7 @@ DOMAIN, www.mdzyapi.com, DIRECT
 DOMAIN-SUFFIX, heimuer.tv, DIRECT
 DOMAIN-SUFFIX, heimuer.xyz, DIRECT
 
-#播放
+#播放(高频变动域名，需定期更新)
 DOMAIN, 2bzfvku2xwu7.com, DIRECT
 DOMAIN, n9ihkvv1ytjr.com, DIRECT
 DOMAIN, 0cicgw0mte7y.com, DIRECT
@@ -254,13 +249,13 @@ DOMAIN, mdghhsgc4iiy.com, DIRECT
 DOMAIN, m3u8.hmrvideo.com, DIRECT
 
 #华为吧主页
-DOMAIN, hw8.live, DIRECT
+DOMAIN-SUFFIX, hw8.live, DIRECT
 #播放
 DOMAIN, selfcdn.simaguo.com, DIRECT
 DOMAIN, m3u.nikanba.live, DIRECT
 
 #腐剧主页
-DOMAIN, www.fuju2024.cc, DIRECT
+DOMAIN-SUFFIX, fuju2024.cc, DIRECT
 #播放
 DOMAIN-SUFFIX, yishihui.com, DIRECT
 
@@ -272,8 +267,8 @@ DOMAIN, c.baisiweiting.com, DIRECT
 DOMAIN, hd.ijycnd.com, DIRECT
 
 #OK主页
-DOMAIN, pic.okzy.xyz, DIRECT
-DOMAIN, wakdj.com, DIRECT
+DOMAIN-SUFFIX, okzy.xyz, DIRECT
+DOMAIN-SUFFIX, wakdj.com, DIRECT
 #播放
 DOMAIN-SUFFIX, noop44.com, DIRECT
 DOMAIN-SUFFIX, bxgbnet.com, DIRECT
@@ -286,7 +281,7 @@ DOMAIN-KEYWORD, bbffvip.com, DIRECT
 DOMAIN-KEYWORD, rrcdnbf, DIRECT
 
 #小黄人主页
-DOMAIN, iqyi.xiaohuangrentv.com, DIRECT
+DOMAIN-SUFFIX, xiaohuangrentv.com, DIRECT
 #播放
 DOMAIN-KEYWORD, .jisu.com, DIRECT
 
@@ -301,7 +296,7 @@ DOMAIN-SUFFIX, xingchongwang.com, DIRECT
 DOMAIN-SUFFIX, uvvv77.com, DIRECT
 #播放
 DOMAIN-SUFFIX, jklnopq.com, DIRECT
-DOMAIN, cj.yayazy.net, DIRECT
+DOMAIN-SUFFIX, yayazy.net, DIRECT
 DOMAIN-SUFFIX, qdhdcate.com, DIRECT
 
 #影图主页
@@ -313,15 +308,15 @@ DOMAIN, pic.picturecdn.com, DIRECT
 DOMAIN-SUFFIX, xaab57.com, DIRECT
 
 #U酷主页
-DOMAIN, api.ukuapi.com, DIRECT
+DOMAIN-SUFFIX, ukuapi.com, DIRECT
 #播放
 DOMAIN-KEYWORD, ukzy.ukubf, DIRECT
 
 #豪华主页
 DOMAIN, hhzyapi.com, DIRECT
 #播放
-DOMAIN, play.hhuus.com, DIRECT
-DOMAIN, p.hhwenjian.com, DIRECT
+DOMAIN-SUFFIX, hhuus.com, DIRECT
+DOMAIN-SUFFIX, hhwenjian.com, DIRECT
 
 #极速主页
 DOMAIN, jszyapi.com, DIRECT
@@ -336,7 +331,7 @@ DOMAIN-SUFFIX, pqqrs.vip, DIRECT
 DOMAIN-SUFFIX, qrssv.com, DIRECT
 
 #ikun主页
-DOMAIN, www.imgikzy.com, DIRECT
+DOMAIN-SUFFIX, imgikzy.com, DIRECT
 #播放
 DOMAIN, kkzycdn.com, DIRECT
 DOMAIN, bfikuncdn.com, DIRECT
@@ -354,7 +349,7 @@ DOMAIN, bfzyapi.com, DIRECT
 DOMAIN-SUFFIX, bfllvip.com, DIRECT
 
 #红牛主页
-DOMAIN, www.hongniuzy2.com, DIRECT
+DOMAIN-SUFFIX, hongniuzy2.com, DIRECT
 #播放
 DOMAIN, hn.bfvvs.com, DIRECT
 DOMAIN, hnts.ymuuy.com, DIRECT
@@ -392,8 +387,8 @@ DOMAIN-SUFFIX, wgslsw.com, DIRECT
 DOMAIN, pic.jegms.com, DIRECT
 
 #卧龙主页
-DOMAIN, collect.wolongzyw.com, DIRECT
-DOMAIN, pic.wlongimg.com, DIRECT
+DOMAIN-SUFFIX, wolongzyw.com, DIRECT
+DOMAIN-SUFFIX, wlongimg.com, DIRECT
 #播放
 DOMAIN-KEYWORD, cdn.wls, DIRECT
 DOMAIN-KEYWORD, cdn.wlcdn, DIRECT
@@ -415,7 +410,7 @@ DOMAIN, v5.xyaa88.com, DIRECT
 #速博主页
 DOMAIN-KEYWORD, subo, DIRECT
 #播放
-DOMAIN, play.subokk.com, DIRECT
+DOMAIN-SUFFIX, subokk.com, DIRECT
 DOMAIN-SUFFIX, xlzyd.com, DIRECT
 
 #魔都主页
@@ -425,8 +420,8 @@ DOMAIN, www.mdzypic.com, DIRECT
 DOMAIN-KEYWORD, play.modujx, DIRECT
 
 #最大主页
-DOMAIN, ok.zuidapic.com, DIRECT
-DOMAIN, zuidazy.me, DIRECT
+DOMAIN-SUFFIX, zuidapic.com, DIRECT
+DOMAIN-SUFFIX, zuidazy.me, DIRECT
 #播放
 DOMAIN-SUFFIX, daayee.com, DIRECT
 
