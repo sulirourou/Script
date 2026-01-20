@@ -135,7 +135,6 @@ DOMAIN-SUFFIX, xlys01.com, DIRECT
 #烧火影视主页
 DOMAIN-SUFFIX, saohuo.tv, DIRECT
 #播放
-#❌ 原错误：DOMAIN, hhjx.hhplayer.comundefined, DIRECT
 DOMAIN-SUFFIX, video.iqiyi.com, DIRECT
 DOMAIN-SUFFIX, qitu-zuida.com, DIRECT
 DOMAIN, om.tc.qq.com, DIRECT
