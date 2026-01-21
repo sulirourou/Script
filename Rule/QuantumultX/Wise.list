@@ -1,0 +1,33 @@
+#!name=Wise
+#!desc=Wise (TransferWise) 规则集
+#!author=Gemini
+
+; --- 核心业务 ---
+host-suffix, wise.com, Wise
+host-suffix, transferwise.com, Wise
+host-suffix, transferwise.tech, Wise
+host-suffix, wise-capsule.com, Wise
+host-suffix, wise-static.com, Wise
+
+; --- 身份验证 (Okta) ---
+host-suffix, wise.okta.com, Wise
+
+; --- 技术与架构 ---
+host-suffix, tw-icp.com, Wise
+host-suffix, wise.cloud, Wise
+host-suffix, wise.engineering, Wise
+host-suffix, wise.jobs, Wise
+host-suffix, wise.social, Wise
+
+; --- 3D Secure 验证 ---
+host-suffix, cardinalcommerce.com, Wise
+host-suffix, arkoselabs.com, Wise
+
+; --- 支付网关 (可选) ---
+host-suffix, stripe.com, Wise
+host-suffix, adyen.com, Wise
+host-suffix, plaid.com, Wise
+
+; --- 关键词 ---
+host-keyword, transferwise, Wise
+host-keyword, wise-bank, Wise
