@@ -42,6 +42,7 @@ payload:
 
   # --- 网盘源 (合并更新版) ---
   # 玩偶哥哥 (Wogg)
+  - DOMAIN-SUFFIX,wogg
   - DOMAIN-SUFFIX,wogg.one
   - DOMAIN-SUFFIX,wogg.net
   - DOMAIN-SUFFIX,wogg.lol
