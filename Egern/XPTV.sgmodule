@@ -1,47 +1,50 @@
-#!name=XPTV
-#!desc=包含 XPTV 核心服务、网盘官方、影视源及 CMS 采集源的直连规则。注释已独立行显示。
-#!category=XPTV
+#!name=XPTV 直连规则整合 
+#!desc=XPTV/网盘/直播/VOD/CMS/封面/弹幕等域名直连
+#!author=ChatGPT
+#!homepage=
+#!icon=
 
 [Rule]
-# XPTV 核心助手
+# --- XPTV 直连规则 ---
+# 核心服务
 DOMAIN-SUFFIX,xptvhelper.link,DIRECT
 
-# XPTV 核心 API
+# XPTV主站
 DOMAIN,infuseku.xyz,DIRECT
 
 # iCloud同步
 DOMAIN,gateway.icloud.com,DIRECT
 DOMAIN,metrics.icloud.com,DIRECT
 
-# 豆瓣封面
+# XPTV封面来源
 DOMAIN-SUFFIX,doubanio.com,DIRECT
-
-# TMDB 封面
 DOMAIN,image.tmdb.org,DIRECT
 
 # 弹幕
 DOMAIN,dandanplay.net,DIRECT
 
+
 # --- 网盘官方服务 ---
-# 阿里云盘
+# 阿里
 DOMAIN-SUFFIX,aliyundrive.com,DIRECT
 DOMAIN-SUFFIX,voicehub.top,DIRECT
 
-# 夸克网盘
+# 夸克
 DOMAIN-SUFFIX,quark.cn,DIRECT
 
-# 天翼云盘
+# 天翼
 DOMAIN-SUFFIX,189.cn,DIRECT
 DOMAIN-SUFFIX,ctyunxs.cn,DIRECT
 
-# 115网盘
+# 115
 DOMAIN-SUFFIX,115.com,DIRECT
 
-# UC网盘
+# UC
 DOMAIN-SUFFIX,uc.cn,DIRECT
 
-# 小雅 Alist
+# 小雅
 DOMAIN-SUFFIX,xiaoya.pro,DIRECT
+
 
 # --- 网盘源 (合并更新版) ---
 # 玩偶哥哥 (Wogg)
@@ -57,21 +60,21 @@ DOMAIN-SUFFIX,666291.xyz,DIRECT
 DOMAIN-SUFFIX,muou.asia,DIRECT
 DOMAIN-SUFFIX,muou.site,DIRECT
 
-# 小米资源 (Mihdr)
+# 小米 (Mihdr)
 DOMAIN-SUFFIX,mihdr.top,DIRECT
 DOMAIN-SUFFIX,miqk.cc,DIRECT
 
-# 肥猫资源 (Feimao)
+# 肥猫 (Feimao)
 DOMAIN-SUFFIX,feimaoai.site,DIRECT
 DOMAIN-SUFFIX,feimao666.fun,DIRECT
 DOMAIN-SUFFIX,feimao888.fun,DIRECT
 
-# 多多资源 (YYDS)
+# 多多 (YYDS)
 DOMAIN-SUFFIX,yydsys.top,DIRECT
 DOMAIN-SUFFIX,yydsys.cc,DIRECT
 DOMAIN-SUFFIX,214521.xyz,DIRECT
 
-# 二小盘 (Erxiao)
+# 二小 (Erxiao)
 DOMAIN-SUFFIX,2xiaopan.fun,DIRECT
 DOMAIN-SUFFIX,erxiaofn.click,DIRECT
 DOMAIN-SUFFIX,erxiaofn.site,DIRECT
@@ -80,51 +83,61 @@ DOMAIN,xiaoer.5568.eu.org,DIRECT
 # 小盒万物 (Xiaohe)
 DOMAIN-SUFFIX,xhww.net,DIRECT
 
-# 其他网盘源
-# 雷静云
+# 雷鲸
 DOMAIN-SUFFIX,leijing.xyz,DIRECT
 DOMAIN-SUFFIX,leijing1.com,DIRECT
-# 小舟影视
+
+# 校长
 DOMAIN-SUFFIX,xzys.fun,DIRECT
-# 多多影院
+
+# 蜡笔
 DOMAIN-SUFFIX,duopan.fun,DIRECT
-# 南风资源
+
+# 南风
 DOMAIN-SUFFIX,nanf.cc,DIRECT
+
 # 欧歌
 DOMAIN,woog.nxog.eu.org,DIRECT
-# 云盘8
+
+# 云盘吧
 DOMAIN,yunpan8.cc,DIRECT
-# 至真盘
+
+# 至臻
 DOMAIN-SUFFIX,zhizhenpan.fun,DIRECT
-# 小雅备用
+
+# 小萨
 DOMAIN-SUFFIX,xsayang.fun,DIRECT
 
+
 # --- 直播/短视频相关 ---
-# Bilibili 视频
 DOMAIN-SUFFIX,bilivideo.com,DIRECT
 DOMAIN,slink.ltd,DIRECT
-# 抖音 CDN
 DOMAIN-SUFFIX,douyincdn.com,DIRECT
 DOMAIN-SUFFIX,douyinpic.com,DIRECT
-# 斗鱼 CDN
 DOMAIN-SUFFIX,douyucdn.cn,DIRECT
 DOMAIN-SUFFIX,douyucdn2.cn,DIRECT
-# 虎牙直播
 DOMAIN-SUFFIX,huya.com,DIRECT
 DOMAIN-SUFFIX,msstatic.com,DIRECT
-# 柠檬直播
 DOMAIN,lemonlive.deno.dev,DIRECT
 
-# --- VOD 影视源 ---
-# 低端影视
+
+# --- VOD影视源 ---
+# 低端
 DOMAIN-SUFFIX,ddys.pro,DIRECT
-# AGE 动漫
+
+# AGE动漫
 DOMAIN-SUFFIX,agedm.org,DIRECT
-# GiriGiri 动漫
+
+# ギリギリ (Girigiri)
 DOMAIN-SUFFIX,girigirilove.com,DIRECT
 DOMAIN,love.girigirilove.com,DIRECT
 DOMAIN,m3u8.girigirilove.com,DIRECT
-# 4K-AV
+
+# 瓜子
+DOMAIN,api.9cec79d.com,DIRECT
+DOMAIN,wjm.kemfsj.com,DIRECT
+
+# 4k-av
 DOMAIN-SUFFIX,4k-av.com,DIRECT
 
 # 囧动漫
@@ -141,59 +154,107 @@ DOMAIN-SUFFIX,xhscdn.com,DIRECT
 DOMAIN-SUFFIX,bdxiguastatic.com,DIRECT
 DOMAIN-SUFFIX,zshtys888.com,DIRECT
 
-# Libvio / Anfuns
+# libvio
 DOMAIN-SUFFIX,libvio.cc,DIRECT
+DOMAIN-SUFFIX,mcloud.139.com,DIRECT
 DOMAIN-SUFFIX,libvio.cloud,DIRECT
+
+# anfuns
 DOMAIN-SUFFIX,anfuns.org,DIRECT
 DOMAIN-SUFFIX,bytegiftia.top,DIRECT
+DOMAIN-SUFFIX,lenovo.com.cn,DIRECT
+DOMAIN,image.zhihuishu.com,DIRECT
+DOMAIN,presale.111.com.cn,DIRECT
 
-# 其他 VOD
-# 海盗魔力
+# hdmoli
 DOMAIN-SUFFIX,hdmoli.pro,DIRECT
 DOMAIN-SUFFIX,damoli.pro,DIRECT
-# 骚火影视
+
+# 哔嘀影视
+DOMAIN-SUFFIX,xlys01.com,DIRECT
+
+# 烧火影视
 DOMAIN-SUFFIX,saohuo.tv,DIRECT
-# 腾讯/爱奇艺视频流
 DOMAIN-SUFFIX,video.iqiyi.com,DIRECT
+DOMAIN-SUFFIX,qitu-zuida.com,DIRECT
 DOMAIN,om.tc.qq.com,DIRECT
+DOMAIN-SUFFIX,ibytedtos.com,DIRECT
+DOMAIN-SUFFIX,1ljx.com,DIRECT
 DOMAIN-SUFFIX,smtcdns.com,DIRECT
+DOMAIN,cme-video.vod-qcloud.com,DIRECT
+DOMAIN,hhjx.hhplayer.com,DIRECT
+
+# NO視頻
+DOMAIN-SUFFIX,novipnoad.net,DIRECT
+
 # 韩剧看看
 DOMAIN-SUFFIX,hanjukankan.com,DIRECT
 DOMAIN-SUFFIX,thekutv.com,DIRECT
 DOMAIN-SUFFIX,thehanju.com,DIRECT
+DOMAIN-SUFFIX,vvddoo.com,DIRECT
 
-# 星芽短剧
+# 星芽
 DOMAIN,qiniu.rongjuwh.cn,DIRECT
 DOMAIN,app.whjzjx.cn,DIRECT
 DOMAIN,u.shytkjgs.com,DIRECT
+IP-CIDR,218.22.23.189/32,DIRECT,no-resolve
+IP-CIDR,117.68.35.135/32,DIRECT,no-resolve
+IP-CIDR,218.22.23.229/32,DIRECT,no-resolve
 DOMAIN-SUFFIX,qnqcdn.net,DIRECT
 DOMAIN-SUFFIX,xingya.com.cn,DIRECT
+IP-CIDR,117.68.35.139/32,DIRECT,no-resolve
 
 # 小苹果
 IP-CIDR,163.123.192.184/32,DIRECT,no-resolve
+IP-CIDR,148.59.74.50/32,DIRECT,no-resolve
 IP-CIDR,205.178.182.17/32,DIRECT,no-resolve
+IP-CIDR,163.123.192.169/32,DIRECT,no-resolve
+IP-CIDR,163.123.192.68/32,DIRECT,no-resolve
+IP-CIDR,163.123.192.182/32,DIRECT,no-resolve
+IP-CIDR,205.178.182.8/32,DIRECT,no-resolve
+IP-CIDR,163.123.192.108/32,DIRECT,no-resolve
+IP-CIDR,163.123.192.29/32,DIRECT,no-resolve
+IP-CIDR,205.178.182.52/32,DIRECT,no-resolve
+IP-CIDR,163.123.192.17/32,DIRECT,no-resolve
 DOMAIN,c.xpgtv.net,DIRECT
 
-# 厂长资源 / 天天 / 素白白
+# 厂长
 DOMAIN-SUFFIX,czzyvideo.com,DIRECT
+DOMAIN,qimgs.qunarzz.com,DIRECT
+DOMAIN,lf16-fe.resso.me,DIRECT
+DOMAIN-SUFFIX,akamaized.net,DIRECT
 DOMAIN-SUFFIX,czzy.fun,DIRECT
 DOMAIN-SUFFIX,czys.art,DIRECT
+DOMAIN-SUFFIX,larksuitecdn.com,DIRECT
+DOMAIN,dc.xhscdn.com,DIRECT
+DOMAIN,mdn.alipayobjects.com,DIRECT
+
+# 天天
 DOMAIN-SUFFIX,ysdqjs.cn,DIRECT
+
+# 在线之家
 DOMAIN-SUFFIX,zxzja.com,DIRECT
+
+# 素白白
 DOMAIN-SUFFIX,subaibaiys.com,DIRECT
 
-# --- CMS 采集源 ---
-# 360 资源
+
+# --- CMS采集源 ---
+# 360
 DOMAIN,360zy.com,DIRECT
-# 非凡资源
+DOMAIN,vod.lyhuicheng.com,DIRECT
+
+# 非凡
 DOMAIN-KEYWORD,ffzy,DIRECT
-# 秒播资源
+
+# 墨斗
 DOMAIN,www.mdzyapi.com,DIRECT
-# 黑木耳资源
+
+# 黑木耳
 DOMAIN-SUFFIX,heimuer.tv,DIRECT
 DOMAIN-SUFFIX,heimuer.xyz,DIRECT
 
-# CMS 动态播放域名 (切片节点)
+# 动态播放域名 (部分CMS)
 DOMAIN,2bzfvku2xwu7.com,DIRECT
 DOMAIN,n9ihkvv1ytjr.com,DIRECT
 DOMAIN,0cicgw0mte7y.com,DIRECT
@@ -204,71 +265,325 @@ DOMAIN,5pvheva17etb.com,DIRECT
 DOMAIN,k6qgunhk9wuk.com,DIRECT
 DOMAIN,0uxzzy8thov3.com,DIRECT
 DOMAIN,5dagx9am9sai.com,DIRECT
+DOMAIN,omgyesityyhl.com,DIRECT
+DOMAIN,eucjzvub6vhr.com,DIRECT
+DOMAIN,tficf2xx0qxr.com,DIRECT
+DOMAIN,zqmdvefdijjx.com,DIRECT
+DOMAIN,jzuqfavoibww.com,DIRECT
+DOMAIN,in1eab44tnda.com,DIRECT
+DOMAIN,nfysfaemv1m2.com,DIRECT
+DOMAIN,rfjyb3bu5j0r.com,DIRECT
+DOMAIN,wjmgijixqcbc.com,DIRECT
+DOMAIN,jvgcazuedspp.com,DIRECT
+DOMAIN,fmxjkp6ekzcg.com,DIRECT
+DOMAIN,zea35s3nhdbn.com,DIRECT
+DOMAIN,zehnaxihujfi.com,DIRECT
+DOMAIN,0nzuqy0k3c35.com,DIRECT
+DOMAIN,yvocwep63nev.com,DIRECT
+DOMAIN,navogkbbnjl4.com,DIRECT
+DOMAIN,xgwr4phkkafo.com,DIRECT
+DOMAIN,om43531gxybq.com,DIRECT
+DOMAIN,3lky1u69bdx2.com,DIRECT
+DOMAIN,438pnr4dyywt.com,DIRECT
+DOMAIN,mdghhsgc4iiy.com,DIRECT
+DOMAIN,m3u8.hmrvideo.com,DIRECT
 
-# 资源站
-# OK 资源
+# 华为吧
+DOMAIN-SUFFIX,hw8.live,DIRECT
+DOMAIN,selfcdn.simaguo.com,DIRECT
+DOMAIN,m3u.nikanba.live,DIRECT
+
+# 腐剧
+DOMAIN-SUFFIX,fuju2024.cc,DIRECT
+DOMAIN-SUFFIX,yishihui.com,DIRECT
+
+# 金鹰
+DOMAIN,image.jinyingimage.com,DIRECT
+DOMAIN,jinyingzy.com,DIRECT
+DOMAIN,c.baisiweiting.com,DIRECT
+DOMAIN,hd.ijycnd.com,DIRECT
+
+# OK资源
 DOMAIN-SUFFIX,okzy.xyz,DIRECT
-# 鸭鸭资源
+DOMAIN-SUFFIX,wakdj.com,DIRECT
+DOMAIN-SUFFIX,noop44.com,DIRECT
+DOMAIN-SUFFIX,bxgbnet.com,DIRECT
+DOMAIN-SUFFIX,xxya88.com,DIRECT
+
+# 宝片
+DOMAIN,zpsps.com,DIRECT
+DOMAIN-KEYWORD,bbffvip.com,DIRECT
+DOMAIN-KEYWORD,rrcdnbf,DIRECT
+
+# 小黄人
+DOMAIN-SUFFIX,xiaohuangrentv.com,DIRECT
+DOMAIN-KEYWORD,.jisu.com,DIRECT
+
+# 牛牛
+DOMAIN,pic.niuniuzy.info,DIRECT
+DOMAIN-SUFFIX,qrstt.com,DIRECT
+DOMAIN-SUFFIX,stuuvwy.com,DIRECT
+DOMAIN-SUFFIX,xingchongwang.com,DIRECT
+
+# 丫丫
+DOMAIN-SUFFIX,uvvv77.com,DIRECT
+DOMAIN-SUFFIX,jklnopq.com,DIRECT
 DOMAIN-SUFFIX,yayazy.net,DIRECT
-# 豪华资源
+DOMAIN-SUFFIX,qdhdcate.com,DIRECT
+
+# 影图
+DOMAIN,cj.vodimg.top,DIRECT
+DOMAIN-SUFFIX,ghij11.com,DIRECT
+DOMAIN-SUFFIX,tlkqc.com,DIRECT
+DOMAIN,pic.picturecdn.com,DIRECT
+DOMAIN-SUFFIX,xaab57.com,DIRECT
+
+# U酷
+DOMAIN-SUFFIX,ukuapi.com,DIRECT
+DOMAIN-KEYWORD,ukzy.ukubf,DIRECT
+
+# 豪华
 DOMAIN,hhzyapi.com,DIRECT
-# 极速资源
+DOMAIN-SUFFIX,hhuus.com,DIRECT
+DOMAIN-SUFFIX,hhwenjian.com,DIRECT
+
+# 极速
 DOMAIN,jszyapi.com,DIRECT
-# 暴风资源
-DOMAIN,bfzyapi.com,DIRECT
-DOMAIN-SUFFIX,bfzypic.com,DIRECT
-# 红牛资源
-DOMAIN-SUFFIX,hongniuzy2.com,DIRECT
-# 快车资源
-DOMAIN,caijl.kczyapi.com,DIRECT
-# 闪电资源
-DOMAIN,sdzyapi.com,DIRECT
-# 樱花资源
-DOMAIN-SUFFIX,yhzybf.com,DIRECT
-# 卧龙资源
-DOMAIN-SUFFIX,wolongzyw.com,DIRECT
-DOMAIN-SUFFIX,wlongimg.com,DIRECT
-# 无尽资源
-DOMAIN,api.wujinapi.com,DIRECT
-# 摩豆资源
-DOMAIN,caiji.moduapi.cc,DIRECT
-# 最大资源
-DOMAIN-SUFFIX,zuidazy.me,DIRECT
-DOMAIN-SUFFIX,zuidapic.com,DIRECT
-# 量子资源
+
+# 索尼
+DOMAIN,snzypic.vip,DIRECT
+DOMAIN-KEYWORD,.hiij,DIRECT
+DOMAIN-SUFFIX,nopqq.vip,DIRECT
+DOMAIN-SUFFIX,uvwwx.vip,DIRECT
+DOMAIN-SUFFIX,pqqrs.vip,DIRECT
+DOMAIN-SUFFIX,qrssv.com,DIRECT
+
+# ikun
+DOMAIN-SUFFIX,imgikzy.com,DIRECT
+DOMAIN,kkzycdn.com,DIRECT
+DOMAIN,bfikuncdn.com,DIRECT
+
+# 量子
 DOMAIN,cj.lziapi.com,DIRECT
 DOMAIN,img.lzzyimg.com,DIRECT
+DOMAIN-KEYWORD,v.cdnlz,DIRECT
 
-# --- XPAV 源 ---
-# 海外托管源 (Streamtape等)
+# 暴风
+DOMAIN-SUFFIX,bfzypic.com,DIRECT
+DOMAIN,bfzyapi.com,DIRECT
+DOMAIN-SUFFIX,bfllvip.com,DIRECT
+
+# 红牛
+DOMAIN-SUFFIX,hongniuzy2.com,DIRECT
+DOMAIN,hn.bfvvs.com,DIRECT
+DOMAIN,hnts.ymuuy.com,DIRECT
+
+# 快车
+DOMAIN,caijl.kczyapi.com,DIRECT
+DOMAIN-SUFFIX,fghjklm.com,DIRECT
+DOMAIN-SUFFIX,ijkklmn.com,DIRECT
+DOMAIN-SUFFIX,longshengtea.com,DIRECT
+DOMAIN-SUFFIX,stuuv.vip,DIRECT
+
+# 闪电
+DOMAIN,sdzyapi.com,DIRECT
+DOMAIN-SUFFIX,qrrs56.com,DIRECT
+DOMAIN-SUFFIX,wwxy0.com,DIRECT
+DOMAIN-SUFFIX,fentvoss.com,DIRECT
+
+# 樱花
+DOMAIN,m3u8.apiyhzy.com,DIRECT
+DOMAIN-SUFFIX,ijkkl.vip,DIRECT
+DOMAIN-SUFFIX,abcce.vip,DIRECT
+DOMAIN-SUFFIX,mmnn34.com,DIRECT
+DOMAIN-SUFFIX,vwxx78.com,DIRECT
+DOMAIN-SUFFIX,stttu.vip,DIRECT
+DOMAIN-SUFFIX,tuvvv.vip,DIRECT
+DOMAIN-SUFFIX,ijkmnno.com,DIRECT
+DOMAIN-SUFFIX,deefg.vip,DIRECT
+DOMAIN-SUFFIX,lmnoprs.com,DIRECT
+DOMAIN-KEYWORD,shes,DIRECT
+DOMAIN-SUFFIX,yhzybf.com,DIRECT
+DOMAIN-SUFFIX,wgslsw.com,DIRECT
+DOMAIN,pic.jegms.com,DIRECT
+
+# 卧龙
+DOMAIN-SUFFIX,wolongzyw.com,DIRECT
+DOMAIN-SUFFIX,wlongimg.com,DIRECT
+DOMAIN-KEYWORD,cdn.wls,DIRECT
+DOMAIN-KEYWORD,cdn.wlcdn,DIRECT
+
+# 虎牙
+DOMAIN-KEYWORD,.huya,DIRECT
+
+# 飘零
+DOMAIN,p2100.net,DIRECT
+
+# 无尽
+DOMAIN,api.wujinapi.com,DIRECT
+DOMAIN-SUFFIX,stuv67.com,DIRECT
+DOMAIN-SUFFIX,hjjk22.com,DIRECT
+DOMAIN-SUFFIX,jkkl23.com,DIRECT
+DOMAIN,v5.xyaa88.com,DIRECT
+
+# 速博
+DOMAIN-KEYWORD,subo,DIRECT
+DOMAIN-SUFFIX,subokk.com,DIRECT
+DOMAIN-SUFFIX,xlzyd.com,DIRECT
+
+# 魔都
+DOMAIN,caiji.moduapi.cc,DIRECT
+DOMAIN,www.mdzypic.com,DIRECT
+DOMAIN-KEYWORD,play.modujx,DIRECT
+
+# 最大
+DOMAIN-SUFFIX,zuidapic.com,DIRECT
+DOMAIN-SUFFIX,zuidazy.me,DIRECT
+DOMAIN-SUFFIX,daayee.com,DIRECT
+
+# 新浪
+DOMAIN,xinlangtupian.com,DIRECT
+DOMAIN,play.xluuss.com,DIRECT
+
+# 八戒
+DOMAIN-SUFFIX,monidai.com,DIRECT
+DOMAIN-SUFFIX,hdslb.pro,DIRECT
+
+
+# --- XPAV源 ---
+# Hanime1
 DOMAIN,vdownload.hembed.com,DIRECT
+
+# MISSAV
 DOMAIN,surrit.com,DIRECT
+
+# SupJav-ST
 DOMAIN,streamtape.com,DIRECT
 DOMAIN-SUFFIX,tapecontent.net,DIRECT
-# 芯智源
-DOMAIN-SUFFIX,xinzhisoft.xyz,DIRECT
-DOMAIN-SUFFIX,xinzhitushu.xyz,DIRECT
 
-# --- 静态资源与图床 ---
-# 极速图床
+
+# --- CMS其他杂项 ---
+# 森林
+DOMAIN,slapibf.com,DIRECT
+DOMAIN,fmtu.sltututu.com,DIRECT
+DOMAIN-SUFFIX,bbffsl.com,DIRECT
+
+# 探探
+DOMAIN,apittzy.com,DIRECT
+DOMAIN,vod1.ttbfp2.com,DIRECT
+
+# 奥斯卡
+DOMAIN,aosikazy.com,DIRECT
+DOMAIN,bfaskcdn.com,DIRECT
+DOMAIN,uqetyzxa.com,DIRECT
+
+# 老鸭
+DOMAIN,api.apilyzy.com,DIRECT
+DOMAIN,img.lytuchuang91.com,DIRECT
+DOMAIN-SUFFIX,laoyacdn.com,DIRECT
+
+# 91麻豆
+DOMAIN,666529.xyz,DIRECT
+DOMAIN,91md.me,DIRECT
+DOMAIN-SUFFIX,97img.com,DIRECT
+DOMAIN,cctv123456.com,DIRECT
+DOMAIN-SUFFIX,cdn2020.com,DIRECT
+
+# 易看
+DOMAIN,img.yikanimg.top,DIRECT
+DOMAIN,api.yikanapi.com,DIRECT
+DOMAIN,v.ykv3.com,DIRECT
+
+# 番号
+DOMAIN,fm.fhpicpic.com,DIRECT
+DOMAIN,fhapi9.com,DIRECT
+DOMAIN,v2024.fhbbff.com,DIRECT
+
+# 鲨鱼
+DOMAIN,sycdn.ddljsytt.com,DIRECT
+DOMAIN,v2024.sysybf.com,DIRECT
+
+# Alvin
+DOMAIN,fm.lbpicpic.com,DIRECT
+DOMAIN,lbapiby.com,DIRECT
+DOMAIN,vip3.lbbf9.com,DIRECT
+
+# 黄瓜
+DOMAIN,player.hgplayer00.com,DIRECT
+DOMAIN,img.hgimg00.com,DIRECT
+
+# 玉兔
+DOMAIN,sbzytpimg2.com,DIRECT
+DOMAIN,apiyutu.com,DIRECT
+DOMAIN,yutubf.lsbbf3.com,DIRECT
+
+# 辣椒
+DOMAIN-SUFFIX,newljlj.com,DIRECT
+DOMAIN,ljcdn.ddljsytt.com,DIRECT
+
+# 精品
+DOMAIN,jinpinxm.com,DIRECT
+DOMAIN-KEYWORD,jingpinx.com,DIRECT
+DOMAIN,05hao.top,DIRECT
+
+# 草榴
+DOMAIN,www.caoliuzyw.com,DIRECT
+DOMAIN-SUFFIX,comodoca.com,DIRECT
+DOMAIN-SUFFIX,usertrust.com,DIRECT
+DOMAIN-SUFFIX,sectigo.com,DIRECT
+DOMAIN-SUFFIX,caoliuzywimg.com,DIRECT
+DOMAIN,player.cl9987.com,DIRECT
+
+# 老色逼
+DOMAIN,apilsbzy1.com,DIRECT
+
+
+# --- 杂七杂八的网站封面 ---
+DOMAIN,img.kuaichezy.net,DIRECT
+DOMAIN,puui.qpic.cn,DIRECT
 DOMAIN-SUFFIX,jisuimage.com,DIRECT
-# 头条图床
 DOMAIN-SUFFIX,toutiaoimg.com,DIRECT
-# 椰子图床
 DOMAIN-SUFFIX,yzzyimages.com,DIRECT
-# 阿里静态资源
-DOMAIN-SUFFIX,alicdn.com,DIRECT
-# 爱奇艺图床
-DOMAIN-SUFFIX,iqiyipic.com,DIRECT
-# 腾讯静态资源
-DOMAIN-SUFFIX,gtimg.cn,DIRECT
-# 百度相关
-DOMAIN-SUFFIX,baidu.com,DIRECT
+DOMAIN,hhmage.com,DIRECT
+DOMAIN,wework.qpic.cn,DIRECT
 DOMAIN,pic.rmb.bdstatic.com,DIRECT
-# 新浪图床
+DOMAIN-SUFFIX,alicdn.com,DIRECT
+DOMAIN-SUFFIX,ykimg.com,DIRECT
+DOMAIN-SUFFIX,netease.com,DIRECT
+DOMAIN-SUFFIX,gtimg.cn,DIRECT
+DOMAIN-SUFFIX,meituan.net,DIRECT
+DOMAIN,mdn.alipay.com,DIRECT
 DOMAIN,fc.sinaimg.cn,DIRECT
-DOMAIN,wx4.sinaimg.cn,DIRECT
-# 其他公共图床
+DOMAIN,img.moegirl.org.cn,DIRECT
+DOMAIN,pic8.iqiyipic.com,DIRECT
+DOMAIN,p0.qhimg.com,DIRECT
+DOMAIN-SUFFIX,iqiyipic.com,DIRECT
+DOMAIN,api.zaqohu.com,DIRECT
+DOMAIN,images.67c6c7a.com,DIRECT
+DOMAIN,pic7.58cdn.com.cn,DIRECT
+DOMAIN,help-ol.bj.bcebos.com,DIRECT
 DOMAIN-SUFFIX,loli.net,DIRECT
-DOMAIN,pic.imgdb.cn,DIRECT
+DOMAIN-SUFFIX,360buyimg.com,DIRECT
+DOMAIN,pic1.imgyzzy.com,DIRECT
+DOMAIN,get.sogou.com,DIRECT
+DOMAIN,open.bigmodel.cn,DIRECT
+DOMAIN,vcover-vt-pic.puui.qpic.cn,DIRECT
+DOMAIN,fs-im-kefu.7moor-fs1.com,DIRECT
+DOMAIN,img.image8899.net,DIRECT
 DOMAIN,img.picgo.net,DIRECT
+DOMAIN,pic3.yzzyimages.com,DIRECT
+DOMAIN,647bc185.szrtcpa.com,DIRECT
+DOMAIN,img.98ha.com,DIRECT
+DOMAIN,challenge.rivers.chaitin.cn,DIRECT
+DOMAIN,image.maimn.com,DIRECT
+DOMAIN-SUFFIX,baidu.com,DIRECT
+DOMAIN,img.liangzipic.com,DIRECT
+DOMAIN,imagev2.xmcdn.com,DIRECT
+DOMAIN,pic.imgdb.cn,DIRECT
+DOMAIN,pic3.yzzyimg.online,DIRECT
+DOMAIN,wx4.sinaimg.cn,DIRECT
+DOMAIN,img.jisuimage.com,DIRECT
+DOMAIN,pic.wujinpp.com,DIRECT
+DOMAIN,suboimage.com,DIRECT
+DOMAIN,img.ffzy888.com,DIRECT
+DOMAIN,img.lzzyimg.com,DIRECT
