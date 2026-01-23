@@ -48,6 +48,7 @@ DOMAIN-SUFFIX,xiaoya.pro,DIRECT
 
 # --- 网盘源 (合并更新版) ---
 # 玩偶哥哥 (Wogg)
+DOMAIN-KEYWORD,wogg,DIRECT
 DOMAIN-SUFFIX,wogg.one,DIRECT
 DOMAIN-SUFFIX,wogg.net,DIRECT
 DOMAIN-SUFFIX,wogg.lol,DIRECT
