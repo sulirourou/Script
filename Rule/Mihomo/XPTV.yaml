@@ -1,51 +1,57 @@
 payload:
   # --- XPTV 直连规则 ---
-  # 核心服务
+  # 核心服务（XPTV Helper）
   - DOMAIN-SUFFIX,xptvhelper.link
 
-  # XPTV主站
+  # XPTV主站（InfuseKu / XPTV）
   - DOMAIN,infuseku.xyz
 
-  # iCloud同步
+  # iCloud同步（Apple iCloud）
   - DOMAIN,gateway.icloud.com
   - DOMAIN,metrics.icloud.com
 
-  # XPTV封面来源
+  # XPTV封面来源（豆瓣 / TMDB）
   - DOMAIN-SUFFIX,doubanio.com
   - DOMAIN,image.tmdb.org
 
-  # 弹幕
+  # 弹幕（弹弹Play / DandanPlay）
   - DOMAIN,dandanplay.net
 
+
   # --- 网盘官方服务 ---
-  # 阿里
+  # 阿里云盘（AliyunDrive）
   - DOMAIN-SUFFIX,aliyundrive.com
   - DOMAIN-SUFFIX,voicehub.top
-  # 夸克
+
+  # 夸克网盘（Quark）
   - DOMAIN-SUFFIX,quark.cn
-  # 天翼
+
+  # 天翼云盘（China Telecom）
   - DOMAIN-SUFFIX,189.cn
   - DOMAIN-SUFFIX,ctyunxs.cn
-  # 115
+
+  # 115网盘
   - DOMAIN-SUFFIX,115.com
-  # UC
+
+  # UC网盘 / UC
   - DOMAIN-SUFFIX,uc.cn
-  # 小雅
+
+  # 小雅（Xiaoya）
   - DOMAIN-SUFFIX,xiaoya.pro
+
 
   # --- 网盘源 (合并更新版) ---
   # 玩偶哥哥 (Wogg)
   - DOMAIN-SUFFIX,wogg.one
   - DOMAIN-SUFFIX,wogg.net
-  - DOMAIN-SUFFIX,wogg.xxooo.cf
   - DOMAIN-SUFFIX,wogg.lol
-  - DOMAIN-SUFFIX,333232.xyz
+  - DOMAIN-SUFFIX,wogg.xxooo.cf
 
   # 木偶哥哥 (Muou)
   - DOMAIN-SUFFIX,mogg.top
-  - DOMAIN-SUFFIX,666291.xyz
   - DOMAIN-SUFFIX,muou.asia
   - DOMAIN-SUFFIX,muou.site
+  - DOMAIN-SUFFIX,666291.xyz
 
   # 小米 (Mihdr)
   - DOMAIN-SUFFIX,mihdr.top
@@ -73,34 +79,56 @@ payload:
   # 雷鲸
   - DOMAIN-SUFFIX,leijing.xyz
   - DOMAIN-SUFFIX,leijing1.com
+
   # 校长
   - DOMAIN-SUFFIX,xzys.fun
+
   # 蜡笔
   - DOMAIN-SUFFIX,duopan.fun
+
   # 南风
   - DOMAIN-SUFFIX,nanf.cc
+
   # 欧歌
   - DOMAIN,woog.nxog.eu.org
+
   # 云盘吧
   - DOMAIN,yunpan8.cc
+
   # 至臻
   - DOMAIN-SUFFIX,zhizhenpan.fun
+
   # 小萨
   - DOMAIN-SUFFIX,xsayang.fun
 
+
   # --- 直播/短视频相关 ---
+  # B站视频CDN（bilibili）
   - DOMAIN-SUFFIX,bilivideo.com
+
+  # slink（短链/跳转服务）
   - DOMAIN,slink.ltd
+
+  # 抖音CDN（Douyin）
   - DOMAIN-SUFFIX,douyincdn.com
   - DOMAIN-SUFFIX,douyinpic.com
+
+  # 斗鱼CDN（Douyu）
   - DOMAIN-SUFFIX,douyucdn.cn
   - DOMAIN-SUFFIX,douyucdn2.cn
+
+  # 虎牙直播（Huya）
   - DOMAIN-SUFFIX,huya.com
+
+  # 微软静态资源（Microsoft / msstatic）
   - DOMAIN-SUFFIX,msstatic.com
+
+  # LemonLive（deno）
   - DOMAIN,lemonlive.deno.dev
 
+
   # --- VOD影视源 ---
-  # 低端
+  # 低端影视（DDYS）
   - DOMAIN-SUFFIX,ddys.pro
 
   # AGE动漫
@@ -111,14 +139,14 @@ payload:
   - DOMAIN,love.girigirilove.com
   - DOMAIN,m3u8.girigirilove.com
 
-  # 瓜子
+  # 瓜子（影视源）
   - DOMAIN,api.9cec79d.com
   - DOMAIN,wjm.kemfsj.com
 
   # 4k-av
   - DOMAIN-SUFFIX,4k-av.com
 
-  # 囧动漫
+  # 囧动漫（相关资源/封面/CDN）
   - IP-CIDR,43.142.232.217/32,no-resolve
   - DOMAIN-SUFFIX,fanchenstatic.com
   - DOMAIN,i0.hdslb.com
@@ -144,7 +172,7 @@ payload:
   - DOMAIN,image.zhihuishu.com
   - DOMAIN,presale.111.com.cn
 
-  # hdmoli
+  # hdmoli / 大莫里
   - DOMAIN-SUFFIX,hdmoli.pro
   - DOMAIN-SUFFIX,damoli.pro
 
@@ -162,16 +190,16 @@ payload:
   - DOMAIN,cme-video.vod-qcloud.com
   - DOMAIN,hhjx.hhplayer.com
 
-  # NO視頻
+  # NO視頻（去广告）
   - DOMAIN-SUFFIX,novipnoad.net
 
-  # 韩剧看看
+  # 韩剧看看 / thekutv / thehanju
   - DOMAIN-SUFFIX,hanjukankan.com
   - DOMAIN-SUFFIX,thekutv.com
   - DOMAIN-SUFFIX,thehanju.com
   - DOMAIN-SUFFIX,vvddoo.com
 
-  # 星芽
+  # 星芽（影视源）
   - DOMAIN,qiniu.rongjuwh.cn
   - DOMAIN,app.whjzjx.cn
   - DOMAIN,u.shytkjgs.com
@@ -182,7 +210,7 @@ payload:
   - DOMAIN-SUFFIX,xingya.com.cn
   - IP-CIDR,117.68.35.139/32,no-resolve
 
-  # 小苹果
+  # 小苹果（影视源）
   - IP-CIDR,163.123.192.184/32,no-resolve
   - IP-CIDR,148.59.74.50/32,no-resolve
   - IP-CIDR,205.178.182.17/32,no-resolve
@@ -196,7 +224,7 @@ payload:
   - IP-CIDR,163.123.192.17/32,no-resolve
   - DOMAIN,c.xpgtv.net
 
-  # 厂长
+  # 厂长资源（czzy）
   - DOMAIN-SUFFIX,czzyvideo.com
   - DOMAIN,qimgs.qunarzz.com
   - DOMAIN,lf16-fe.resso.me
@@ -207,7 +235,7 @@ payload:
   - DOMAIN,dc.xhscdn.com
   - DOMAIN,mdn.alipayobjects.com
 
-  # 天天
+  # 天天（影视源）
   - DOMAIN-SUFFIX,ysdqjs.cn
 
   # 在线之家
@@ -216,18 +244,19 @@ payload:
   # 素白白
   - DOMAIN-SUFFIX,subaibaiys.com
 
+
   # --- CMS采集源 ---
-  # 360
+  # 360资源
   - DOMAIN,360zy.com
   - DOMAIN,vod.lyhuicheng.com
 
-  # 非凡
+  # 非凡资源（ffzy）
   - DOMAIN-KEYWORD,ffzy
 
-  # 墨斗
+  # 墨斗资源（mdzy）
   - DOMAIN,www.mdzyapi.com
 
-  # 黑木耳
+  # 黑木耳（heimuer）
   - DOMAIN-SUFFIX,heimuer.tv
   - DOMAIN-SUFFIX,heimuer.xyz
 
@@ -265,69 +294,69 @@ payload:
   - DOMAIN,mdghhsgc4iiy.com
   - DOMAIN,m3u8.hmrvideo.com
 
-  # 华为吧
+  # 华为吧（资源站）
   - DOMAIN-SUFFIX,hw8.live
   - DOMAIN,selfcdn.simaguo.com
   - DOMAIN,m3u.nikanba.live
 
-  # 腐剧
+  # 腐剧（资源站）
   - DOMAIN-SUFFIX,fuju2024.cc
   - DOMAIN-SUFFIX,yishihui.com
 
-  # 金鹰
+  # 金鹰资源（jinyingzy）
   - DOMAIN,image.jinyingimage.com
   - DOMAIN,jinyingzy.com
   - DOMAIN,c.baisiweiting.com
   - DOMAIN,hd.ijycnd.com
 
-  # OK资源
+  # OK资源（okzy）
   - DOMAIN-SUFFIX,okzy.xyz
   - DOMAIN-SUFFIX,wakdj.com
   - DOMAIN-SUFFIX,noop44.com
   - DOMAIN-SUFFIX,bxgbnet.com
   - DOMAIN-SUFFIX,xxya88.com
 
-  # 宝片
+  # 宝片（bbff）
   - DOMAIN,zpsps.com
   - DOMAIN-KEYWORD,bbffvip.com
   - DOMAIN-KEYWORD,rrcdnbf
 
-  # 小黄人
+  # 小黄人资源
   - DOMAIN-SUFFIX,xiaohuangrentv.com
   - DOMAIN-KEYWORD,.jisu.com
 
-  # 牛牛
+  # 牛牛资源
   - DOMAIN,pic.niuniuzy.info
   - DOMAIN-SUFFIX,qrstt.com
   - DOMAIN-SUFFIX,stuuvwy.com
   - DOMAIN-SUFFIX,xingchongwang.com
 
-  # 丫丫
+  # 丫丫资源
   - DOMAIN-SUFFIX,uvvv77.com
   - DOMAIN-SUFFIX,jklnopq.com
   - DOMAIN-SUFFIX,yayazy.net
   - DOMAIN-SUFFIX,qdhdcate.com
 
-  # 影图
+  # 影图资源
   - DOMAIN,cj.vodimg.top
   - DOMAIN-SUFFIX,ghij11.com
   - DOMAIN-SUFFIX,tlkqc.com
   - DOMAIN,pic.picturecdn.com
   - DOMAIN-SUFFIX,xaab57.com
 
-  # U酷
+  # U酷资源（uku）
   - DOMAIN-SUFFIX,ukuapi.com
   - DOMAIN-KEYWORD,ukzy.ukubf
 
-  # 豪华
+  # 豪华资源（hhzy）
   - DOMAIN,hhzyapi.com
   - DOMAIN-SUFFIX,hhuus.com
   - DOMAIN-SUFFIX,hhwenjian.com
 
-  # 极速
+  # 极速资源（jszy）
   - DOMAIN,jszyapi.com
 
-  # 索尼
+  # 索尼资源（snzy）
   - DOMAIN,snzypic.vip
   - DOMAIN-KEYWORD,.hiij
   - DOMAIN-SUFFIX,nopqq.vip
@@ -335,40 +364,40 @@ payload:
   - DOMAIN-SUFFIX,pqqrs.vip
   - DOMAIN-SUFFIX,qrssv.com
 
-  # ikun
+  # ikun资源
   - DOMAIN-SUFFIX,imgikzy.com
   - DOMAIN,kkzycdn.com
   - DOMAIN,bfikuncdn.com
 
-  # 量子
+  # 量子资源（lzi）
   - DOMAIN,cj.lziapi.com
   - DOMAIN,img.lzzyimg.com
   - DOMAIN-KEYWORD,v.cdnlz
 
-  # 暴风
+  # 暴风资源（bfzy）
   - DOMAIN-SUFFIX,bfzypic.com
   - DOMAIN,bfzyapi.com
   - DOMAIN-SUFFIX,bfllvip.com
 
-  # 红牛
+  # 红牛资源
   - DOMAIN-SUFFIX,hongniuzy2.com
   - DOMAIN,hn.bfvvs.com
   - DOMAIN,hnts.ymuuy.com
 
-  # 快车
+  # 快车资源（kczy）
   - DOMAIN,caijl.kczyapi.com
   - DOMAIN-SUFFIX,fghjklm.com
   - DOMAIN-SUFFIX,ijkklmn.com
   - DOMAIN-SUFFIX,longshengtea.com
   - DOMAIN-SUFFIX,stuuv.vip
 
-  # 闪电
+  # 闪电资源（sdzy）
   - DOMAIN,sdzyapi.com
   - DOMAIN-SUFFIX,qrrs56.com
   - DOMAIN-SUFFIX,wwxy0.com
   - DOMAIN-SUFFIX,fentvoss.com
 
-  # 樱花
+  # 樱花资源（yhzy）
   - DOMAIN,m3u8.apiyhzy.com
   - DOMAIN-SUFFIX,ijkkl.vip
   - DOMAIN-SUFFIX,abcce.vip
@@ -384,88 +413,77 @@ payload:
   - DOMAIN-SUFFIX,wgslsw.com
   - DOMAIN,pic.jegms.com
 
-  # 卧龙
+  # 卧龙资源（wolong）
   - DOMAIN-SUFFIX,wolongzyw.com
   - DOMAIN-SUFFIX,wlongimg.com
   - DOMAIN-KEYWORD,cdn.wls
   - DOMAIN-KEYWORD,cdn.wlcdn
 
-  # 虎牙
+  # 虎牙相关（huya）
   - DOMAIN-KEYWORD,.huya
 
-  # 飘零
+  # 飘零资源
   - DOMAIN,p2100.net
 
-  # 无尽
+  # 无尽资源
   - DOMAIN,api.wujinapi.com
   - DOMAIN-SUFFIX,stuv67.com
   - DOMAIN-SUFFIX,hjjk22.com
   - DOMAIN-SUFFIX,jkkl23.com
   - DOMAIN,v5.xyaa88.com
 
-  # 速博
+  # 速博资源（subo）
   - DOMAIN-KEYWORD,subo
   - DOMAIN-SUFFIX,subokk.com
   - DOMAIN-SUFFIX,xlzyd.com
 
-  # 魔都
+  # 魔都资源（modu）
   - DOMAIN,caiji.moduapi.cc
   - DOMAIN,www.mdzypic.com
   - DOMAIN-KEYWORD,play.modujx
 
-  # 最大
+  # 最大资源（zuid）
   - DOMAIN-SUFFIX,zuidapic.com
   - DOMAIN-SUFFIX,zuidazy.me
   - DOMAIN-SUFFIX,daayee.com
 
-  # 新浪
+  # 新浪图片/资源
   - DOMAIN,xinlangtupian.com
   - DOMAIN,play.xluuss.com
 
-  # 八戒
+  # 八戒资源
   - DOMAIN-SUFFIX,monidai.com
   - DOMAIN-SUFFIX,hdslb.pro
 
+
   # --- XPAV源 ---
-  # Hanime1
+  # Hanime1 下载域名
   - DOMAIN,vdownload.hembed.com
+
   # MISSAV
   - DOMAIN,surrit.com
-  # SupJav-ST
+
+  # SupJav-ST / Streamtape
   - DOMAIN,streamtape.com
   - DOMAIN-SUFFIX,tapecontent.net
 
-  # 秋名山见
-  - DOMAIN,api.maiyoux.com
-  - DOMAIN-SUFFIX,xinzhisoft.xyz
-  - DOMAIN-SUFFIX,zhenyidaoxinxi.top
-  - DOMAIN-SUFFIX,xinzhitushu.xyz
-  - DOMAIN-SUFFIX,dmtmax.cn
-  - DOMAIN-SUFFIX,anfangmart.cn
-  - DOMAIN-SUFFIX,dapengjiaoyu.top
-  - DOMAIN-SUFFIX,aliyuncs.com
-  - DOMAIN-SUFFIX,kdfwz.top
-
-  # 91AV
-  - DOMAIN-SUFFIX,knzaol.cn
-  - DOMAIN-SUFFIX,bndmpsjx.com
 
   # --- CMS其他杂项 ---
-  # 森林
+  # 森林资源
   - DOMAIN,slapibf.com
   - DOMAIN,fmtu.sltututu.com
   - DOMAIN-SUFFIX,bbffsl.com
 
-  # 探探
+  # 探探资源
   - DOMAIN,apittzy.com
   - DOMAIN,vod1.ttbfp2.com
 
-  # 奥斯卡
+  # 奥斯卡资源
   - DOMAIN,aosikazy.com
   - DOMAIN,bfaskcdn.com
   - DOMAIN,uqetyzxa.com
 
-  # 老鸭
+  # 老鸭资源
   - DOMAIN,api.apilyzy.com
   - DOMAIN,img.lytuchuang91.com
   - DOMAIN-SUFFIX,laoyacdn.com
@@ -477,49 +495,44 @@ payload:
   - DOMAIN,cctv123456.com
   - DOMAIN-SUFFIX,cdn2020.com
 
-  # 易看
+  # 易看资源
   - DOMAIN,img.yikanimg.top
   - DOMAIN,api.yikanapi.com
   - DOMAIN,v.ykv3.com
 
-  # 番号
+  # 番号资源
   - DOMAIN,fm.fhpicpic.com
   - DOMAIN,fhapi9.com
   - DOMAIN,v2024.fhbbff.com
 
-  # 鲨鱼
+  # 鲨鱼资源
   - DOMAIN,sycdn.ddljsytt.com
   - DOMAIN,v2024.sysybf.com
 
-  # Alvin
+  # Alvin资源
   - DOMAIN,fm.lbpicpic.com
   - DOMAIN,lbapiby.com
   - DOMAIN,vip3.lbbf9.com
 
-  # 黄瓜
+  # 黄瓜资源
   - DOMAIN,player.hgplayer00.com
   - DOMAIN,img.hgimg00.com
 
-  # 玉兔
+  # 玉兔资源
   - DOMAIN,sbzytpimg2.com
   - DOMAIN,apiyutu.com
   - DOMAIN,yutubf.lsbbf3.com
 
-  # 辣椒
+  # 辣椒资源
   - DOMAIN-SUFFIX,newljlj.com
   - DOMAIN,ljcdn.ddljsytt.com
 
-  # 奶香香
-  - DOMAIN,guzwiayz.com
-  - DOMAIN,naixxzy.com
-  - DOMAIN,nxxplayurl.com
-
-  # 精品
+  # 精品资源
   - DOMAIN,jinpinxm.com
   - DOMAIN-KEYWORD,jingpinx.com
   - DOMAIN,05hao.top
 
-  # 草榴
+  # 草榴资源（caoliu）
   - DOMAIN,www.caoliuzyw.com
   - DOMAIN-SUFFIX,comodoca.com
   - DOMAIN-SUFFIX,usertrust.com
@@ -527,55 +540,151 @@ payload:
   - DOMAIN-SUFFIX,caoliuzywimg.com
   - DOMAIN,player.cl9987.com
 
-  # 老色逼
+  # 老色逼资源
   - DOMAIN,apilsbzy1.com
 
-  # 杂七杂八的网站封面
+
+  # --- 杂七杂八的网站封面 ---
+  # 快车资源/采集站封面图床（疑似资源站）
   - DOMAIN,img.kuaichezy.net
+
+  # 腾讯系图片CDN（QPic）
   - DOMAIN,puui.qpic.cn
+
+  # 极速图片/图床（资源站常用）
   - DOMAIN-SUFFIX,jisuimage.com
+
+  # 字节跳动图床（今日头条/西瓜/抖音相关）
   - DOMAIN-SUFFIX,toutiaoimg.com
+
+  # 影视资源站封面图（YZZY Images）
   - DOMAIN-SUFFIX,yzzyimages.com
+
+  # 资源站图床（未知站点封面域名）
   - DOMAIN,hhmage.com
+
+  # 企业微信/WeCom 图片CDN（qpic）
   - DOMAIN,wework.qpic.cn
+
+  # 百度静态资源（bdstatic）
   - DOMAIN,pic.rmb.bdstatic.com
+
+  # 阿里系CDN（淘宝/天猫/阿里静态资源）
   - DOMAIN-SUFFIX,alicdn.com
+
+  # 优酷/阿里文娱图片CDN（ykimg）
   - DOMAIN-SUFFIX,ykimg.com
+
+  # 网易系资源域名（新闻/云音乐等）
   - DOMAIN-SUFFIX,netease.com
+
+  # 腾讯静态资源/CDN（QQ/腾讯视频等）
   - DOMAIN-SUFFIX,gtimg.cn
+
+  # 美团静态资源/CDN
   - DOMAIN-SUFFIX,meituan.net
+
+  # 支付宝/蚂蚁静态资源CDN（mdn）
   - DOMAIN,mdn.alipay.com
+
+  # 新浪微博图床（sinaimg）
   - DOMAIN,fc.sinaimg.cn
+
+  # 萌娘百科图片站
   - DOMAIN,img.moegirl.org.cn
+
+  # 爱奇艺封面/图片CDN
   - DOMAIN,pic8.iqiyipic.com
+
+  # 奇虎360图片CDN（qhimg）
   - DOMAIN,p0.qhimg.com
+
+  # 爱奇艺图片域名（全站）
   - DOMAIN-SUFFIX,iqiyipic.com
+
+  # 资源站接口/封面（未知来源）
   - DOMAIN,api.zaqohu.com
+
+  # 资源站图片域名（随机图床）
   - DOMAIN,images.67c6c7a.com
+
+  # 58系图片CDN（疑似 58cdn）
   - DOMAIN,pic7.58cdn.com.cn
+
+  # 百度智能云 BOS 对象存储（BCE）
   - DOMAIN,help-ol.bj.bcebos.com
+
+  # Loli 图床（loli.net）
   - DOMAIN-SUFFIX,loli.net
+
+  # 京东图片CDN
   - DOMAIN-SUFFIX,360buyimg.com
+
+  # 影视资源站封面图（imgyzzy）
   - DOMAIN,pic1.imgyzzy.com
+
+  # 搜狗相关接口/下载域名
   - DOMAIN,get.sogou.com
+
+  # AI平台接口域名（bigmodel.cn，可能为大模型服务）
   - DOMAIN,open.bigmodel.cn
+
+  # 腾讯系封面/视频封面图（qpic）
   - DOMAIN,vcover-vt-pic.puui.qpic.cn
-  - DOMAIN,img.lzzyimg.com
+
+  # 七陌（7moor）在线客服资源域名
   - DOMAIN,fs-im-kefu.7moor-fs1.com
+
+  # 资源站图片域名（未知图床）
   - DOMAIN,img.image8899.net
+
+  # PicGo 图床相关域名（可能）
   - DOMAIN,img.picgo.net
+
+  # 影视资源站封面图（yzzyimages 子域）
   - DOMAIN,pic3.yzzyimages.com
+
+  # 随机域名图床/验证跳转（未知）
   - DOMAIN,647bc185.szrtcpa.com
+
+  # 资源站图片域名（未知）
   - DOMAIN,img.98ha.com
+
+  # 长亭科技 Chaitin 反爬/验证挑战页（challenge）
   - DOMAIN,challenge.rivers.chaitin.cn
+
+  # 资源站图片域名（未知）
   - DOMAIN,image.maimn.com
+
+  # 百度主域（可能用于图片/跳转/接口）
   - DOMAIN-SUFFIX,baidu.com
+
+  # 资源站图片域名（量子/类似资源站封面）
   - DOMAIN,img.liangzipic.com
+
+  # 喜马拉雅图片CDN（xmcdn）
   - DOMAIN,imagev2.xmcdn.com
+
+  # 图床（imgdb.cn）
   - DOMAIN,pic.imgdb.cn
+
+  # 影视资源站封面（yzzyimg online 子域）
   - DOMAIN,pic3.yzzyimg.online
+
+  # 新浪微博图床（sinaimg）
   - DOMAIN,wx4.sinaimg.cn
+
+  # 极速图片（子域）
   - DOMAIN,img.jisuimage.com
+
+  # 资源站封面图（无尽/相关）
   - DOMAIN,pic.wujinpp.com
+
+  # 速博/资源站封面图（subo image）
   - DOMAIN,suboimage.com
+
+  # 非凡资源封面图（FFZY）
   - DOMAIN,img.ffzy888.com
+
+  # 量子资源封面图（LZZY）
+  - DOMAIN,img.lzzyimg.com
