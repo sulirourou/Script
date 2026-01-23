@@ -1,18 +1,14 @@
-#!name=XPTV 综合直连优化模块
+#!name=XPTV
 #!desc=包含 XPTV 核心服务、网盘官方、影视源及 CMS 采集源的直连规则。注释已独立行显示。
 #!category=XPTV
 
 [Rule]
-# 弹幕
-DOMAIN,dandanplay.net,DIRECT
-
 # XPTV 核心助手
 DOMAIN-SUFFIX,xptvhelper.link,DIRECT
 
 # XPTV 核心 API
 DOMAIN,infuseku.xyz,DIRECT
 
-# iCloud 同步
 # iCloud同步
 DOMAIN,gateway.icloud.com,DIRECT
 DOMAIN,metrics.icloud.com,DIRECT
@@ -22,6 +18,9 @@ DOMAIN-SUFFIX,doubanio.com,DIRECT
 
 # TMDB 封面
 DOMAIN,image.tmdb.org,DIRECT
+
+# 弹幕
+DOMAIN,dandanplay.net,DIRECT
 
 # --- 网盘官方服务 ---
 # 阿里云盘
