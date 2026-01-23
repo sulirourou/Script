@@ -5,603 +5,603 @@
 # --- XPTV 直连规则 ---
 
 # 核心服务
-host-suffix, xptvhelper.link, direct
+host-suffix, xptvhelper.link
 
 # XPTV主站 (部分地区可直连)
-host, infuseku.xyz, direct
+host, infuseku.xyz
 
 # iCloud同步
-host, gateway.icloud.com, direct
-host, metrics.icloud.com, direct
+host, gateway.icloud.com
+host, metrics.icloud.com
 
 # XPTV封面来源
 # 小海报
-host-suffix, doubanio.com, direct
+host-suffix, doubanio.com
 # 大封面
-host, image.tmdb.org, direct
+host, image.tmdb.org
 
 # 弹幕
-host, dandanplay.net, direct
+host, dandanplay.net
 
 # --- 网盘规则 ---
 # 阿里
-host-suffix, aliyundrive.com, direct
-host-suffix, voicehub.top, direct
+host-suffix, aliyundrive.com
+host-suffix, voicehub.top
 # 夸克
-host-suffix, quark.cn, direct
+host-suffix, quark.cn
 # 天翼
-host-suffix, 189.cn, direct
-host-suffix, ctyunxs.cn, direct
+host-suffix, 189.cn
+host-suffix, ctyunxs.cn
 # 115
-host-suffix, 115.com, direct
+host-suffix, 115.com
 # UC
-host-suffix, uc.cn, direct
+host-suffix, uc.cn
 # 小雅
-host-suffix, xiaoya.pro, direct
+host-suffix, xiaoya.pro
 
 # --- 网盘源 ---
 # 小米
-host, mihdr.top, direct
+host, mihdr.top
 # 木偶
-host-suffix, mogg.top, direct
-host-suffix, 666291.xyz, direct
+host-suffix, mogg.top
+host-suffix, 666291.xyz
 # 玩偶
-host-suffix, wogg.one, direct
-host-suffix, wogg.net, direct
-host-suffix, wogg.xxooo.cf, direct
+host-suffix, wogg.one
+host-suffix, wogg.net
+host-suffix, wogg.xxooo.cf
 # 雷鲸
-host-suffix, leijing.xyz, direct
-host-suffix, leijing1.com, direct
+host-suffix, leijing.xyz
+host-suffix, leijing1.com
 # 校长
-host-suffix, xzys.fun, direct
+host-suffix, xzys.fun
 # 蜡笔
-host-suffix, duopan.fun, direct
+host-suffix, duopan.fun
 # 南风
-host-suffix, nanf.cc, direct
+host-suffix, nanf.cc
 # 多多
-host-suffix, yydsys.top, direct
+host-suffix, yydsys.top
 # 欧歌
-host, woog.nxog.eu.org, direct
+host, woog.nxog.eu.org
 # 云盘吧
-host, yunpan8.cc, direct
+host, yunpan8.cc
 
 # nmlive相关
-host-suffix, bilivideo.com, direct
-host, slink.ltd, direct
-host-suffix, douyincdn.com, direct
-host-suffix, douyinpic.com, direct
-host-suffix, douyucdn.cn, direct
-host-suffix, douyucdn2.cn, direct
-host-suffix, huya.com, direct
-host-suffix, msstatic.com, direct
-host, lemonlive.deno.dev, direct
+host-suffix, bilivideo.com
+host, slink.ltd
+host-suffix, douyincdn.com
+host-suffix, douyinpic.com
+host-suffix, douyucdn.cn
+host-suffix, douyucdn2.cn
+host-suffix, huya.com
+host-suffix, msstatic.com
+host, lemonlive.deno.dev
 
 # --- VOD源 ---
 # 低端主页与播放
-host-suffix, ddys.pro, direct
+host-suffix, ddys.pro
 
 # AGE主页
-host-suffix, agedm.org, direct
+host-suffix, agedm.org
 
 # ギリギリ主页
-host-suffix, girigirilove.com, direct
+host-suffix, girigirilove.com
 # 播放
-host, love.girigirilove.com, direct
-host, m3u8.girigirilove.com, direct
+host, love.girigirilove.com
+host, m3u8.girigirilove.com
 
 # 瓜子主页
-host, api.9cec79d.com, direct
+host, api.9cec79d.com
 # 播放
-host, wjm.kemfsj.com, direct
+host, wjm.kemfsj.com
 
 # 4k-av播放
-host-suffix, 4k-av.com, direct
+host-suffix, 4k-av.com
 
 # 囧动漫主页
-ip-cidr, 43.142.232.217/32, direct
+ip-cidr, 43.142.232.217/32
 # 播放
-host-suffix, fanchenstatic.com, direct
-host, i0.hdslb.com, direct
-host-suffix, bsgslb.cn, direct
-host-suffix, bytetos.com, direct
-host-suffix, douyinvod.com, direct
-host-suffix, byteimg.com, direct
-ip-cidr, 110.41.171.181/32, direct
-ip-cidr, 49.235.143.104/32, direct
-host-suffix, xhscdn.com, direct
-host-suffix, bdxiguastatic.com, direct
-host-suffix, zshtys888.com, direct
+host-suffix, fanchenstatic.com
+host, i0.hdslb.com
+host-suffix, bsgslb.cn
+host-suffix, bytetos.com
+host-suffix, douyinvod.com
+host-suffix, byteimg.com
+ip-cidr, 110.41.171.181/32
+ip-cidr, 49.235.143.104/32
+host-suffix, xhscdn.com
+host-suffix, bdxiguastatic.com
+host-suffix, zshtys888.com
 
 # libvio主页
-host-suffix, libvio.cc, direct
+host-suffix, libvio.cc
 # 播放
-host-suffix, mcloud.139.com, direct
-host-suffix, libvio.cloud, direct
+host-suffix, mcloud.139.com
+host-suffix, libvio.cloud
 
 # anfuns相关
-host-suffix, anfuns.org, direct
-host-suffix, bytegiftia.top, direct
-host-suffix, lenovo.com.cn, direct
-host, image.zhihuishu.com, direct
-host, presale.111.com.cn, direct
+host-suffix, anfuns.org
+host-suffix, bytegiftia.top
+host-suffix, lenovo.com.cn
+host, image.zhihuishu.com
+host, presale.111.com.cn
 
 # hdmoli主页
-host-suffix, hdmoli.pro, direct
+host-suffix, hdmoli.pro
 # 播放
-host-suffix, damoli.pro, direct
+host-suffix, damoli.pro
 
 # 哔嘀影视主页
-host-suffix, xlys01.com, direct
+host-suffix, xlys01.com
 
 # 烧火影视主页
-host-suffix, saohuo.tv, direct
+host-suffix, saohuo.tv
 # 播放
-host-suffix, video.iqiyi.com, direct
-host-suffix, qitu-zuida.com, direct
-host, om.tc.qq.com, direct
-host-suffix, ibytedtos.com, direct
-host-suffix, 1ljx.com, direct
-host-suffix, smtcdns.com, direct
-host, cme-video.vod-qcloud.com, direct
-host, hhjx.hhplayer.com, direct
+host-suffix, video.iqiyi.com
+host-suffix, qitu-zuida.com
+host, om.tc.qq.com
+host-suffix, ibytedtos.com
+host-suffix, 1ljx.com
+host-suffix, smtcdns.com
+host, cme-video.vod-qcloud.com
+host, hhjx.hhplayer.com
 
 # NO視頻主页
-host-suffix, novipnoad.net, direct
+host-suffix, novipnoad.net
 
 # 韩剧看看主页
-host-suffix, hanjukankan.com, direct
-host-suffix, thekutv.com, direct
+host-suffix, hanjukankan.com
+host-suffix, thekutv.com
 # 播放
-host-suffix, thehanju.com, direct
-host-suffix, vvddoo.com, direct
+host-suffix, thehanju.com
+host-suffix, vvddoo.com
 
 # 星芽主页
-host, qiniu.rongjuwh.cn, direct
-host, app.whjzjx.cn, direct
-host, u.shytkjgs.com, direct
+host, qiniu.rongjuwh.cn
+host, app.whjzjx.cn
+host, u.shytkjgs.com
 # 播放
-ip-cidr, 218.22.23.189/32, direct
-ip-cidr, 117.68.35.135/32, direct
-ip-cidr, 218.22.23.229/32, direct
-host-suffix, qnqcdn.net, direct
-host-suffix, xingya.com.cn, direct
-ip-cidr, 117.68.35.139/32, direct
+ip-cidr, 218.22.23.189/32
+ip-cidr, 117.68.35.135/32
+ip-cidr, 218.22.23.229/32
+host-suffix, qnqcdn.net
+host-suffix, xingya.com.cn
+ip-cidr, 117.68.35.139/32
 
 # 小苹果播放
-ip-cidr, 163.123.192.184/32, direct
-ip-cidr, 148.59.74.50/32, direct
-ip-cidr, 205.178.182.17/32, direct
-ip-cidr, 163.123.192.169/32, direct
-ip-cidr, 163.123.192.68/32, direct
-ip-cidr, 163.123.192.182/32, direct
-ip-cidr, 205.178.182.8/32, direct
-ip-cidr, 163.123.192.108/32, direct
-ip-cidr, 163.123.192.29/32, direct
-ip-cidr, 205.178.182.52/32, direct
-ip-cidr, 163.123.192.17/32, direct
-host, c.xpgtv.net, direct
+ip-cidr, 163.123.192.184/32
+ip-cidr, 148.59.74.50/32
+ip-cidr, 205.178.182.17/32
+ip-cidr, 163.123.192.169/32
+ip-cidr, 163.123.192.68/32
+ip-cidr, 163.123.192.182/32
+ip-cidr, 205.178.182.8/32
+ip-cidr, 163.123.192.108/32
+ip-cidr, 163.123.192.29/32
+ip-cidr, 205.178.182.52/32
+ip-cidr, 163.123.192.17/32
+host, c.xpgtv.net
 
 # 厂长主页
-host-suffix, czzyvideo.com, direct
+host-suffix, czzyvideo.com
 # 播放
-host, qimgs.qunarzz.com, direct
-host, lf16-fe.resso.me, direct
-host-suffix, akamaized.net, direct
-host-suffix, czzy.fun, direct
-host-suffix, czys.art, direct
-host-suffix, larksuitecdn.com, direct
-host, dc.xhscdn.com, direct
-host, mdn.alipayobjects.com, direct
+host, qimgs.qunarzz.com
+host, lf16-fe.resso.me
+host-suffix, akamaized.net
+host-suffix, czzy.fun
+host-suffix, czys.art
+host-suffix, larksuitecdn.com
+host, dc.xhscdn.com
+host, mdn.alipayobjects.com
 
 # 天天主页
-host-suffix, ysdqjs.cn, direct
+host-suffix, ysdqjs.cn
 
 # 在线之家主页--播放地址是ctyunxs.cn,在天翼里有
-host-suffix, zxzja.com, direct
+host-suffix, zxzja.com
 
 # 素白白主页--播放地址是dc.xhscdn.com,在厂长里有
-host-suffix, subaibaiys.com, direct
+host-suffix, subaibaiys.com
 
 # --- CMS源 ---
 # 360主页
-host, 360zy.com, direct
+host, 360zy.com
 # 播放
-host, vod.lyhuicheng.com, direct
+host, vod.lyhuicheng.com
 
 # 非凡主页和播放
-host-keyword, ffzy, direct
+host-keyword, ffzy
 
 # 墨斗主页
-host, www.mdzyapi.com, direct
+host, www.mdzyapi.com
 
 # 黑木耳主页
-host-suffix, heimuer.tv, direct
-host-suffix, heimuer.xyz, direct
+host-suffix, heimuer.tv
+host-suffix, heimuer.xyz
 
 # 播放(高频变动域名，需定期更新)
-host, 2bzfvku2xwu7.com, direct
-host, n9ihkvv1ytjr.com, direct
-host, 0cicgw0mte7y.com, direct
-host, r5oa1oqwh6gz.com, direct
-host, knfuzimvbmwr.com, direct
-host, ucul8pjt6v6h.com, direct
-host, 5pvheva17etb.com, direct
-host, k6qgunhk9wuk.com, direct
-host, 0uxzzy8thov3.com, direct
-host, 5dagx9am9sai.com, direct
-host, omgyesityyhl.com, direct
-host, eucjzvub6vhr.com, direct
-host, tficf2xx0qxr.com, direct
-host, zqmdvefdijjx.com, direct
-host, jzuqfavoibww.com, direct
-host, in1eab44tnda.com, direct
-host, nfysfaemv1m2.com, direct
-host, rfjyb3bu5j0r.com, direct
-host, wjmgijixqcbc.com, direct
-host, jvgcazuedspp.com, direct
-host, fmxjkp6ekzcg.com, direct
-host, zea35s3nhdbn.com, direct
-host, zehnaxihujfi.com, direct
-host, 0nzuqy0k3c35.com, direct
-host, yvocwep63nev.com, direct
-host, navogkbbnjl4.com, direct
-host, xgwr4phkkafo.com, direct
-host, om43531gxybq.com, direct
-host, 3lky1u69bdx2.com, direct
-host, 438pnr4dyywt.com, direct
-host, mdghhsgc4iiy.com, direct
-host, m3u8.hmrvideo.com, direct
+host, 2bzfvku2xwu7.com
+host, n9ihkvv1ytjr.com
+host, 0cicgw0mte7y.com
+host, r5oa1oqwh6gz.com
+host, knfuzimvbmwr.com
+host, ucul8pjt6v6h.com
+host, 5pvheva17etb.com
+host, k6qgunhk9wuk.com
+host, 0uxzzy8thov3.com
+host, 5dagx9am9sai.com
+host, omgyesityyhl.com
+host, eucjzvub6vhr.com
+host, tficf2xx0qxr.com
+host, zqmdvefdijjx.com
+host, jzuqfavoibww.com
+host, in1eab44tnda.com
+host, nfysfaemv1m2.com
+host, rfjyb3bu5j0r.com
+host, wjmgijixqcbc.com
+host, jvgcazuedspp.com
+host, fmxjkp6ekzcg.com
+host, zea35s3nhdbn.com
+host, zehnaxihujfi.com
+host, 0nzuqy0k3c35.com
+host, yvocwep63nev.com
+host, navogkbbnjl4.com
+host, xgwr4phkkafo.com
+host, om43531gxybq.com
+host, 3lky1u69bdx2.com
+host, 438pnr4dyywt.com
+host, mdghhsgc4iiy.com
+host, m3u8.hmrvideo.com
 
 # 华为吧主页
-host-suffix, hw8.live, direct
+host-suffix, hw8.live
 # 播放
-host, selfcdn.simaguo.com, direct
-host, m3u.nikanba.live, direct
+host, selfcdn.simaguo.com
+host, m3u.nikanba.live
 
 # 腐剧主页
-host-suffix, fuju2024.cc, direct
+host-suffix, fuju2024.cc
 # 播放
-host-suffix, yishihui.com, direct
+host-suffix, yishihui.com
 
 # 金鹰主页
-host, image.jinyingimage.com, direct
-host, jinyingzy.com, direct
+host, image.jinyingimage.com
+host, jinyingzy.com
 # 播放
-host, c.baisiweiting.com, direct
-host, hd.ijycnd.com, direct
+host, c.baisiweiting.com
+host, hd.ijycnd.com
 
 # OK主页
-host-suffix, okzy.xyz, direct
-host-suffix, wakdj.com, direct
+host-suffix, okzy.xyz
+host-suffix, wakdj.com
 # 播放
-host-suffix, noop44.com, direct
-host-suffix, bxgbnet.com, direct
-host-suffix, xxya88.com, direct
+host-suffix, noop44.com
+host-suffix, bxgbnet.com
+host-suffix, xxya88.com
 
 # 宝片主页
-host, zpsps.com, direct
+host, zpsps.com
 # 播放
-host-keyword, bbffvip.com, direct
-host-keyword, rrcdnbf, direct
+host-keyword, bbffvip.com
+host-keyword, rrcdnbf
 
 # 小黄人主页
-host-suffix, xiaohuangrentv.com, direct
+host-suffix, xiaohuangrentv.com
 # 播放
-host-keyword, .jisu.com, direct
+host-keyword, .jisu.com
 
 # 牛牛主页
-host, pic.niuniuzy.info, direct
+host, pic.niuniuzy.info
 # 播放
-host-suffix, qrstt.com, direct
-host-suffix, stuuvwy.com, direct
-host-suffix, xingchongwang.com, direct
+host-suffix, qrstt.com
+host-suffix, stuuvwy.com
+host-suffix, xingchongwang.com
 
 # 丫丫主页
-host-suffix, uvvv77.com, direct
+host-suffix, uvvv77.com
 # 播放
-host-suffix, jklnopq.com, direct
-host-suffix, yayazy.net, direct
-host-suffix, qdhdcate.com, direct
+host-suffix, jklnopq.com
+host-suffix, yayazy.net
+host-suffix, qdhdcate.com
 
 # 影图主页
-host, cj.vodimg.top, direct
+host, cj.vodimg.top
 # 播放
-host-suffix, ghij11.com, direct
-host-suffix, tlkqc.com, direct
-host, pic.picturecdn.com, direct
-host-suffix, xaab57.com, direct
+host-suffix, ghij11.com
+host-suffix, tlkqc.com
+host, pic.picturecdn.com
+host-suffix, xaab57.com
 
 # U酷主页
-host-suffix, ukuapi.com, direct
+host-suffix, ukuapi.com
 # 播放
-host-keyword, ukzy.ukubf, direct
+host-keyword, ukzy.ukubf
 
 # 豪华主页
-host, hhzyapi.com, direct
+host, hhzyapi.com
 # 播放
-host-suffix, hhuus.com, direct
-host-suffix, hhwenjian.com, direct
+host-suffix, hhuus.com
+host-suffix, hhwenjian.com
 
 # 极速主页
-host, jszyapi.com, direct
+host, jszyapi.com
 
 # 索尼主页
-host, snzypic.vip, direct
+host, snzypic.vip
 # 播放
 host-keyword, .hiij, direct
-host-suffix, nopqq.vip, direct
-host-suffix, uvwwx.vip, direct
-host-suffix, pqqrs.vip, direct
-host-suffix, qrssv.com, direct
+host-suffix, nopqq.vip
+host-suffix, uvwwx.vip
+host-suffix, pqqrs.vip
+host-suffix, qrssv.com
 
 # ikun主页
-host-suffix, imgikzy.com, direct
+host-suffix, imgikzy.com
 # 播放
-host, kkzycdn.com, direct
-host, bfikuncdn.com, direct
+host, kkzycdn.com
+host, bfikuncdn.com
 
 # 量子主页
-host, cj.lziapi.com, direct
-host, img.lzzyimg.com, direct
+host, cj.lziapi.com
+host, img.lzzyimg.com
 # 播放
-host-keyword, v.cdnlz, direct
+host-keyword, v.cdnlz
 
 # 暴风主页
-host-suffix, bfzypic.com, direct
-host, bfzyapi.com, direct
+host-suffix, bfzypic.com
+host, bfzyapi.com
 # 播放
-host-suffix, bfllvip.com, direct
+host-suffix, bfllvip.com
 
 # 红牛主页
-host-suffix, hongniuzy2.com, direct
+host-suffix, hongniuzy2.com
 # 播放
-host, hn.bfvvs.com, direct
-host, hnts.ymuuy.com, direct
+host, hn.bfvvs.com
+host, hnts.ymuuy.com
 
 # 快车主页
-host, caijl.kczyapi.com, direct
+host, caijl.kczyapi.com
 # 播放
-host-suffix, fghjklm.com, direct
-host-suffix, ijkklmn.com, direct
-host-suffix, longshengtea.com, direct
-host-suffix, stuuv.vip, direct
+host-suffix, fghjklm.com
+host-suffix, ijkklmn.com
+host-suffix, longshengtea.com
+host-suffix, stuuv.vip
 
 # 闪电主页
-host, sdzyapi.com, direct
+host, sdzyapi.com
 # 播放
-host-suffix, qrrs56.com, direct
-host-suffix, wwxy0.com, direct
-host-suffix, fentvoss.com, direct
+host-suffix, qrrs56.com
+host-suffix, wwxy0.com
+host-suffix, fentvoss.com
 
 # 樱花主页
-host, m3u8.apiyhzy.com, direct
+host, m3u8.apiyhzy.com
 # 播放
-host-suffix, ijkkl.vip, direct
-host-suffix, abcce.vip, direct
-host-suffix, mmnn34.com, direct
-host-suffix, vwxx78.com, direct
-host-suffix, stttu.vip, direct
-host-suffix, tuvvv.vip, direct
-host-suffix, ijkmnno.com, direct
-host-suffix, deefg.vip, direct
-host-suffix, lmnoprs.com, direct
-host-keyword, shes, direct
-host-suffix, yhzybf.com, direct
-host-suffix, wgslsw.com, direct
-host, pic.jegms.com, direct
+host-suffix, ijkkl.vip
+host-suffix, abcce.vip
+host-suffix, mmnn34.com
+host-suffix, vwxx78.com
+host-suffix, stttu.vip
+host-suffix, tuvvv.vip
+host-suffix, ijkmnno.com
+host-suffix, deefg.vip
+host-suffix, lmnoprs.com
+host-keyword, shes
+host-suffix, yhzybf.com
+host-suffix, wgslsw.com
+host, pic.jegms.com
 
 # 卧龙主页
-host-suffix, wolongzyw.com, direct
-host-suffix, wlongimg.com, direct
+host-suffix, wolongzyw.com
+host-suffix, wlongimg.com
 # 播放
-host-keyword, cdn.wls, direct
-host-keyword, cdn.wlcdn, direct
+host-keyword, cdn.wls
+host-keyword, cdn.wlcdn
 
 # 虎牙主页与播放
-host-keyword, .huya, direct
+host-keyword, .huya
 
 # 飘零主页
-host, p2100.net, direct
+host, p2100.net
 
 # 无尽主页
-host, api.wujinapi.com, direct
+host, api.wujinapi.com
 # 播放
-host-suffix, stuv67.com, direct
-host-suffix, hjjk22.com, direct
-host-suffix, jkkl23.com, direct
-host, v5.xyaa88.com, direct
+host-suffix, stuv67.com
+host-suffix, hjjk22.com
+host-suffix, jkkl23.com
+host, v5.xyaa88.com
 
 # 速博主页
-host-keyword, subo, direct
+host-keyword, subo
 # 播放
-host-suffix, subokk.com, direct
-host-suffix, xlzyd.com, direct
+host-suffix, subokk.com
+host-suffix, xlzyd.com
 
 # 魔都主页
-host, caiji.moduapi.cc, direct
-host, www.mdzypic.com, direct
+host, caiji.moduapi.cc
+host, www.mdzypic.com
 # 播放
-host-keyword, play.modujx, direct
+host-keyword, play.modujx
 
 # 最大主页
-host-suffix, zuidapic.com, direct
-host-suffix, zuidazy.me, direct
+host-suffix, zuidapic.com
+host-suffix, zuidazy.me
 # 播放
-host-suffix, daayee.com, direct
+host-suffix, daayee.com
 
 # 新浪主页
-host, xinlangtupian.com, direct
+host, xinlangtupian.com
 # 播放
-host, play.xluuss.com, direct
+host, play.xluuss.com
 
 # 八戒播放
-host-suffix, monidai.com, direct
-host-suffix, hdslb.pro, direct
+host-suffix, monidai.com
+host-suffix, hdslb.pro
 
 # --- XPAV源 ---
 # Hanime1播放
-host, vdownload.hembed.com, direct
+host, vdownload.hembed.com
 # MISSAV播放
-host, surrit.com, direct
+host, surrit.com
 # SupJav-ST播放
-host, streamtape.com, direct
-host-suffix, tapecontent.net, direct
+host, streamtape.com
+host-suffix, tapecontent.net
 
 # 秋名山见主页
-host, api.maiyoux.com, direct
+host, api.maiyoux.com
 # 播放
-host-suffix, xinzhisoft.xyz, direct
-host-suffix, zhenyidaoxinxi.top, direct
-host-suffix, xinzhitushu.xyz, direct
-host-suffix, dmtmax.cn, direct
-host-suffix, anfangmart.cn, direct
-host-suffix, dapengjiaoyu.top, direct
-host-suffix, aliyuncs.com, direct
-host-suffix, kdfwz.top, direct
+host-suffix, xinzhisoft.xyz
+host-suffix, zhenyidaoxinxi.top
+host-suffix, xinzhitushu.xyz
+host-suffix, dmtmax.cn
+host-suffix, anfangmart.cn
+host-suffix, dapengjiaoyu.top
+host-suffix, aliyuncs.com
+host-suffix, kdfwz.top
 
 # 91AV播放
-host-suffix, knzaol.cn, direct
-host-suffix, bndmpsjx.com, direct
+host-suffix, knzaol.cn
+host-suffix, bndmpsjx.com
 
 # --- CMS源 ---
 # 森林主页
-host, slapibf.com, direct
+host, slapibf.com
 # 播放
-host, fmtu.sltututu.com, direct
-host-suffix, bbffsl.com, direct
+host, fmtu.sltututu.com
+host-suffix, bbffsl.com
 
 # 探探主页
-host, apittzy.com, direct
+host, apittzy.com
 # 播放
-host, vod1.ttbfp2.com, direct
+host, vod1.ttbfp2.com
 
 # 奥斯卡主页
-host, aosikazy.com, direct
+host, aosikazy.com
 # 播放
-host, bfaskcdn.com, direct
-host, uqetyzxa.com, direct
+host, bfaskcdn.com
+host, uqetyzxa.com
 
 # 老鸭主页
-host, api.apilyzy.com, direct
-host, img.lytuchuang91.com, direct
+host, api.apilyzy.com
+host, img.lytuchuang91.com
 # 播放
-host-suffix, laoyacdn.com, direct
+host-suffix, laoyacdn.com
 
 # 91麻豆主页
-host, 666529.xyz, direct
-host, 91md.me, direct
+host, 666529.xyz
+host, 91md.me
 # 播放
-host-suffix, 97img.com, direct
-host, cctv123456.com, direct
-host-suffix, cdn2020.com, direct
+host-suffix, 97img.com
+host, cctv123456.com
+host-suffix, cdn2020.com
 
 # 易看主页
-host, img.yikanimg.top, direct
-host, api.yikanapi.com, direct
+host, img.yikanimg.top
+host, api.yikanapi.com
 # 播放
-host, v.ykv3.com, direct
+host, v.ykv3.com
 
 # 番号主页
-host, fm.fhpicpic.com, direct
-host, fhapi9.com, direct
+host, fm.fhpicpic.com
+host, fhapi9.com
 # 播放
-host, v2024.fhbbff.com, direct
+host, v2024.fhbbff.com
 
 # 鲨鱼主页
-host, sycdn.ddljsytt.com, direct
+host, sycdn.ddljsytt.com
 # 播放
-host, v2024.sysybf.com, direct
+host, v2024.sysybf.com
 
 # Alvin主页
-host, fm.lbpicpic.com, direct
-host, lbapiby.com, direct
+host, fm.lbpicpic.com
+host, lbapiby.com
 # 播放
-host, vip3.lbbf9.com, direct
+host, vip3.lbbf9.com
 
 # 黄瓜播放
-host, player.hgplayer00.com, direct
-host, img.hgimg00.com, direct
+host, player.hgplayer00.com
+host, img.hgimg00.com
 
 # 玉兔主页
-host, sbzytpimg2.com, direct
-host, apiyutu.com, direct
+host, sbzytpimg2.com
+host, apiyutu.com
 # 播放
-host, yutubf.lsbbf3.com, direct
+host, yutubf.lsbbf3.com
 
 # 辣椒播放
-host-suffix, newljlj.com, direct
-host, ljcdn.ddljsytt.com, direct
+host-suffix, newljlj.com
+host, ljcdn.ddljsytt.com
 
 # 奶香香主页
-host, guzwiayz.com, direct
-host, naixxzy.com, direct
+host, guzwiayz.com
+host, naixxzy.com
 # 播放
-host, nxxplayurl.com, direct
+host, nxxplayurl.com
 
 # 精品主页
-host, jinpinxm.com, direct
-host-keyword, jingpinx.com, direct
+host, jinpinxm.com
+host-keyword, jingpinx.com
 # 播放
-host, 05hao.top, direct
+host, 05hao.top
 
 # 草榴主页
-host, www.caoliuzyw.com, direct
-host-suffix, comodoca.com, direct
-host-suffix, usertrust.com, direct
-host-suffix, sectigo.com, direct
-host-suffix, caoliuzywimg.com, direct
+host, www.caoliuzyw.com
+host-suffix, comodoca.com
+host-suffix, usertrust.com
+host-suffix, sectigo.com
+host-suffix, caoliuzywimg.com
 # 播放
-host, player.cl9987.com, direct
+host, player.cl9987.com
 
 # 老色逼主页
-host, apilsbzy1.com, direct
+host, apilsbzy1.com
 
 # 杂七杂八的网站封面
-host, img.kuaichezy.net, direct
-host, puui.qpic.cn, direct
-host-suffix, jisuimage.com, direct
-host-suffix, toutiaoimg.com, direct
-host-suffix, yzzyimages.com, direct
-host, hhmage.com, direct
-host, wework.qpic.cn, direct
-host, pic.rmb.bdstatic.com, direct
-host-suffix, alicdn.com, direct
-host-suffix, ykimg.com, direct
-host-suffix, netease.com, direct
-host-suffix, gtimg.cn, direct
-host-suffix, meituan.net, direct
-host, mdn.alipay.com, direct
-host, fc.sinaimg.cn, direct
-host, img.moegirl.org.cn, direct
-host, pic8.iqiyipic.com, direct
-host, p0.qhimg.com, direct
-host-suffix, iqiyipic.com, direct
-host, api.zaqohu.com, direct
-host, images.67c6c7a.com, direct
-host, pic7.58cdn.com.cn, direct
-host, help-ol.bj.bcebos.com, direct
-host-suffix, loli.net, direct
-host-suffix, 360buyimg.com, direct
-host, pic1.imgyzzy.com, direct
-host, get.sogou.com, direct
-host, open.bigmodel.cn, direct
-host, vcover-vt-pic.puui.qpic.cn, direct
-host, img.lzzyimg.com, direct
-host, fs-im-kefu.7moor-fs1.com, direct
-host, img.image8899.net, direct
-host, img.picgo.net, direct
-host, pic3.yzzyimages.com, direct
-host, 647bc185.szrtcpa.com, direct
-host, img.98ha.com, direct
-host, challenge.rivers.chaitin.cn, direct
-host, image.maimn.com, direct
-host-suffix, baidu.com, direct
-host, img.liangzipic.com, direct
-host, imagev2.xmcdn.com, direct
-host, pic.imgdb.cn, direct
-host, pic3.yzzyimg.online, direct
-host, wx4.sinaimg.cn, direct
-host, img.jisuimage.com, direct
-host, pic.wujinpp.com, direct
-host, suboimage.com, direct
-host, img.ffzy888.com, direct
+host, img.kuaichezy.net
+host, puui.qpic.cn
+host-suffix, jisuimage.com
+host-suffix, toutiaoimg.com
+host-suffix, yzzyimages.com
+host, hhmage.com
+host, wework.qpic.cn
+host, pic.rmb.bdstatic.com
+host-suffix, alicdn.com
+host-suffix, ykimg.com
+host-suffix, netease.com
+host-suffix, gtimg.cn
+host-suffix, meituan.net
+host, mdn.alipay.com
+host, fc.sinaimg.cn
+host, img.moegirl.org.cn
+host, pic8.iqiyipic.com
+host, p0.qhimg.com
+host-suffix, iqiyipic.com
+host, api.zaqohu.com
+host, images.67c6c7a.com
+host, pic7.58cdn.com.cn
+host, help-ol.bj.bcebos.com
+host-suffix, loli.net
+host-suffix, 360buyimg.com
+host, pic1.imgyzzy.com
+host, get.sogou.com
+host, open.bigmodel.cn
+host, vcover-vt-pic.puui.qpic.cn
+host, img.lzzyimg.com
+host, fs-im-kefu.7moor-fs1.com
+host, img.image8899.net
+host, img.picgo.net
+host, pic3.yzzyimages.com
+host, 647bc185.szrtcpa.com
+host, img.98ha.com
+host, challenge.rivers.chaitin.cn
+host, image.maimn.com
+host-suffix, baidu.com
+host, img.liangzipic.com
+host, imagev2.xmcdn.com
+host, pic.imgdb.cn
+host, pic3.yzzyimg.online
+host, wx4.sinaimg.cn
+host, img.jisuimage.com
+host, pic.wujinpp.com
+host, suboimage.com
+host, img.ffzy888.com
