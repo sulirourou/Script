@@ -1,14 +1,11 @@
 #!name=IP检测网站分流
-#!desc=支持 IPAPI.CO, IP-API.COM, FreeIPAPI.COM 独立自定义策略。请在模块参数中手动输入策略名。
+#!desc=支持 IP-API.COM, FreeIPAPI.COM 独立自定义策略。请在模块参数中手动输入策略名。
 #!category=网络检测
-#!arguments=IPAPI.CO:DIRECT,IP-API.COM:DIRECT,FreeIPAPI.COM:DIRECT
+#!arguments=IP-API.COM:DIRECT,FreeIPAPI.COM:DIRECT
 
 [Rule]
-# 1. IPAPI.CO
-DOMAIN-SUFFIX,ipapi.co,{{{IPAPI.CO}}}
-
-# 2. IP-API.COM
+# 1. IP-API.COM
 DOMAIN-SUFFIX,ip-api.com,{{{IP-API.COM}}}
 
-# 3. FreeIPAPI
+# 2. FreeIPAPI
 DOMAIN-SUFFIX,freeipapi.com,{{{FreeIPAPI.COM}}}
