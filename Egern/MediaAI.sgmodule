@@ -5,15 +5,57 @@
 #!arguments-desc=Proxy: 选择要检测的策略组
 
 [Rule]
-# 确保所有检测请求走你选定的策略组
-DOMAIN-SUFFIX,netflix.com,{{{Proxy}}}
-DOMAIN-SUFFIX,disneyplus.com,{{{Proxy}}}
-DOMAIN-SUFFIX,max.com,{{{Proxy}}}
-DOMAIN-SUFFIX,tiktok.com,{{{Proxy}}}
-DOMAIN-SUFFIX,chatgpt.com,{{{Proxy}}}
-DOMAIN-SUFFIX,claude.ai,{{{Proxy}}}
-DOMAIN-SUFFIX,google.com,{{{Proxy}}}
+# --- [IP 信息检测] ---
+# 用于面板获取 IP 地理位置及纯净度数据
 DOMAIN-SUFFIX,ippure.com,{{{Proxy}}}
+
+# --- [流媒体服务] ---
+# Dazn
+DOMAIN-SUFFIX,dazn.com,{{{Proxy}}}
+
+# TikTok
+DOMAIN-SUFFIX,tiktok.com,{{{Proxy}}}
+DOMAIN-SUFFIX,byteoversea.com,{{{Proxy}}}
+
+# Netflix
+DOMAIN-SUFFIX,netflix.com,{{{Proxy}}}
+DOMAIN-SUFFIX,nflxso.net,{{{Proxy}}}
+
+# Disney+
+DOMAIN-SUFFIX,disneyplus.com,{{{Proxy}}}
+DOMAIN-SUFFIX,disney.com,{{{Proxy}}}
+
+# YouTube
+DOMAIN-SUFFIX,youtube.com,{{{Proxy}}}
+DOMAIN-SUFFIX,googlevideo.com,{{{Proxy}}}
+
+# HBO Max / Max
+DOMAIN-SUFFIX,max.com,{{{Proxy}}}
+DOMAIN-SUFFIX,hbomax.com,{{{Proxy}}}
+
+# Discovery+
+DOMAIN-SUFFIX,discoveryplus.com,{{{Proxy}}}
+
+# Paramount+
+DOMAIN-SUFFIX,paramountplus.com,{{{Proxy}}}
+
+# --- [AI 助手] ---
+# Grok (x.ai)
+DOMAIN-SUFFIX,x.ai,{{{Proxy}}}
+
+# Claude
+DOMAIN-SUFFIX,claude.ai,{{{Proxy}}}
+DOMAIN-SUFFIX,anthropic.com,{{{Proxy}}}
+
+# Gemini
+DOMAIN-SUFFIX,gemini.google.com,{{{Proxy}}}
+DOMAIN-SUFFIX,google.com,{{{Proxy}}}
+
+# ChatGPT
+DOMAIN-SUFFIX,chatgpt.com,{{{Proxy}}}
+DOMAIN-SUFFIX,openai.com,{{{Proxy}}}
+DOMAIN-SUFFIX,oaistatic.com,{{{Proxy}}}
+DOMAIN-SUFFIX,oaiusercontent.com,{{{Proxy}}}
 
 [Panel]
 # 首页展示面板
