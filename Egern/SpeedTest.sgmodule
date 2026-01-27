@@ -6,14 +6,16 @@
 #!arguments-desc=Proxy: 请输入你想使用的策略组名称
 
 [Rule]
+# > Ookla Speedtest
+DOMAIN-SUFFIX,speedtest.net,{{{Proxy}}}
+DOMAIN-SUFFIX,ooklaserver.net,{{{Proxy}}}
+
 # > Fast.com
 DOMAIN-SUFFIX,fast.com,{{{Proxy}}}
 
-# > Ookla Speedtest
-DOMAIN-SUFFIX,speedtest.net,{{{Proxy}}}
-
 # > Google Fiber Speedtest
 DOMAIN-SUFFIX,fiber.google.com,{{{Proxy}}}
+DOMAIN-SUFFIX,speedtest.googlefiber.net,{{{Proxy}}}
 
 # > Cloudflare Speed
 DOMAIN-SUFFIX,speed.cloudflare.com,{{{Proxy}}}
