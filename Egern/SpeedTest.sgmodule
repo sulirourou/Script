@@ -6,6 +6,9 @@
 #!arguments-desc=Proxy: 请输入你想使用的策略组名称
 
 [Rule]
+# > Ping0
+DOMAIN-SUFFIX,ping0.cc,{{{Proxy}}}
+
 # > Ookla Speedtest
 DOMAIN-SUFFIX,speedtest.net,{{{Proxy}}}
 DOMAIN-SUFFIX,ooklaserver.net,{{{Proxy}}}
