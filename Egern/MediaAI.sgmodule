@@ -2,7 +2,7 @@
 #!desc=支持自定义节点检测。在参数内选择策略组。
 #!category=网络检测
 #!arguments=Proxy:DIRECT
-#!arguments-desc=Proxy: 选择要检测的策略组 (例如：Proxy, 节点选择等)
+#!arguments-desc=Proxy: 选择要检测的策略组
 
 [Rule]
 # 确保所有检测请求走你选定的策略组
