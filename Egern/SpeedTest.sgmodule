@@ -6,17 +6,17 @@
 #!arguments-desc=Proxy: 请输入你想使用的策略组名称
 
 [Rule]
-# > Ookla Speedtest
-DOMAIN-SUFFIX,speedtest.net,{{Policy}}
-
 # > Fast.com
-DOMAIN-SUFFIX,fast.com,{{Policy}}
+DOMAIN-SUFFIX,fast.com,{{{Proxy}}}
+
+# > Ookla Speedtest
+DOMAIN-SUFFIX,speedtest.net,{{{Proxy}}}
 
 # > Google Fiber Speedtest
-DOMAIN-SUFFIX,fiber.google.com,{{Policy}}
+DOMAIN-SUFFIX,fiber.google.com,{{{Proxy}}}
 
 # > Cloudflare Speed
-DOMAIN-SUFFIX,speed.cloudflare.com,{{Policy}}
+DOMAIN-SUFFIX,speed.cloudflare.com,{{{Proxy}}}
 
 # > OpenSpeedTest
-DOMAIN-SUFFIX,openspeedtest.com,{{Policy}}
+DOMAIN-SUFFIX,openspeedtest.com,{{{Proxy}}}
