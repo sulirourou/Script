@@ -3,25 +3,20 @@
 #!author=Gemini
 #!category=Rules
 #!arguments=Proxy:CheckPolicy
-#!arguments-desc=Proxy: 请输入你想使用的策略组名称 (例如: CheckPolicy, Proxy, 美国节点)
+#!arguments-desc=Proxy: 请输入你想使用的策略组名称
 
 [Rule]
 # > Ookla Speedtest
 DOMAIN-SUFFIX,speedtest.net,{{Policy}}
-DOMAIN-SUFFIX,speedtestcustom.com,{{Policy}}
-DOMAIN-SUFFIX,ooklaserver.net,{{Policy}}
 
 # > Fast.com
 DOMAIN-SUFFIX,fast.com,{{Policy}}
-DOMAIN-SUFFIX,nflxvideo.net,{{Policy}}
 
 # > Google Fiber Speedtest
 DOMAIN-SUFFIX,fiber.google.com,{{Policy}}
-DOMAIN-SUFFIX,speedtest.googlefiber.net,{{Policy}}
 
 # > Cloudflare Speed
 DOMAIN-SUFFIX,speed.cloudflare.com,{{Policy}}
 
-# > 其他优质测速源
-DOMAIN-SUFFIX,testmy.net,{{Policy}}
+# > OpenSpeedTest
 DOMAIN-SUFFIX,openspeedtest.com,{{Policy}}
