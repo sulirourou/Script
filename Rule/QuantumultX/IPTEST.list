@@ -1,0 +1,72 @@
+# --- IP检测 ---
+# > iP.skk.moe
+HOST-SUFFIX,skk.moe
+
+# > IP.sb
+HOST-SUFFIX,ip.sb
+
+# > IP.im
+HOST-SUFFIX,ip.im
+
+# > IP.plus
+HOST-SUFFIX,ip.plus
+
+# > ipapi
+HOST-SUFFIX,ipapi.is
+HOST-SUFFIX,ipapi.co
+
+# > Ping0
+HOST-SUFFIX,ping0.cc
+
+# > IPinfo
+HOST-SUFFIX,ipinfo.io
+
+# > DB-IP
+HOST-SUFFIX,db-ip.com
+
+# > Whoer
+HOST-SUFFIX,whoer.net
+HOST-SUFFIX,whoerip.com
+
+# > ipwhois
+HOST-SUFFIX,ipwhois.io
+
+# > MaxMind
+HOST-SUFFIX,maxmind.com
+
+# > IP2Location
+HOST-SUFFIX,ip2location.com
+
+# > Scamalytics
+HOST-SUFFIX,scamalytics.com
+
+# > Ping Test
+HOST-SUFFIX,ping-test.net
+
+# --- 测网速 ---
+# > Fast.com
+HOST-SUFFIX,fast.com
+
+# > Speedtest by Ookla
+HOST-SUFFIX,speedtest.net
+HOST-SUFFIX,ooklaserver.net
+
+# > Speedtest.cn
+HOST-SUFFIX,speedtest.cn
+
+# > Cloudflare Speed
+HOST-SUFFIX,speed.cloudflare.com
+
+# > OpenSpeedTest
+HOST-SUFFIX,openspeedtest.com
+
+# > nPerf
+HOST-SUFFIX,nperf.com
+
+# --- IPv6 ---
+# > TestIPv6
+HOST-SUFFIX,test-ipv6.com
+
+# --- DNS检测 ---
+# > DNS leak test
+HOST-SUFFIX,dnsleaktest.com
