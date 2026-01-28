@@ -25,3 +25,8 @@ DOMAIN-SUFFIX,speed.cloudflare.com,{{{Proxy}}}
 
 # > OpenSpeedTest
 DOMAIN-SUFFIX,openspeedtest.com,{{{Proxy}}}
+
+# > nPerf
+DOMAIN-SUFFIX,www.nperf.com,{{{Proxy}}}
+
+
