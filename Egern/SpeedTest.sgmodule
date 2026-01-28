@@ -28,5 +28,9 @@ DOMAIN-SUFFIX,www.nperf.com,{{{Proxy}}}
 # > Ping Test
 DOMAIN-SUFFIX,ping-test.net,{{{Proxy}}}
 
+# > WhoerIP
+DOMAIN-SUFFIX,whoerip.com,{{{Proxy}}}
+
+
 
 
