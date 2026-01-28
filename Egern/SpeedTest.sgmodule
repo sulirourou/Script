@@ -8,7 +8,7 @@
 [Rule]
 # --- IP检测 ---
 # > iP.skk.moe
-DOMAIN-KEYWORD,skk,{{{Proxy}}}
+DOMAIN-SUFFIX,skk.moe,{{{Proxy}}}
 
 # > IP.im
 DOMAIN-SUFFIX,ip.im,{{{Proxy}}}
