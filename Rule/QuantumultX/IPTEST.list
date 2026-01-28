@@ -31,6 +31,12 @@ HOST-SUFFIX,whoerip.com
 # > ipwhois
 HOST-SUFFIX,ipwhois.io
 
+# > IP-API
+HOST-SUFFIX,ip-api.com
+
+# > iPPure
+HOST-SUFFIX,ippure.com
+
 # > MaxMind
 HOST-SUFFIX,maxmind.com
 
@@ -39,6 +45,9 @@ HOST-SUFFIX,ip2location.com
 
 # > Scamalytics
 HOST-SUFFIX,scamalytics.com
+
+# > iTDOG
+HOST-SUFFIX,itdog.cn
 
 # > Ping Test
 HOST-SUFFIX,ping-test.net
