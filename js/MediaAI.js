@@ -68,7 +68,7 @@ const TIMEOUT = 3000;
   //           3. 面板 UI 构建
   // ===========================================
 
-  let content = `🏠 本地 IP: ${info.local.ip}\n`;
+  let content = `🏠 本地: ${info.local.ip}\n`;
   content += `📍 位置: ${info.local.flag} ${info.local.country} ${info.local.city}\n`;
   content += `🏢 运营商: ${info.local.isp}\n`;
   content += `\n`; 
