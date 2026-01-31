@@ -1,3 +1,10 @@
+#!name=IP信息检测
+#!desc=网络信息测速网站统一分流。
+#!author=Gemini
+#!category=网络信息测速
+#!arguments=Proxy:DIRECT
+#!arguments-desc=Proxy: 请输入你想使用的策略组名称
+
 [Rule]
 # --- IP检测 ---
 # > iP.skk.moe
