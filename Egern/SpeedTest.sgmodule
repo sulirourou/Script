@@ -1,10 +1,3 @@
-#!name=IP信息检测
-#!desc=网络信息测速网站统一分流。
-#!author=Gemini
-#!category=网络信息测速
-#!arguments=Proxy:DIRECT
-#!arguments-desc=Proxy: 请输入你想使用的策略组名称
-
 [Rule]
 # --- IP检测 ---
 # > iP.skk.moe
@@ -19,8 +12,10 @@ DOMAIN-SUFFIX,ip.im,{{{Proxy}}}
 # > IP.plus
 DOMAIN-SUFFIX,ip.plus,{{{Proxy}}}
 
-# > ipapi
+# > ipapi.is
 DOMAIN-SUFFIX,ipapi.is,{{{Proxy}}}
+
+# > ipapi.co
 DOMAIN-SUFFIX,ipapi.co,{{{Proxy}}}
 
 # > Ping0
@@ -80,6 +75,11 @@ DOMAIN-SUFFIX,openspeedtest.com,{{{Proxy}}}
 # > nPerf
 DOMAIN-SUFFIX,nperf.com,{{{Proxy}}}
 
+# > Google Fiber Internet Speed Test
+DOMAIN-SUFFIX,fiber.google.com,{{{Proxy}}}
+DOMAIN-SUFFIX,googlefiber.net,{{{Proxy}}}
+DOMAIN-SUFFIX,gfiber.com,{{{Proxy}}}
+
 # --- IPv6 ---
 # > TestIPv6
 DOMAIN-SUFFIX,test-ipv6.com,{{{Proxy}}}
@@ -87,5 +87,3 @@ DOMAIN-SUFFIX,test-ipv6.com,{{{Proxy}}}
 # --- DNS检测 ---
 # > DNS leak test
 DOMAIN-SUFFIX,dnsleaktest.com,{{{Proxy}}}
-
-
