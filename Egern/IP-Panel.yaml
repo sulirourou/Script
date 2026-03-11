@@ -1,25 +1,12 @@
-Name: Split Widget
-desc: 拆分版小组件
+Name: IP Info Widget
+desc: IP信息 + 纯净度 + 流媒体 + AI 检测小组件
 category: widget
 
 scriptings:
   - generic:
-      name: IPPanelScript
+      name: ip-info-widget
       script_url: https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js
       timeout: 15
 
 widgets:
-  - name: 1. IP纯净度
-    script_name: IPPanelScript
-    env:
-      TYPE: IP
-
-  - name: 2. 流媒体
-    script_name: IPPanelScript
-    env:
-      TYPE: STREAM
-
-  - name: 3. AI助手
-    script_name: IPPanelScript
-    env:
-      TYPE: AI
+  - name: ip-info-widget
