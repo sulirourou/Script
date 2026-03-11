@@ -1,34 +1,34 @@
-name: SplitWidgets
-description: Split Widgets Panel
+name: "SplitWidgets"
+description: "Split Widgets Panel"
 
 scriptings:
   - generic:
-      name: IPPanelScript
-      script_url: https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js
+      name: "IPPanelScript"
+      script_url: "https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js"
       timeout: 15
 
 widgets:
-  - name: IP-Info
-    script_name: IPPanelScript
+  - name: "IP-Info"
+    script_name: "IPPanelScript"
     env:
-      TYPE: IP
+      TYPE: "IP"
 
-  - name: Media-Info
-    script_name: IPPanelScript
+  - name: "Media-Info"
+    script_name: "IPPanelScript"
     env:
-      TYPE: STREAM
+      TYPE: "STREAM"
 
-  - name: AI-Info
-    script_name: IPPanelScript
+  - name: "AI-Info"
+    script_name: "IPPanelScript"
     env:
-      TYPE: AI
+      TYPE: "AI"
 
 rules:
-  - DOMAIN-SUFFIX,ippure.com,Proxy
-  - DOMAIN-SUFFIX,netflix.com,Proxy
-  - DOMAIN-SUFFIX,disneyplus.com,Proxy
-  - DOMAIN-SUFFIX,chatgpt.com,Proxy
-  - DOMAIN-SUFFIX,openai.com,Proxy
-  - DOMAIN-SUFFIX,google.com,Proxy
-  - DOMAIN-SUFFIX,claude.ai,Proxy
-  - DOMAIN-SUFFIX,x.ai,Proxy
+  - "DOMAIN-SUFFIX,ippure.com,Proxy"
+  - "DOMAIN-SUFFIX,netflix.com,Proxy"
+  - "DOMAIN-SUFFIX,disneyplus.com,Proxy"
+  - "DOMAIN-SUFFIX,chatgpt.com,Proxy"
+  - "DOMAIN-SUFFIX,openai.com,Proxy"
+  - "DOMAIN-SUFFIX,google.com,Proxy"
+  - "DOMAIN-SUFFIX,claude.ai,Proxy"
+  - "DOMAIN-SUFFIX,x.ai,Proxy"
