@@ -9,4 +9,17 @@ scriptings:
       timeout: 15
 
 widgets:
-  - name: ip-info-widget
+  - name: 1. IP纯净度
+    script_name: ip-info-widget
+    env:
+      TYPE: IP
+
+  - name: 2. 流媒体
+    script_name: ip-info-widget
+    env:
+      TYPE: STREAM
+
+  - name: 3. AI助手
+    script_name: ip-info-widget
+    env:
+      TYPE: AI
