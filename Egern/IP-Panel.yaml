@@ -2,7 +2,7 @@ name: "IP与流媒体面板"
 description: "展示 IP 纯净度、流媒体及 AI 解锁状态的小组件"
 
 scriptings:
-  - generic:
+- generic:
       name: "IP-Panel-Widget"
       script_url: "https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js"
       timeout: 15
