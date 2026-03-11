@@ -1,7 +1,9 @@
+name: "IP与流媒体面板"
+description: "展示 IP 纯净度、流媒体及 AI 解锁状态的小组件"
+
 scriptings:
   - generic:
       name: "IP-Panel-Widget"
-      # 请将这里替换为你的实际脚本路径或 URL
       script_url: "https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js"
       timeout: 15
 
@@ -9,14 +11,26 @@ widgets:
   - name: "IP-Panel-Widget"
     script_name: "IP-Panel-Widget"
 
-# 将你原有的分流规则平移过来，确保测试域名走代理
 rules:
   - DOMAIN-SUFFIX, ippure.com, Proxy
+  - DOMAIN-SUFFIX, dazn.com, Proxy
+  - DOMAIN-SUFFIX, tiktok.com, Proxy
+  - DOMAIN-SUFFIX, byteoversea.com, Proxy
   - DOMAIN-SUFFIX, netflix.com, Proxy
   - DOMAIN-SUFFIX, nflxso.net, Proxy
   - DOMAIN-SUFFIX, disneyplus.com, Proxy
+  - DOMAIN-SUFFIX, disney.com, Proxy
   - DOMAIN-SUFFIX, googlevideo.com, Proxy
+  - DOMAIN-SUFFIX, max.com, Proxy
+  - DOMAIN-SUFFIX, hbomax.com, Proxy
+  - DOMAIN-SUFFIX, discoveryplus.com, Proxy
+  - DOMAIN-SUFFIX, paramountplus.com, Proxy
+  - DOMAIN-SUFFIX, x.ai, Proxy
+  - DOMAIN-SUFFIX, claude.ai, Proxy
+  - DOMAIN-SUFFIX, anthropic.com, Proxy
+  - DOMAIN-SUFFIX, gemini.google.com, Proxy
+  - DOMAIN-SUFFIX, google.com, Proxy
   - DOMAIN-SUFFIX, chatgpt.com, Proxy
   - DOMAIN-SUFFIX, openai.com, Proxy
-  - DOMAIN-SUFFIX, gemini.google.com, Proxy
-  - DOMAIN-SUFFIX, claude.ai, Proxy
+  - DOMAIN-SUFFIX, oaistatic.com, Proxy
+  - DOMAIN-SUFFIX, oaiusercontent.com, Proxy
