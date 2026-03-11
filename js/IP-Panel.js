@@ -1,6 +1,6 @@
 /**
- * 🌏 Egern IP & 解锁满血大面板
- * 专为 Large Widget 设计
+ * 🌏 Egern 极简风解锁面板
+ * 无内部卡片，纯净列表式设计
  */
 
 const localUrl = "https://myip.ipip.net/json";
@@ -11,22 +11,17 @@ const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (
 export default async function(ctx) {
   let info = {
     local: { ip: "获取中...", loc: "未知" },
-    landing: { ip: "获取中...", asn: "", flag: "🏳️", loc: "未知", nativeText: "", riskText: "", code: "UN" },
-    streaming: {},
-    ai: {}
+    landing: { ip: "获取中...", flag: "", nativeText: "", riskText: "", code: "UN" },
+    streaming: {}, ai: {}
   };
 
-  // 1. 网络数据获取
   async function getLocalIP() {
     try {
       let res = await ctx.http.get(localUrl, { timeout: TIMEOUT, policy: "direct", headers: { 'User-Agent': UA } });
       let j = await res.json();
-      if (j.ret === "ok" && j.data) {
-        let locArr = j.data.location || [];
-        return { ip: j.data.ip, loc: `${locArr[0]||""} ${locArr[2]||""}` };
-      }
+      if (j.ret === "ok" && j.data) return { ip: j.data.ip };
       throw new Error();
-    } catch (e) { return { ip: "获取失败", loc: "❌ 未知" }; }
+    } catch (e) { return { ip: "获取失败" }; }
   }
 
   async function getLandingIP() {
@@ -35,13 +30,13 @@ export default async function(ctx) {
       let j = await res.json();
       const ip = j.ip || j.query || "失败";
       const risk = j.fraudScore || 0;
-      let riskText = risk >= 80 ? `高(${risk})` : risk >= 70 ? `高(${risk})` : risk >= 40 ? `中(${risk})` : `低(${risk})`;
+      let riskText = risk >= 80 ? `高风险(${risk})` : risk >= 40 ? `中风险(${risk})` : `低风险(${risk})`;
       return {
-        ip, asn: j.asn || "", flag: flagEmoji(j.countryCode), loc: `${j.country||""} ${j.city||""}`,
-        code: j.countryCode || "UN", nativeText: j.isResidential ? "原生" : "机房", riskText
+        ip, flag: flagEmoji(j.countryCode), code: j.countryCode || "UN",
+        nativeText: j.isResidential ? "原生" : "机房", riskText
       };
     } catch (e) {
-      return { ip: "网络错误", asn: "", flag: "❌", loc: "未知", code: "UN", nativeText: "未知", riskText: "失败" };
+      return { ip: "网络错误", flag: "", code: "UN", nativeText: "未知", riskText: "失败" };
     }
   }
 
@@ -52,12 +47,10 @@ export default async function(ctx) {
     } catch (e) { return "超时"; }
   }
 
-  // 2. 并发检测队列 (包含所有原版检测)
   const tasks = [
     getLocalIP().then(r => info.local = r),
     getLandingIP().then(r => info.landing = r),
     
-    // --- 流媒体 ---
     check("https://www.netflix.com/title/81280792", async (res) => {
       if (res.status === 403) return "未支持";
       if (res.status === 404) return "仅自制剧";
@@ -65,7 +58,6 @@ export default async function(ctx) {
         let ourl = res.headers.get('x-originating-url');
         if (ourl) {
           let region = ourl.split('/')[3].split('-')[0];
-          // 修复 UNSUPPORTEDBROWSER 问题
           if (region.toLowerCase().includes("unsupported")) region = info.landing.code;
           return `支持 ${flagEmoji(region === 'title' ? 'us' : region)}`;
         }
@@ -86,7 +78,6 @@ export default async function(ctx) {
     check("https://www.max.com", async (res) => res.status === 200 ? `支持 ${info.landing.flag}` : "未支持", { timeout: TIMEOUT, headers: { 'User-Agent': UA } }).then(r => info.streaming.HBO = r),
     check("https://www.paramountplus.com/", async (res) => res.status === 200 ? `支持 ${info.landing.flag}` : (res.status === 302 || res.status === 403 ? "未支持" : "超时"), { timeout: TIMEOUT, headers: { 'User-Agent': UA } }).then(r => info.streaming.Paramount = r),
     
-    // --- AI 助手 ---
     check("https://chatgpt.com/", async (res) => {
       let data = await res.text();
       if (data.includes("text/plain")) return "未支持";
@@ -102,7 +93,6 @@ export default async function(ctx) {
 
   await Promise.allSettled(tasks);
 
-  // 3. UI 辅助函数
   function flagEmoji(code) {
     if (!code || code.length !== 2) return "";
     if (code.toUpperCase() === "TW") code = "CN";
@@ -119,37 +109,37 @@ export default async function(ctx) {
   }
 
   const isLarge = ctx.widgetFamily.includes("Large");
-  const fSize = isLarge ? 11 : 10; // 大组件稍微放大字号
+  const fSize = isLarge ? 12 : 11; 
 
   function buildRow(icon, name, value) {
     return {
       type: "stack", direction: "row", alignItems: "center", gap: 4,
       children: [
-        { type: "text", text: `${icon} ${name}`, font: { size: fSize, weight: "medium" }, textColor: { light: "#555555", dark: "#AAAAAA" }, maxLines: 1 },
+        { type: "text", text: `${icon} ${name}`, font: { size: fSize, weight: "medium" }, textColor: { light: "#666666", dark: "#999999" }, maxLines: 1 },
         { type: "spacer" },
         { type: "text", text: value || "...", font: { size: fSize, weight: "bold" }, textColor: getStatusColor(value), maxLines: 1, minScale: 0.6 }
       ]
     };
   }
 
-  function buildCard(title, children) {
+  // 移除了包裹背景，只保留简单的头部文本
+  function buildSection(title, children) {
     return {
-      type: "stack", direction: "column", gap: 5, padding: 10, borderRadius: 12, flex: 1, backgroundColor: { light: "#F2F2F7", dark: "#1C1C1E" },
+      type: "stack", direction: "column", gap: 6, flex: 1,
       children: [
-        { type: "text", text: title, font: { size: 11, weight: "bold" }, textColor: { light: "#8E8E93", dark: "#8E8E93" } },
+        { type: "text", text: title, font: { size: 10, weight: "bold" }, textColor: { light: "#A1A1A6", dark: "#636366" } },
         ...children
       ]
     };
   }
 
-  // 4. 构建模块卡片
-  const netCard = buildCard("📡 网络与节点纯净度", [
+  const netSection = buildSection("NETWORK", [
     buildRow("🏠", "本地 IP", info.local.ip),
     buildRow("🌐", "节点 IP", `${info.landing.flag} ${info.landing.ip}`),
-    buildRow("🛡️", "原生与风险", `${info.landing.nativeText} · ${info.landing.riskText}`)
+    buildRow("🛡️", "纯净度", `${info.landing.nativeText} · ${info.landing.riskText}`)
   ]);
 
-  const streamCard = buildCard("🎬 流媒体解锁", [
+  const streamSection = buildSection("STREAMING", [
     buildRow("🎥", "Netflix", info.streaming.Netflix),
     buildRow("▶️", "YouTube", info.streaming.YouTube),
     buildRow("🏰", "Disney+", info.streaming.Disney),
@@ -158,48 +148,56 @@ export default async function(ctx) {
     buildRow("🏔️", "Paramount+", info.streaming.Paramount)
   ]);
 
-  const aiCard = buildCard("🤖 AI 助手", [
+  const aiSection = buildSection("AI ASSISTANTS", [
     buildRow("🤡", "ChatGPT", info.ai.ChatGPT),
     buildRow("🧠", "Claude", info.ai.Claude),
     buildRow("✨", "Gemini", info.ai.Gemini),
     buildRow("✖️", "Grok", info.ai.Grok)
   ]);
 
-  // 5. 组装终极布局
-  let mainContent;
+  let contentLayout;
   if (isLarge) {
-    // 大组件：双栏完美布局 (左边网络+AI，右边流媒体)
-    mainContent = {
-      type: "stack", direction: "row", gap: 10,
+    contentLayout = {
+      type: "stack", direction: "row", gap: 20, 
       children: [
-        { type: "stack", direction: "column", gap: 10, flex: 1, children: [ netCard, aiCard ] },
-        { type: "stack", direction: "column", gap: 10, flex: 1, children: [ streamCard ] }
+        { type: "stack", direction: "column", gap: 16, flex: 1, children: [ netSection, aiSection ] },
+        { type: "stack", direction: "column", gap: 16, flex: 1.1, children: [ streamSection ] }
       ]
     };
   } else {
-    // 兼容中组件
-    mainContent = {
-      type: "stack", direction: "row", gap: 8,
-      children: [ netCard, streamCard ]
+    contentLayout = {
+      type: "stack", direction: "row", gap: 12,
+      children: [
+        { type: "stack", direction: "column", gap: 12, flex: 1, children: [ netSection ] },
+        { type: "stack", direction: "column", gap: 12, flex: 1, children: [ 
+            buildSection("STREAMING", [
+                buildRow("🎥", "Netflix", info.streaming.Netflix),
+                buildRow("▶️", "YouTube", info.streaming.YouTube),
+                buildRow("🏰", "Disney+", info.streaming.Disney)
+            ]) 
+        ]}
+      ]
     };
   }
 
   return {
     type: "widget",
+    url: "egern://", // 点击刷新
     padding: 16,
-    gap: 12,
-    backgroundColor: { light: "#FFFFFF", dark: "#000000" },
+    gap: 16,
+    // 更纯粹的底色
+    backgroundColor: { light: "#F2F2F7", dark: "#121212" },
     children: [
       {
         type: "stack", direction: "row", alignItems: "center", gap: 6,
         children: [
-          { type: "image", src: "sf-symbol:globe.americas.fill", color: "#AF52DE", width: 16, height: 16 },
-          { type: "text", text: "IP 信息与解锁监控", font: { size: 14, weight: "bold" }, textColor: { light: "#000000", dark: "#FFFFFF" } },
+          { type: "image", src: "sf-symbol:network", color: "#0A84FF", width: 16, height: 16 },
+          { type: "text", text: "环境监测", font: { size: 14, weight: "bold" }, textColor: { light: "#000000", dark: "#FFFFFF" } },
           { type: "spacer" },
           { type: "date", date: new Date().toISOString(), format: "time", font: { size: 11, weight: "medium" }, textColor: "#8E8E93" }
         ]
       },
-      mainContent
+      contentLayout
     ]
   };
 }
