@@ -1,5 +1,6 @@
 /**
- * 🌏 Egern IP & 解锁信息面板小组件 (修复版)
+ * 🌏 Egern IP & 解锁满血大面板
+ * 专为 Large Widget 设计
  */
 
 const localUrl = "https://myip.ipip.net/json";
@@ -9,38 +10,38 @@ const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (
 
 export default async function(ctx) {
   let info = {
-    local: { ip: "获取中...", flag: "🏳️", isp: "未知" },
-    landing: { ip: "获取中...", flag: "🏳️", asn: "", org: "", countryCode: "UN", nativeText: "", riskText: "", riskLevel: 0 },
+    local: { ip: "获取中...", loc: "未知" },
+    landing: { ip: "获取中...", asn: "", flag: "🏳️", loc: "未知", nativeText: "", riskText: "", code: "UN" },
     streaming: {},
     ai: {}
   };
 
+  // 1. 网络数据获取
   async function getLocalIP() {
     try {
       let res = await ctx.http.get(localUrl, { timeout: TIMEOUT, policy: "direct", headers: { 'User-Agent': UA } });
       let j = await res.json();
       if (j.ret === "ok" && j.data) {
-        let loc = j.data.location || [];
-        let code = (loc[0] === "中国") ? "CN" : "UN";
-        return { ip: j.data.ip, flag: flagEmoji(code), isp: loc[4] || "未知" };
+        let locArr = j.data.location || [];
+        return { ip: j.data.ip, loc: `${locArr[0]||""} ${locArr[2]||""}` };
       }
       throw new Error();
-    } catch (e) { return { ip: "获取失败", flag: "❌", isp: "未知" }; }
+    } catch (e) { return { ip: "获取失败", loc: "❌ 未知" }; }
   }
 
   async function getLandingIP() {
     try {
       let res = await ctx.http.get(proxyUrl, { timeout: TIMEOUT, headers: { 'User-Agent': UA } });
       let j = await res.json();
-      const ip = j.ip || j.query || "获取失败";
+      const ip = j.ip || j.query || "失败";
       const risk = j.fraudScore || 0;
-      let riskText = risk >= 80 ? `高风险(${risk})` : risk >= 70 ? `高风险(${risk})` : risk >= 40 ? `中等风险(${risk})` : `低风险(${risk})`;
+      let riskText = risk >= 80 ? `高(${risk})` : risk >= 70 ? `高(${risk})` : risk >= 40 ? `中(${risk})` : `低(${risk})`;
       return {
-        ip, flag: flagEmoji(j.countryCode), asn: j.asn || "", org: j.asOrganization || "",
-        countryCode: j.countryCode || "UN", nativeText: j.isResidential ? "原生" : "机房", riskText, riskLevel: risk
+        ip, asn: j.asn || "", flag: flagEmoji(j.countryCode), loc: `${j.country||""} ${j.city||""}`,
+        code: j.countryCode || "UN", nativeText: j.isResidential ? "原生" : "机房", riskText
       };
     } catch (e) {
-      return { ip: "网络错误", flag: "❌", asn: "", org: "", countryCode: "UN", nativeText: "未知", riskText: "检测失败", riskLevel: 0 };
+      return { ip: "网络错误", asn: "", flag: "❌", loc: "未知", code: "UN", nativeText: "未知", riskText: "失败" };
     }
   }
 
@@ -51,9 +52,12 @@ export default async function(ctx) {
     } catch (e) { return "超时"; }
   }
 
+  // 2. 并发检测队列 (包含所有原版检测)
   const tasks = [
     getLocalIP().then(r => info.local = r),
     getLandingIP().then(r => info.landing = r),
+    
+    // --- 流媒体 ---
     check("https://www.netflix.com/title/81280792", async (res) => {
       if (res.status === 403) return "未支持";
       if (res.status === 404) return "仅自制剧";
@@ -61,40 +65,46 @@ export default async function(ctx) {
         let ourl = res.headers.get('x-originating-url');
         if (ourl) {
           let region = ourl.split('/')[3].split('-')[0];
+          // 修复 UNSUPPORTEDBROWSER 问题
+          if (region.toLowerCase().includes("unsupported")) region = info.landing.code;
           return `支持 ${flagEmoji(region === 'title' ? 'us' : region)}`;
         }
-        return "支持";
+        return `支持 ${info.landing.flag}`;
       }
       return "失败";
     }, { timeout: TIMEOUT, headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15' } }).then(r => info.streaming.Netflix = r),
+    
     check("https://www.youtube.com/premium", async (res) => {
       let data = await res.text();
       if (data.includes('Premium is not available')) return "未支持";
       let ret = new RegExp('"GL":"(.*?)"', 'gm').exec(data);
       return `支持 ${flagEmoji(ret ? ret[1] : (data.includes('google.cn') ? 'CN' : 'US'))}`;
     }, { timeout: TIMEOUT, headers: { 'User-Agent': UA } }).then(r => info.streaming.YouTube = r),
-    check("https://www.disneyplus.com", async (res) => (res.status === 200 || res.status === 301 || res.status === 302) ? "支持" : "未支持", { timeout: TIMEOUT, redirect: 'manual' }).then(r => info.streaming.Disney = r),
-    check("https://www.tiktok.com", async (res) => (res.status === 200 || res.status === 302) ? "支持" : "未支持", { timeout: TIMEOUT, redirect: 'manual' }).then(r => info.streaming.TikTok = r),
+    
+    check("https://www.disneyplus.com", async (res) => (res.status === 200 || res.status === 301 || res.status === 302) ? `支持 ${info.landing.flag}` : "未支持", { timeout: TIMEOUT, redirect: 'manual' }).then(r => info.streaming.Disney = r),
+    check("https://www.tiktok.com", async (res) => (res.status === 200 || res.status === 302) ? `支持 ${info.landing.flag}` : "未支持", { timeout: TIMEOUT, redirect: 'manual' }).then(r => info.streaming.TikTok = r),
+    check("https://www.max.com", async (res) => res.status === 200 ? `支持 ${info.landing.flag}` : "未支持", { timeout: TIMEOUT, headers: { 'User-Agent': UA } }).then(r => info.streaming.HBO = r),
+    check("https://www.paramountplus.com/", async (res) => res.status === 200 ? `支持 ${info.landing.flag}` : (res.status === 302 || res.status === 403 ? "未支持" : "超时"), { timeout: TIMEOUT, headers: { 'User-Agent': UA } }).then(r => info.streaming.Paramount = r),
+    
+    // --- AI 助手 ---
     check("https://chatgpt.com/", async (res) => {
       let data = await res.text();
       if (data.includes("text/plain")) return "未支持";
       let traceRes = await ctx.http.get('https://chat.openai.com/cdn-cgi/trace', { timeout: TIMEOUT, headers: { 'User-Agent': UA } });
-      let traceData = await traceRes.text();
-      let match = traceData.match(/loc=(.*)/);
+      let match = (await traceRes.text()).match(/loc=(.*)/);
       if (match && !["CN","HK","RU","IR","XX"].includes(match[1])) return `支持 ${flagEmoji(match[1])}`;
       return "未支持";
     }, { timeout: TIMEOUT, headers: { 'User-Agent': UA } }).then(r => info.ai.ChatGPT = r),
-    check("https://gemini.google.com", async (res) => res.status === 200 ? "支持" : "未支持", { timeout: TIMEOUT }).then(r => info.ai.Gemini = r),
-    check("https://claude.ai/favicon.ico", async (res) => res.status === 200 ? "支持" : "未支持", { timeout: TIMEOUT }).then(r => info.ai.Claude = r)
+    check("https://gemini.google.com", async (res) => res.status === 200 ? `支持 ${info.landing.flag}` : "未支持", { timeout: TIMEOUT }).then(r => info.ai.Gemini = r),
+    check("https://claude.ai/favicon.ico", async (res) => res.status === 200 ? `支持 ${info.landing.flag}` : "未支持", { timeout: TIMEOUT }).then(r => info.ai.Claude = r),
+    check("https://grok.x.ai", async (res) => (res.status === 200 || res.status === 302) ? `支持 ${info.landing.flag}` : "未支持", { timeout: TIMEOUT }).then(r => info.ai.Grok = r)
   ];
 
   await Promise.allSettled(tasks);
 
-  // 修复：国旗转换 Bug
+  // 3. UI 辅助函数
   function flagEmoji(code) {
-    if (!code) return "🏳️";
-    // 如果返回的不是两位字母的国家代码（比如返回了单词），直接原样返回，防止转出乱码
-    if (code.length !== 2) return `[${code.toUpperCase()}]`; 
+    if (!code || code.length !== 2) return "";
     if (code.toUpperCase() === "TW") code = "CN";
     if (code.toUpperCase() === "UK") code = "GB";
     return String.fromCodePoint(...code.toUpperCase().split('').map(c => 127397 + c.charCodeAt()));
@@ -102,89 +112,94 @@ export default async function(ctx) {
 
   function getStatusColor(text) {
     if (!text) return "#8E8E93";
-    if (text.includes("支持") || text.includes("原生") || text.includes("低风险")) return "#34C759";
-    if (text.includes("未") || text.includes("失败") || text.includes("高风险") || text.includes("❌")) return "#FF3B30";
-    if (text.includes("自制剧") || text.includes("中等")) return "#FF9500";
+    if (text.includes("支持") || text.includes("原生") || text.includes("低")) return "#34C759";
+    if (text.includes("未") || text.includes("失败") || text.includes("高") || text.includes("❌")) return "#FF3B30";
+    if (text.includes("自制剧") || text.includes("中")) return "#FF9500";
     return "#8E8E93";
   }
 
-  // 修复：加入 maxLines 和 minScale 防止内容溢出
+  const isLarge = ctx.widgetFamily.includes("Large");
+  const fSize = isLarge ? 11 : 10; // 大组件稍微放大字号
+
   function buildRow(icon, name, value) {
     return {
       type: "stack", direction: "row", alignItems: "center", gap: 4,
       children: [
-        { type: "text", text: `${icon} ${name}`, font: { size: 10, weight: "medium" }, textColor: { light: "#666666", dark: "#AAAAAA" }, maxLines: 1 },
+        { type: "text", text: `${icon} ${name}`, font: { size: fSize, weight: "medium" }, textColor: { light: "#555555", dark: "#AAAAAA" }, maxLines: 1 },
         { type: "spacer" },
-        { type: "text", text: value || "...", font: { size: 10, weight: "bold" }, textColor: getStatusColor(value), maxLines: 1, minScale: 0.6 }
+        { type: "text", text: value || "...", font: { size: fSize, weight: "bold" }, textColor: getStatusColor(value), maxLines: 1, minScale: 0.6 }
       ]
     };
   }
 
-  const isSmall = ctx.widgetFamily === "systemSmall";
-  const isMedium = ctx.widgetFamily === "systemMedium";
+  function buildCard(title, children) {
+    return {
+      type: "stack", direction: "column", gap: 5, padding: 10, borderRadius: 12, flex: 1, backgroundColor: { light: "#F2F2F7", dark: "#1C1C1E" },
+      children: [
+        { type: "text", text: title, font: { size: 11, weight: "bold" }, textColor: { light: "#8E8E93", dark: "#8E8E93" } },
+        ...children
+      ]
+    };
+  }
 
-  // 修复：优化内边距和圆角
-  const ipBlock = {
-    type: "stack", direction: "column", gap: 4, padding: 8, borderRadius: 10, flex: 1, backgroundColor: { light: "#F2F2F7", dark: "#1C1C1E" },
-    children: [
-      { type: "text", text: "📡 网络与纯净度", font: { size: 10, weight: "bold" }, textColor: { light: "#8E8E93", dark: "#8E8E93" }, maxLines: 1 },
-      buildRow("🏠", "本地", info.local.flag),
-      buildRow("🌐", "节点", `${info.landing.flag} ${info.landing.nativeText}`),
-      buildRow("🛡️", "欺诈", info.landing.riskText)
-    ]
-  };
+  // 4. 构建模块卡片
+  const netCard = buildCard("📡 网络与节点纯净度", [
+    buildRow("🏠", "本地 IP", info.local.ip),
+    buildRow("🌐", "节点 IP", `${info.landing.flag} ${info.landing.ip}`),
+    buildRow("🛡️", "原生与风险", `${info.landing.nativeText} · ${info.landing.riskText}`)
+  ]);
 
-  const streamBlock = {
-    type: "stack", direction: "column", gap: 4, padding: 8, borderRadius: 10, flex: 1, backgroundColor: { light: "#F2F2F7", dark: "#1C1C1E" },
-    children: [
-      { type: "text", text: "🎬 流媒体", font: { size: 10, weight: "bold" }, textColor: { light: "#8E8E93", dark: "#8E8E93" }, maxLines: 1 },
-      buildRow("🎥", "Netflix", info.streaming.Netflix),
-      buildRow("▶️", "YouTube", info.streaming.YouTube),
-      buildRow("🏰", "Disney+", info.streaming.Disney)
-    ]
-  };
-  if (!isMedium) streamBlock.children.push(buildRow("🎵", "TikTok", info.streaming.TikTok));
+  const streamCard = buildCard("🎬 流媒体解锁", [
+    buildRow("🎥", "Netflix", info.streaming.Netflix),
+    buildRow("▶️", "YouTube", info.streaming.YouTube),
+    buildRow("🏰", "Disney+", info.streaming.Disney),
+    buildRow("🎵", "TikTok", info.streaming.TikTok),
+    buildRow("🎞️", "HBO Max", info.streaming.HBO),
+    buildRow("🏔️", "Paramount+", info.streaming.Paramount)
+  ]);
 
-  const aiBlock = {
-    type: "stack", direction: "column", gap: 4, padding: 8, borderRadius: 10, flex: 1, backgroundColor: { light: "#F2F2F7", dark: "#1C1C1E" },
-    children: [
-      { type: "text", text: "🤖 AI 助手", font: { size: 10, weight: "bold" }, textColor: { light: "#8E8E93", dark: "#8E8E93" }, maxLines: 1 },
-      buildRow("🤡", "ChatGPT", info.ai.ChatGPT),
-      buildRow("✨", "Gemini", info.ai.Gemini),
-      buildRow("🧠", "Claude", info.ai.Claude)
-    ]
-  };
+  const aiCard = buildCard("🤖 AI 助手", [
+    buildRow("🤡", "ChatGPT", info.ai.ChatGPT),
+    buildRow("🧠", "Claude", info.ai.Claude),
+    buildRow("✨", "Gemini", info.ai.Gemini),
+    buildRow("✖️", "Grok", info.ai.Grok)
+  ]);
 
+  // 5. 组装终极布局
   let mainContent;
-  if (isSmall) {
-    mainContent = [ ipBlock, { type: "spacer" }, buildRow("🤖", "GPT", info.ai.ChatGPT), buildRow("🎥", "NF", info.streaming.Netflix) ];
-  } else if (isMedium) {
-    mainContent = [
-      { type: "stack", direction: "row", gap: 8, children: [ ipBlock, streamBlock ]}
-    ];
+  if (isLarge) {
+    // 大组件：双栏完美布局 (左边网络+AI，右边流媒体)
+    mainContent = {
+      type: "stack", direction: "row", gap: 10,
+      children: [
+        { type: "stack", direction: "column", gap: 10, flex: 1, children: [ netCard, aiCard ] },
+        { type: "stack", direction: "column", gap: 10, flex: 1, children: [ streamCard ] }
+      ]
+    };
   } else {
-    mainContent = [
-      ipBlock,
-      { type: "stack", direction: "row", gap: 8, children: [ streamBlock, aiBlock ] }
-    ];
+    // 兼容中组件
+    mainContent = {
+      type: "stack", direction: "row", gap: 8,
+      children: [ netCard, streamCard ]
+    };
   }
 
   return {
     type: "widget",
-    padding: 12,
-    gap: 8,
+    padding: 16,
+    gap: 12,
     backgroundColor: { light: "#FFFFFF", dark: "#000000" },
     children: [
       {
         type: "stack", direction: "row", alignItems: "center", gap: 6,
         children: [
-          { type: "image", src: "sf-symbol:globe.americas.fill", color: "#AF52DE", width: 14, height: 14 },
-          { type: "text", text: "环境监控", font: { size: 12, weight: "bold" }, textColor: { light: "#000000", dark: "#FFFFFF" } },
+          { type: "image", src: "sf-symbol:globe.americas.fill", color: "#AF52DE", width: 16, height: 16 },
+          { type: "text", text: "IP 信息与解锁监控", font: { size: 14, weight: "bold" }, textColor: { light: "#000000", dark: "#FFFFFF" } },
           { type: "spacer" },
-          { type: "date", date: new Date().toISOString(), format: "time", font: { size: 10, weight: "medium" }, textColor: "#8E8E93" }
+          { type: "date", date: new Date().toISOString(), format: "time", font: { size: 11, weight: "medium" }, textColor: "#8E8E93" }
         ]
       },
-      ...mainContent
+      mainContent
     ]
   };
 }
