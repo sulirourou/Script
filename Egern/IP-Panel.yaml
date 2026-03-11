@@ -4,7 +4,7 @@ description: "纯净度、流媒体、AI独立中组件"
 scriptings:
   - generic:
       name: "Split-Widget-Script"
-      script_url: "https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js?v=1"
+      script_url: "https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js"
       timeout: 15
 
 widgets:
