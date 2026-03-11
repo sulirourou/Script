@@ -1,46 +1,34 @@
-name: "组件拆分套装"
-description: "纯净度、流媒体、AI独立中组件"
+name: SplitWidgets
+description: Split Widgets Panel
 
 scriptings:
   - generic:
-      name: "Split-Widget-Script"
-      script_url: "https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js"
+      name: IPPanelScript
+      script_url: https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js
       timeout: 15
 
 widgets:
-  - name: "1. IP纯净度面板"
-    script_name: "Split-Widget-Script"
+  - name: IP-Info
+    script_name: IPPanelScript
     env:
-      TYPE: "IP"
-      
-  - name: "2. 流媒体解锁"
-    script_name: "Split-Widget-Script"
+      TYPE: IP
+
+  - name: Media-Info
+    script_name: IPPanelScript
     env:
-      TYPE: "STREAM"
-      
-  - name: "3. AI助手"
-    script_name: "Split-Widget-Script"
+      TYPE: STREAM
+
+  - name: AI-Info
+    script_name: IPPanelScript
     env:
-      TYPE: "AI"
+      TYPE: AI
 
 rules:
-  - DOMAIN-SUFFIX, ippure.com, Proxy
-  - DOMAIN-SUFFIX, dazn.com, Proxy
-  - DOMAIN-SUFFIX, tiktok.com, Proxy
-  - DOMAIN-SUFFIX, byteoversea.com, Proxy
-  - DOMAIN-SUFFIX, netflix.com, Proxy
-  - DOMAIN-SUFFIX, nflxso.net, Proxy
-  - DOMAIN-SUFFIX, disneyplus.com, Proxy
-  - DOMAIN-SUFFIX, disney.com, Proxy
-  - DOMAIN-SUFFIX, googlevideo.com, Proxy
-  - DOMAIN-SUFFIX, max.com, Proxy
-  - DOMAIN-SUFFIX, hbomax.com, Proxy
-  - DOMAIN-SUFFIX, discoveryplus.com, Proxy
-  - DOMAIN-SUFFIX, paramountplus.com, Proxy
-  - DOMAIN-SUFFIX, x.ai, Proxy
-  - DOMAIN-SUFFIX, claude.ai, Proxy
-  - DOMAIN-SUFFIX, anthropic.com, Proxy
-  - DOMAIN-SUFFIX, gemini.google.com, Proxy
-  - DOMAIN-SUFFIX, google.com, Proxy
-  - DOMAIN-SUFFIX, chatgpt.com, Proxy
-  - DOMAIN-SUFFIX, openai.com, Proxy
+  - DOMAIN-SUFFIX,ippure.com,Proxy
+  - DOMAIN-SUFFIX,netflix.com,Proxy
+  - DOMAIN-SUFFIX,disneyplus.com,Proxy
+  - DOMAIN-SUFFIX,chatgpt.com,Proxy
+  - DOMAIN-SUFFIX,openai.com,Proxy
+  - DOMAIN-SUFFIX,google.com,Proxy
+  - DOMAIN-SUFFIX,claude.ai,Proxy
+  - DOMAIN-SUFFIX,x.ai,Proxy
