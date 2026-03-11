@@ -1,34 +1,25 @@
-name: "SplitWidgets"
-description: "Split Widgets Panel"
+Name: Split Widget
+desc: 拆分版小组件
+category: widget
 
 scriptings:
   - generic:
-      name: "IPPanelScript"
-      script_url: "https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js"
+      name: IPPanelScript
+      script_url: https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js
       timeout: 15
 
 widgets:
-  - name: "IP-Info"
-    script_name: "IPPanelScript"
+  - name: 1. IP纯净度
+    script_name: IPPanelScript
     env:
-      TYPE: "IP"
+      TYPE: IP
 
-  - name: "Media-Info"
-    script_name: "IPPanelScript"
+  - name: 2. 流媒体
+    script_name: IPPanelScript
     env:
-      TYPE: "STREAM"
+      TYPE: STREAM
 
-  - name: "AI-Info"
-    script_name: "IPPanelScript"
+  - name: 3. AI助手
+    script_name: IPPanelScript
     env:
-      TYPE: "AI"
-
-rules:
-  - "DOMAIN-SUFFIX,ippure.com,Proxy"
-  - "DOMAIN-SUFFIX,netflix.com,Proxy"
-  - "DOMAIN-SUFFIX,disneyplus.com,Proxy"
-  - "DOMAIN-SUFFIX,chatgpt.com,Proxy"
-  - "DOMAIN-SUFFIX,openai.com,Proxy"
-  - "DOMAIN-SUFFIX,google.com,Proxy"
-  - "DOMAIN-SUFFIX,claude.ai,Proxy"
-  - "DOMAIN-SUFFIX,x.ai,Proxy"
+      TYPE: AI
