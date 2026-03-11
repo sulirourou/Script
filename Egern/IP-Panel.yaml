@@ -1,19 +1,12 @@
-name: IP-Streaming-Panel
-description: IP-Check-Widget
+name: IP Info Widget
+desc: IP信息 + 纯净度 + 流媒体 + AI 检测小组件
+category: widget
 
 scriptings:
   - generic:
-      name: IP-Panel-Widget
+      name: ip-info-widget
       script_url: https://raw.githubusercontent.com/sulirourou/Script/main/js/IP-Panel.js
       timeout: 15
 
 widgets:
-  - name: IP-Panel-Widget
-    script_name: IP-Panel-Widget
-
-rules:
-  - DOMAIN-SUFFIX, ippure.com, Proxy
-  - DOMAIN-SUFFIX, netflix.com, Proxy
-  - DOMAIN-SUFFIX, disneyplus.com, Proxy
-  - DOMAIN-SUFFIX, chatgpt.com, Proxy
-  - DOMAIN-SUFFIX, openai.com, Proxy
+  - name: ip-info-widget
