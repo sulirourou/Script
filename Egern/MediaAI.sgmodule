@@ -1,8 +1,8 @@
-#!name=IP-Pure & 流媒体 & AI 检测
+#!name=域名分流
 #!desc=支持自定义节点检测。在参数内为不同模块和网站选择独立策略组。
 #!category=网络检测
-#!arguments=Proxy:DIRECT, Policy_Apasidao:DIRECT, Policy_GCP:Google, Policy_IPAPI:Claw Cloud S, Policy_Browserleaks:Claw Cloud S, Policy_GitBlur:GitHub, Policy_GreasyFork:Final
-#!arguments-desc=Proxy: 流媒体及AI默认策略, Policy_Apasidao: 爱啪思道策略, Policy_GCP: GCP策略, Policy_IPAPI: IP-API策略, Policy_Browserleaks: Browserleaks策略, Policy_GitBlur: GitBlur策略, Policy_GreasyFork: Greasy Fork策略
+#!arguments=Proxy:Final, Apasidao:Final, GCP:Final, IPAPI:Final, Browserleaks:Final, GitBlur:Final, GreasyFork:Final
+#!arguments-desc=Proxy: 流媒体及AI默认策略, Apasidao: 爱啪思道策略, GCP: GCP策略, IPAPI: IP-API策略, Browserleaks: Browserleaks策略, GitBlur: GitBlur策略, GreasyFork: Greasy Fork策略
 
 [Rule]
 # --- [IP 信息检测] ---
@@ -26,7 +26,7 @@ DOMAIN-SUFFIX,disneyplus.com,{{{Proxy}}}
 DOMAIN-SUFFIX,disney.com,{{{Proxy}}}
 
 # YouTube
-DOMAIN-SUFFIX,youtube.com,{{{Proxy}}}
+DOMAIN-SUFFIX,googleusercontent.com,{{{Proxy}}}
 DOMAIN-SUFFIX,googlevideo.com,{{{Proxy}}}
 
 # HBO Max / Max
@@ -62,19 +62,19 @@ DOMAIN-SUFFIX,oaiusercontent.com,{{{Proxy}}}
 # ==================================
 
 # 爱啪思道 (精确匹配)
-DOMAIN,app.localhost.qaq.wiki,{{{Policy_Apasidao}}}
+DOMAIN,app.localhost.qaq.wiki,{{{Apasidao}}}
 
 # GCP (IP 匹配)
-IP-CIDR,35.212.188.11/32,{{{Policy_GCP}}},no-resolve
+IP-CIDR,35.212.188.11/32,{{{GCP}}},no-resolve
 
 # IP-API (通配后缀匹配)
-DOMAIN-SUFFIX,ip-api.com,{{{Policy_IPAPI}}}
+DOMAIN-SUFFIX,ip-api.com,{{{IPAPI}}}
 
 # Browserleaks (后缀匹配)
-DOMAIN-SUFFIX,browserleaks.com,{{{Policy_Browserleaks}}}
+DOMAIN-SUFFIX,browserleaks.com,{{{Browserleaks}}}
 
 # GitBlur (后缀匹配)
-DOMAIN-SUFFIX,gitblur.com,{{{Policy_GitBlur}}}
+DOMAIN-SUFFIX,gitblur.com,{{{GitBlur}}}
 
 # Greasy Fork (后缀匹配)
-DOMAIN-SUFFIX,greasyfork.org,{{{Policy_GreasyFork}}}
+DOMAIN-SUFFIX,greasyfork.org,{{{GreasyFork}}}
