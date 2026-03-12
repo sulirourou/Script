@@ -64,10 +64,10 @@ DOMAIN-SUFFIX,oaiusercontent.com,{{{Proxy}}}
 # 爱啪思道 (精确匹配)
 DOMAIN,app.localhost.qaq.wiki,{{{Asspp}}}
 
-# GCP (IP 匹配)
-IP-CIDR,35.212.188.11/32,{{{GCP}}},no-resolve
+# GCP (精确匹配)
+DOMAIN,35.212.188.11,{{{GCP}}}
 
-# IP-API (通配后缀匹配)
+# IP-API (后缀匹配)
 DOMAIN-SUFFIX,ip-api.com,{{{IP-API}}}
 
 # GitBlur (后缀匹配)
