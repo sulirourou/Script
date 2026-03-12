@@ -4,7 +4,7 @@ description: IP信息纯净度 + 流媒体 + AI 小组件
 scriptings:
   - generic:
       name: IPMediaAI-Widget
-      script_url: ./IP-Widget.js
+      script_url: ./IPMediaAI-Widget.js
       timeout: 15
 
 widgets:
