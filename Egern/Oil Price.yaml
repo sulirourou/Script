@@ -1,0 +1,150 @@
+/**
+ * 🌏 Egern 独立组件: 全国油价监控 (横向平铺经典版)
+ * 完美复刻原 Scriptable 截图样式
+ */
+
+const API_LOCAL_IP = "https://myip.ipip.net/json";
+const TIMEOUT = 4000;
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36';
+
+// 省份拼音映射表
+const provMap = {
+  "北京": "beijing", "天津": "tianjin", "河北": "hebei", "山西": "shanxi",
+  "内蒙古": "neimenggu", "辽宁": "liaoning", "吉林": "jilin", "黑龙江": "heilongjiang",
+  "上海": "shanghai", "江苏": "jiangsu", "浙江": "zhejiang", "安徽": "anhui",
+  "福建": "fujian", "江西": "jiangxi", "山东": "shandong", "河南": "henan",
+  "湖北": "hubei", "湖南": "hunan", "广东": "guangdong", "广西": "guangxi",
+  "海南": "hainan", "重庆": "chongqing", "四川": "sichuan", "贵州": "guizhou",
+  "云南": "yunnan", "西藏": "xizang", "陕西": "shaanxi", "甘肃": "gansu",
+  "青海": "qinghai", "宁夏": "ningxia", "新疆": "xinjiang"
+};
+
+export default async function(ctx) {
+  let locData = { prov: "北京", py: "beijing" };
+  let oilData = { p92: "0.00", p95: "0.00", p98: "0.00", p0: "0.00", trend: "未知", adjustVal: "0.00", date: "未知日期", refreshDate: "" };
+
+  // 1. 尝试获取本地位置
+  try {
+    let resIp = await ctx.http.get(API_LOCAL_IP, { timeout: TIMEOUT, headers: { 'User-Agent': UA } });
+    let jIp = await resIp.json();
+    if (jIp.ret === "ok" && jIp.data && jIp.data.location) {
+      let provName = jIp.data.location[1] || jIp.data.location[0] || "北京";
+      locData.prov = provName.replace(/省|市|自治区|回族自治区|维吾尔自治区|壮族自治区/g, "");
+      locData.py = provMap[locData.prov] || "beijing";
+    }
+  } catch(e) {}
+
+  // 2. 获取油价数据
+  try {
+    let resOil = await ctx.http.get(`http://m.qiyoujiage.com/${locData.py}.shtml`, { timeout: TIMEOUT, headers: { 'User-Agent': UA } });
+    let html = await resOil.text();
+    
+    oilData.p92 = html.match(/92号汽油.*?<dd>([\d\.]+)/)?.[1] || "0.00";
+    oilData.p95 = html.match(/95号汽油.*?<dd>([\d\.]+)/)?.[1] || "0.00";
+    oilData.p98 = html.match(/98号汽油.*?<dd>([\d\.]+)/)?.[1] || "0.00";
+    oilData.p0  = html.match(/0号柴油.*?<dd>([\d\.]+)/)?.[1] || "0.00";
+
+    let tishi = html.match(/<div class="tishi">([\s\S]*?)<\/div>/)?.[1] || "";
+    if (tishi.includes("上调") || tishi.includes("上涨") || tishi.includes("大涨")) oilData.trend = "上涨";
+    else if (tishi.includes("下调") || tishi.includes("下跌") || tishi.includes("大跌")) oilData.trend = "下跌";
+    else if (tishi.includes("搁浅")) oilData.trend = "搁浅";
+
+    let priceMatch = tishi.match(/\d+\.\d+元\/升-\d+\.\d+元\/升/);
+    if (priceMatch) {
+       let parts = priceMatch[0].replace(/元\/升/g, "").split("-");
+       oilData.adjustVal = ((parseFloat(parts[0]) + parseFloat(parts[1])) / 2).toFixed(2);
+    } else {
+       oilData.adjustVal = tishi.match(/(\d+\.\d+)/)?.[1] || "0.00";
+    }
+    
+    // 生成调价日期
+    let nextDate = tishi.match(/(\d{4}年\d{1,2}月\d{1,2}日|\d{1,2}月\d{1,2}日)/)?.[1] || "";
+    if (nextDate && !nextDate.includes("年")) {
+        nextDate = new Date().getFullYear() + "年" + nextDate;
+    }
+    oilData.date = nextDate ? `${nextDate}${oilData.trend}` : "未知";
+    
+    // 生成刷新日期 (获取当前时间)
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    oilData.refreshDate = `${now.getFullYear()}年${mm}月${dd}日刷新`;
+
+  } catch(e) {}
+
+  // 3. 颜色与符号处理
+  let trendColor = "#8E8E93"; 
+  let sign = "";
+  if (oilData.trend === "上涨") {
+    trendColor = "#EB604D";  // 原图中的橘红色
+    sign = "+";
+  } else if (oilData.trend === "下跌") {
+    trendColor = "#34C759";
+    sign = "-";
+  }
+
+  // 4. 辅助渲染函数：单列油价 (如：92# | ¥7.66 | +0.61)
+  function buildOilCol(name, price, adjust) {
+    return {
+      type: "stack", direction: "column", alignItems: "center", gap: 6, flex: 1,
+      children: [
+        { type: "text", text: name, font: { size: 22, weight: "bold" }, textColor: "#EB604D" },
+        { type: "text", text: `¥${price}`, font: { size: 16, weight: "bold" }, textColor: "#FFFFFF" },
+        { type: "text", text: `${sign}${adjust}`, font: { size: 12, weight: "medium" }, textColor: trendColor }
+      ]
+    };
+  }
+
+  // 计算预计花费 (按默认 0号油 100升 模拟原图)
+  const capacity = 100;
+  const currentPrice = parseFloat(oilData.p0);
+  let futurePrice = currentPrice;
+  if (oilData.trend === "上涨") futurePrice += parseFloat(oilData.adjustVal);
+  else if (oilData.trend === "下跌") futurePrice -= parseFloat(oilData.adjustVal);
+  const totalCost = (futurePrice * capacity).toFixed(2);
+
+  // 5. 构建 UI 树
+  return {
+    type: "widget",
+    url: "egern://",
+    padding: 16,
+    backgroundColor: "#2C2C2E", // 贴近原图的深灰色背景
+    children: [
+      {
+        type: "stack", direction: "column", flex: 1,
+        children: [
+          // 第一行：水滴图标 + 地区
+          {
+            type: "stack", direction: "row", alignItems: "center", gap: 4,
+            children: [
+              { type: "image", src: "sf-symbol:drop", color: "#FFFFFF", width: 14, height: 14 },
+              { type: "text", text: `中国油价 • ${locData.prov}`, font: { size: 14, weight: "bold" }, textColor: "#FFFFFF" }
+            ]
+          },
+          { type: "spacer" },
+          
+          // 第二行：四列横排数据
+          {
+            type: "stack", direction: "row", alignItems: "center",
+            children: [
+              buildOilCol("92#", oilData.p92, oilData.adjustVal),
+              buildOilCol("95#", oilData.p95, oilData.adjustVal),
+              buildOilCol("98#", oilData.p98, oilData.adjustVal),
+              buildOilCol("0#",  oilData.p0,  oilData.adjustVal)
+            ]
+          },
+          { type: "spacer" },
+          
+          // 底部两行居中文字
+          {
+            type: "stack", direction: "column", alignItems: "center", gap: 4,
+            children: [
+              { type: "text", text: `预计加满 0 号汽油 ${capacity} 升需要 ${totalCost} 元`, font: { size: 10, weight: "medium" }, textColor: "#EBEBF5" },
+              { type: "text", text: `${oilData.refreshDate} • ${oilData.date}`, font: { size: 10, weight: "medium" }, textColor: "#EBEBF5" }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+}
