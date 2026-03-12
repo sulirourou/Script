@@ -1,24 +1,24 @@
-Name: IP Info Widget
+Name: IPMediaAI-Widget
 description: IP信息纯净度 + 流媒体 + AI 小组件
 
 scriptings:
   - generic:
-      name: ip-info-widget
+      name: IPMediaAI-Widget
       script_url: ./IP-Widget.js
       timeout: 15
 
 widgets:
   - name: IP纯净度
-    script_name: ip-info-widget
+    script_name: IPMediaAI-Widget
     env:
       TYPE: IP
 
   - name: 流媒体
-    script_name: ip-info-widget
+    script_name: IPMediaAI-Widget
     env:
       TYPE: STREAM
 
   - name: AI助手
-    script_name: ip-info-widget
+    script_name: IPMediaAI-Widget
     env:
       TYPE: AI
