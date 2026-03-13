@@ -1,7 +1,7 @@
 #!name=域名分流
 #!desc=支持自定义节点。在参数内为不同模块和网站选择独立策略组。
 #!category=网络检测
-#!arguments=Proxy:Final, Asspp:Final, GCP:Final, IP-API:Final, Browserleaks:Final, GitBlur:Final, GreasyFork:Final
+#!arguments=Proxy:Final, Asspp:Final, GCP:Final, IP-API:Final, GitBlur:Final, GreasyFork:Final, Browserleaks:Final
 #!arguments-desc=Proxy: 流媒体及AI策略, Asspp: 爱啪思道策略, GCP: GCP策略, IPAPI: IP-API策略,  GitBlur: GitBlur策略, GreasyFork: Greasy Fork策略, Browserleaks: Browserleaks策略
 
 [Rule]
