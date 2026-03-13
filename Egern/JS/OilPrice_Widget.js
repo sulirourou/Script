@@ -133,7 +133,7 @@ export default async function(ctx) {
     let nameColor = "#FFFFFF"; 
     if (name === "92#") nameColor = "#FF3B30"; 
     else if (name === "95#") nameColor = "#34C759"; 
-    else if (name === "98#") nameColor = "#BF5AF2"; 
+    else if (name === "98#") nameColor = "#FFD60A"; 
     else if (name === "0#") nameColor = "#0A84FF"; 
 
     return {
