@@ -146,7 +146,7 @@ export default async function(ctx) {
   }
 
   const baseTextColor = "#EBEBF5"; 
-  const fontSize = 11; 
+  const fontSize = 10; 
   
   const oilNameText = userType === "0" ? "0 号柴油" : `${userType} 号汽油`;
   
