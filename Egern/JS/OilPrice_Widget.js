@@ -1,5 +1,5 @@
 /**
- * ⛽ 全国油价监控小组件 (终极极简大字版)
+ * ⛽ 全国油价监控小组件 (标号彩色独立版)
  * * ==========================================
  * 📚 环境变量配置说明 (在组件的"环境变量"处添加)
  * ==========================================
@@ -132,12 +132,18 @@ export default async function(ctx) {
   const totalCost = (futurePrice * capacity).toFixed(2);
 
   // 4. UI 积木块封装
-  // 💡 直接干掉下面的那行区间文字，只保留名字和纯粹的大号价格
   function buildOilCol(name, price) {
+    // 💡 动态为不同油号分配专属颜色
+    let nameColor = "#FFFFFF"; // 默认防错色
+    if (name === "92#") nameColor = "#FF3B30"; // 红色
+    else if (name === "95#") nameColor = "#34C759"; // 绿色
+    else if (name === "98#") nameColor = "#BF5AF2"; // 紫色
+    else if (name === "0#") nameColor = "#0A84FF"; // 蓝色
+
     return {
       type: "stack", direction: "column", alignItems: "center", gap: 8, flex: 1,
       children: [
-        { type: "text", text: name, font: { size: 22, weight: "medium" }, textColor: "#EB604D" },
+        { type: "text", text: name, font: { size: 22, weight: "medium" }, textColor: nameColor },
         { type: "text", text: `¥${price}`, font: { size: 20, weight: "bold" }, textColor: "#FFFFFF" }
       ]
     };
@@ -148,7 +154,6 @@ export default async function(ctx) {
   
   const oilNameText = userType === "0" ? "0 号柴油" : `${userType} 号汽油`;
   
-  // 底部两行保留
   const costRow = {
     type: "stack", direction: "row", alignItems: "center", gap: 3,
     children: [
