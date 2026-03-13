@@ -161,7 +161,7 @@ export default async function(ctx) {
   const timeRow = {
     type: "stack", direction: "row", alignItems: "center", gap: 3,
     children: [
-      { type: "text", text: `${oilData.refreshDate} • ${oilData.date}${oilData.trend === '搁浅' ? '' : `约 ${oilData.rangeStr} 元/升`}`, font: { size: fontSize, weight: "medium" }, textColor: baseTextColor }
+      { type: "text", text: `${oilData.refreshDate} • ${oilData.date}${oilData.trend === '搁浅' ? '' : ` ${oilData.rangeStr} 元/升`}`, font: { size: fontSize, weight: "medium" }, textColor: baseTextColor }
     ]
   };
 
