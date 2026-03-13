@@ -1,5 +1,5 @@
 /**
- * ⛽ 全国油价监控小组件 (边界清晰 + 精准数值)
+ * ⛽ 全国油价监控小组件 (区间预测版)
  * * ==========================================
  * 📚 环境变量配置说明 (在组件的"环境变量"处添加)
  * ==========================================
@@ -48,7 +48,7 @@ export default async function(ctx) {
   }
 
   let locData = { prov: "北京", py: "beijing" };
-  let oilData = { p92: "0.00", p95: "0.00", p98: "0.00", p0: "0.00", trend: "未知", adjustVal: "0.00", date: "未知日期", refreshDate: "" };
+  let oilData = { p92: "0.00", p95: "0.00", p98: "0.00", p0: "0.00", trend: "未知", adjustVal: "0.00", date: "未知日期", refreshDate: "", rangeStr: "" };
 
   // 1. 定位省份
   if (userCity !== "" && provMap[userCity]) {
@@ -71,7 +71,7 @@ export default async function(ctx) {
     let resOil = await ctx.http.get(`http://m.qiyoujiage.com/${locData.py}.shtml`, { timeout: TIMEOUT, headers: { 'User-Agent': UA } });
     let html = await resOil.text();
     
-    // 极严谨匹配：定位到“XX汽油”后，忽略中间一切非数字符号，精准锁定第一个两位小数
+    // 价格提取
     const getPrice = (name) => {
         let reg = new RegExp(name + "[^\\d]*?(\\d+\\.\\d{2})");
         let match = html.match(reg);
@@ -89,12 +89,22 @@ export default async function(ctx) {
     else if (tishi.includes("下调") || tishi.includes("下跌") || tishi.includes("大跌")) oilData.trend = "下跌";
     else if (tishi.includes("搁浅")) oilData.trend = "搁浅";
 
+    // 💡 核心修改：如果是区间，不仅取最大值，还要记录整个区间字符串
     let rangeMatch = tishi.match(/(\d+\.\d+)元\/升.*?(\d+\.\d+)元\/升/);
     if (rangeMatch) {
-       oilData.adjustVal = Math.max(parseFloat(rangeMatch[1]), parseFloat(rangeMatch[2])).toFixed(2);
+       let num1 = parseFloat(rangeMatch[1]);
+       let num2 = parseFloat(rangeMatch[2]);
+       oilData.adjustVal = Math.max(num1, num2).toFixed(2);
+       // 记录区间字符串，如 "0.55-0.61"
+       oilData.rangeStr = `${rangeMatch[1]}-${rangeMatch[2]}`;
     } else {
        let singleMatch = tishi.match(/(\d+\.\d+)/);
-       if (singleMatch) oilData.adjustVal = singleMatch[1];
+       if (singleMatch) {
+           oilData.adjustVal = singleMatch[1];
+           oilData.rangeStr = singleMatch[1]; // 单值时区间也显示为单值
+       } else {
+           oilData.rangeStr = "搁浅";
+       }
     }
     
     let nextDateMatch = tishi.match(/(\d{4}年\d{1,2}月\d{1,2}日|\d{1,2}月\d{1,2}日)/);
@@ -114,6 +124,13 @@ export default async function(ctx) {
   } catch(e) {}
 
   // 3. 颜色及数值计算
+  let trendColor = "#8E8E93"; 
+  if (oilData.trend === "上涨") {
+    trendColor = "#EB604D"; // 橘红
+  } else if (oilData.trend === "下跌") {
+    trendColor = "#34C759"; // 绿色
+  }
+
   let capacity = Number(userCap);
   if (isNaN(capacity) || capacity <= 0) capacity = 50;
 
@@ -130,17 +147,18 @@ export default async function(ctx) {
   const totalCost = (futurePrice * capacity).toFixed(2);
 
   // 4. UI 积木块封装
-  function buildOilCol(name, price) {
+  function buildOilCol(name, price, range) {
     return {
       type: "stack", direction: "column", alignItems: "center", gap: 8, flex: 1,
       children: [
         { type: "text", text: name, font: { size: 22, weight: "medium" }, textColor: "#EB604D" },
-        { type: "text", text: `¥${price}`, font: { size: 20, weight: "bold" }, textColor: "#FFFFFF" }
+        { type: "text", text: `¥${price}`, font: { size: 20, weight: "bold" }, textColor: "#FFFFFF" },
+        // 💡 视觉修改：直接显示区间字符串（不带符号），颜色跟随趋势
+        { type: "text", text: range, font: { size: 12, weight: "medium" }, textColor: trendColor }
       ]
     };
   }
 
-  // 💡 视觉恢复：底部文字颜色改回柔和的次级白，不那么刺眼
   const baseTextColor = "#EBEBF5"; 
   const fontSize = 11; 
   
@@ -156,7 +174,7 @@ export default async function(ctx) {
   const timeRow = {
     type: "stack", direction: "row", alignItems: "center", gap: 3,
     children: [
-      { type: "text", text: `${oilData.refreshDate} • ${oilData.date}${oilData.trend === '搁浅' ? '' : `约 ${oilData.adjustVal} 元/升`}`, font: { size: fontSize, weight: "medium" }, textColor: baseTextColor }
+      { type: "text", text: `${oilData.refreshDate} • ${oilData.date}${oilData.trend === '搁浅' ? '' : `预计约 ${oilData.rangeStr} 元/升`}`, font: { size: fontSize, weight: "medium" }, textColor: baseTextColor }
     ]
   };
 
@@ -164,7 +182,6 @@ export default async function(ctx) {
     type: "widget",
     url: "egern://",
     padding: 14, 
-    // 💡 视觉恢复：背景色退回 #2C2C2E，在 Egern App 内边界清晰
     backgroundColor: "#2C2C2E", 
     children: [
       {
@@ -180,10 +197,11 @@ export default async function(ctx) {
           {
             type: "stack", direction: "row", alignItems: "center", justifyContent: "space-around",
             children: [
-              buildOilCol("92#", oilData.p92),
-              buildOilCol("95#", oilData.p95),
-              buildOilCol("98#", oilData.p98),
-              buildOilCol("0#",  oilData.p0)
+              // 💡 传给 buildOilCol 的是 oilData.rangeStr
+              buildOilCol("92#", oilData.p92, oilData.rangeStr),
+              buildOilCol("95#", oilData.p95, oilData.rangeStr),
+              buildOilCol("98#", oilData.p98, oilData.rangeStr),
+              buildOilCol("0#",  oilData.p0,  oilData.rangeStr)
             ]
           },
           {
