@@ -1,5 +1,6 @@
 /**
- * 🌏 Egern 独立拆分组件 (纯粹表格左对齐 + 物理截断版)
+ * 🌏 Egern 独立拆分组件 (流媒体+AI保留 / 移除了备用 IP 接口版)
+ * ⚠️ 本地 IP 查询仅使用 ipip.net，不再偷偷请求 ip-api.com
  */
 
 const localUrl = "https://myip.ipip.net/json";
@@ -11,6 +12,7 @@ const TIMEOUT = 3500;
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36';
 
 export default async function(ctx) {
+  // 环境变量控制显示哪个面板：IP, STREAM, AI
   const widgetType = (ctx && ctx.env && ctx.env.TYPE) ? ctx.env.TYPE : "STREAM"; 
   
   let info = {
@@ -19,6 +21,7 @@ export default async function(ctx) {
     streaming: {}, ai: {}
   };
 
+  // 1. 获取本地 IP（彻底删除了 ip-api.com 备胎接口）
   async function getLocalIP() {
     try {
       let res = await ctx.http.get(localUrl, { timeout: TIMEOUT, headers: { 'User-Agent': UA } });
@@ -29,17 +32,11 @@ export default async function(ctx) {
       }
       throw new Error();
     } catch (e) { 
-      try {
-        let fbRes = await ctx.http.get("http://ip-api.com/json/?lang=zh-CN", { timeout: 2000 });
-        let fbJ = await fbRes.json();
-        if(fbJ.status === "success") {
-           return { ip: fbJ.query, loc: `${fbJ.country||""} ${fbJ.city||""}`.trim() || "未知", isp: fbJ.isp || "未知" };
-        }
-      } catch(e2) {}
       return { ip: "获取失败", loc: "未知", isp: "未知" }; 
     }
   }
 
+  // 2. 获取落地节点 IP (ippure)
   async function getLandingIP() {
     try {
       let res = await ctx.http.get(proxyUrl, { timeout: TIMEOUT, headers: { 'User-Agent': UA } });
@@ -56,6 +53,7 @@ export default async function(ctx) {
     } catch (e) { return { ip: "网络错误", type: "IPv4", asn: "", org: "", flag: "❌", loc: "未知", code: "UN", nativeText: "未知", riskText: "失败", riskLevel: 0 }; }
   }
 
+  // 通用检测请求函数
   async function check(url, validator, options = {}) {
     try {
       let res = await (options.method === 'POST' ? ctx.http.post(url, options) : ctx.http.get(url, options));
@@ -63,6 +61,7 @@ export default async function(ctx) {
     } catch (e) { return "超时"; }
   }
 
+  // 根据组件类型，分配并发任务
   let tasks = [];
   if (widgetType === "IP") {
     tasks.push(getLocalIP().then(r => info.local = r), getLandingIP().then(r => info.landing = r));
@@ -129,6 +128,7 @@ export default async function(ctx) {
 
   await Promise.allSettled(tasks);
 
+  // 国旗转换
   function flagEmoji(code) {
     if (!code || code.length !== 2) return "";
     if (code.toUpperCase() === "TW") code = "CN";
@@ -136,6 +136,7 @@ export default async function(ctx) {
     return String.fromCodePoint(...code.toUpperCase().split('').map(c => 127397 + c.charCodeAt()));
   }
 
+  // 状态颜色判断
   function getStatusColor(text) {
     if (!text) return "#8E8E93";
     if (text.includes("支持") || text.includes("原生") || text.includes("低")) return "#34C759";
@@ -144,6 +145,7 @@ export default async function(ctx) {
     return "#8E8E93";
   }
 
+  // 格式化文本
   function formatStatus(text) {
     if (!text) return "-";
     if (text === "未支持" || text.includes("未支持(")) return `${text} 🚫`;
@@ -153,6 +155,7 @@ export default async function(ctx) {
     return text;
   }
 
+  // 字符串截断（防超长折行）
   function cutString(str, maxLen) {
     if (!str) return "-";
     let chars = Array.from(str);
@@ -171,6 +174,7 @@ export default async function(ctx) {
     return res;
   }
 
+  // 渲染流媒体/AI 紧凑行
   function buildCompactRow(icon, name, value) {
     let displayVal = formatStatus(value);
     return {
@@ -183,7 +187,7 @@ export default async function(ctx) {
     };
   }
 
-  // 🚨 终极表格对齐秘籍：标签固定宽度 + 内容紧跟 + spacer垫后挤压
+  // 渲染 IP 表格行
   function buildIPRow(label, value, color, maxStrLen) {
     let displayVal = formatStatus(value);
     if (maxStrLen) displayVal = cutString(displayVal, maxStrLen); 
@@ -191,26 +195,22 @@ export default async function(ctx) {
     return {
       type: "stack", direction: "row", alignItems: "center", gap: 6,
       children: [
-        // 1. 标签固定宽度，相当于表格的第一列
         { type: "stack", width: 32, children: [
           { type: "text", text: label, font: { size: 12, weight: "medium" }, textColor: { light: "#666666", dark: "#999999" }, maxLines: 1 }
         ]},
-        // 2. 数值紧贴在固定宽度的标签后面，相当于表格的第二列
         { type: "text", text: displayVal, font: { size: 12, weight: "bold" }, textColor: color || { light: "#000000", dark: "#FFFFFF" }, maxLines: 1 },
-        // 3. 放一个占位符在最后，把前面的内容都往左边挤，确保绝对靠左
         { type: "spacer" }
       ]
     };
   }
 
+  // 构建主 UI
   let titleText = "", titleIcon = "", titleColor = "";
   let bodyContent;
 
   if (widgetType === "IP") {
     titleText = "IP 与纯净度"; titleIcon = "sf-symbol:network"; titleColor = "#0A84FF";
     
-    const proxyIpDisplay = info.landing.ip; 
-
     bodyContent = {
       type: "stack", direction: "row", gap: 14, alignItems: "start",
       children: [
@@ -223,7 +223,7 @@ export default async function(ctx) {
         ]},
         { type: "stack", direction: "column", gap: 6, flex: 1.2, children: [
             { type: "text", text: "🌐 代理节点", font: { size: 13, weight: "bold" }, textColor: { light: "#8E8E93", dark: "#636366" } },
-            buildIPRow(info.landing.type, proxyIpDisplay, null, 18),
+            buildIPRow(info.landing.type, info.landing.ip, null, 18),
             buildIPRow("ASN", `AS${info.landing.asn} ${info.landing.org}`.trim(), null, 18),
             buildIPRow("位置", info.landing.loc, null, 18),
             buildIPRow("风险", `${info.landing.nativeText} · ${info.landing.riskText}`, getStatusColor(info.landing.riskText), 18)
