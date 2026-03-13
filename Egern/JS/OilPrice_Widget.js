@@ -1,5 +1,5 @@
 /**
- * ⛽ 全国油价监控小组件 (标号彩色独立版)
+ * ⛽ 全国油价监控小组件 (现价计算直觉版)
  * * ==========================================
  * 📚 环境变量配置说明 (在组件的"环境变量"处添加)
  * ==========================================
@@ -125,20 +125,16 @@ export default async function(ctx) {
   else if (userType === "98") basePrice = Number(oilData.p98) || 0;
   else basePrice = Number(oilData.p0) || 0;
 
-  let futurePrice = basePrice;
-  if (oilData.trend === "上涨") futurePrice += (Number(oilData.adjustVal) || 0);
-  else if (oilData.trend === "下跌") futurePrice -= (Number(oilData.adjustVal) || 0);
-  
-  const totalCost = (futurePrice * capacity).toFixed(2);
+  // 💡 彻底抛弃加价计算，完全顺应直觉：屏幕上显示多少钱，就乘以多少钱！
+  const totalCost = (basePrice * capacity).toFixed(2);
 
   // 4. UI 积木块封装
   function buildOilCol(name, price) {
-    // 💡 动态为不同油号分配专属颜色
-    let nameColor = "#FFFFFF"; // 默认防错色
-    if (name === "92#") nameColor = "#FF3B30"; // 红色
-    else if (name === "95#") nameColor = "#34C759"; // 绿色
-    else if (name === "98#") nameColor = "#BF5AF2"; // 紫色
-    else if (name === "0#") nameColor = "#0A84FF"; // 蓝色
+    let nameColor = "#FFFFFF"; 
+    if (name === "92#") nameColor = "#FF3B30"; 
+    else if (name === "95#") nameColor = "#34C759"; 
+    else if (name === "98#") nameColor = "#BF5AF2"; 
+    else if (name === "0#") nameColor = "#0A84FF"; 
 
     return {
       type: "stack", direction: "column", alignItems: "center", gap: 8, flex: 1,
@@ -157,7 +153,8 @@ export default async function(ctx) {
   const costRow = {
     type: "stack", direction: "row", alignItems: "center", gap: 3,
     children: [
-      { type: "text", text: `预计加满 ${oilNameText} ${capacity} 升需要 ${totalCost} 元`, font: { size: fontSize, weight: "medium" }, textColor: baseTextColor }
+      // 💡 文本由“预计加满”改为“当前加满”，避免歧义
+      { type: "text", text: `当前加满 ${oilNameText} ${capacity} 升需 ${totalCost} 元`, font: { size: fontSize, weight: "medium" }, textColor: baseTextColor }
     ]
   };
 
