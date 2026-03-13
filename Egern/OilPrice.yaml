@@ -1,0 +1,13 @@
+name: 实时油价
+description: 油价小组件
+category: widget
+
+scriptings:
+  - generic:
+      name: oil-price-script
+      script_url: ./OilPrice.js
+      timeout: 15
+
+widgets:
+  - name: 实时油价
+    script_name: oil-price-script
