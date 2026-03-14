@@ -12,6 +12,27 @@ export default async function(ctx) {
   let proxyData = { ip: "获取中...", title: "节点网络", detail: "未知", isp: "未知", flag: "🏳️", risk: 0, isDC: false, success: false };
   let localData = { ip: "获取中...", title: "本地网络", detail: "未知", isp: "未知", flag: "🇨🇳", success: false };
 
+  // 💡 终极智能去重函数 (中英文通用)：只要包含国家名，直接剔除重复
+  function cleanLoc(c, r, d, filterStr) {
+      let res = [];
+      let c_low = (c || "").toLowerCase();
+      let r_low = (r || "").toLowerCase();
+      let d_low = (d || "").toLowerCase();
+      let filter_low = (filterStr || "").toLowerCase();
+
+      if (c) res.push(c);
+      
+      if (r && r_low !== c_low && (!filter_low || !r_low.includes(filter_low))) {
+          res.push(r);
+      }
+      
+      if (d && d_low !== c_low && d_low !== r_low && (!filter_low || !d_low.includes(filter_low))) {
+          res.push(d);
+      }
+      
+      return res.join(" ").trim() || "未知";
+  }
+
   // 2. 微软 Edge 翻译接口 (完全还原你的源码)
   async function msTranslate(text, to) {
     if (!text || text === "Unknown") return "";
@@ -48,9 +69,10 @@ export default async function(ctx) {
         let proxyRegionCn = await msTranslate(region, "zh-Hans"); 
         let proxyCityCn = await msTranslate(city, "zh-Hans");
         
-        // 组装数据
-        proxyData.title = `${proxyCountryCn} ${proxyRegionCn} ${proxyCityCn}`.replace(/\s+/g, ' ').trim() || "未知节点";
-        proxyData.detail = `${country} ${region} ${city}`.replace(/\s+/g, ' ').trim();
+        // 💡 修复：组装数据时加入智能去重，过滤中英文的重复词 (如新加坡)
+        proxyData.title = cleanLoc(proxyCountryCn, proxyRegionCn, proxyCityCn, proxyCountryCn) || "未知节点";
+        proxyData.detail = cleanLoc(country, region, city, country) || "未知";
+        
         proxyData.isp = `${rawMainData.asOrganization || ""} (AS${rawMainData.asn || ""})`.trim();
         proxyData.flag = flagEmoji(rawMainData.countryCode);
         proxyData.risk = rawMainData.fraudScore || 0;
@@ -84,12 +106,12 @@ export default async function(ctx) {
         }
         localData.isp = `China ${localCarrierEn}`;
         
-        // 标题行：中文
+        // 标题行：中文 (💡 同样加入去重防御)
         let localCountryCn = await msTranslate(country, "zh-Hans");
         let localCityCn = await msTranslate(city, "zh-Hans");
-        localData.title = `${localCountryCn} ${localCityCn}`.trim() || "本地网络";
+        localData.title = cleanLoc(localCountryCn, "", localCityCn, localCountryCn) || "本地网络";
         
-        // 详情行：英文 (完全依赖微软翻译接口)
+        // 详情行：英文 (完全依赖微软翻译接口，不动源码逻辑)
         let enProv = await msTranslate(prov, "en");
         let enCity = await msTranslate(city, "en");
         localData.detail = `China ${enProv} ${enCity}`.replace(/\s+/g, ' ').trim();
@@ -196,7 +218,8 @@ export default async function(ctx) {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
                   { type: "text", text: proxyData.isDC ? "非原生" : "原生", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } },
-                  { type: "text", text: proxyData.isDC ? "(机房)" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
+                  // 💡 修复：只把 "(机房)" 改为了 "机房"，完全没动别的
+                  { type: "text", text: proxyData.isDC ? "机房" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
                 ]
               },
               // 底部来源标识
