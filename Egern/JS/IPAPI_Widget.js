@@ -13,13 +13,18 @@ export default async function(ctx) {
   let proxyData = { ip: "获取中...", title: "节点网络", detail: "未知", isp: "未知", flag: "🏳️", risk: 0, isDC: false, success: false };
   let localData = { ip: "获取中...", title: "本地网络", detail: "未知", isp: "未知", flag: "🏳️", success: false };
 
-  // 💡 智能去重函数
-  function cleanLoc(country, region, city) {
-      let arr = [];
-      if (country) arr.push(country);
-      if (region && !arr.includes(region)) arr.push(region);
-      if (city && !arr.includes(city)) arr.push(city);
-      return arr.join(" ").trim() || "未知位置";
+  // 💡 新增：无损去重工具（只剔除完全相同的重复词，绝不漏掉省市）
+  function cleanLoc(c, r, d) {
+      let res = [];
+      let c_low = (c || "").toLowerCase();
+      let r_low = (r || "").toLowerCase();
+      let d_low = (d || "").toLowerCase();
+      
+      if (c) res.push(c);
+      if (r && r_low !== c_low) res.push(r);
+      if (d && d_low !== c_low && d_low !== r_low) res.push(d);
+      
+      return res.join(" ").trim() || "未知";
   }
 
   // 2. 数据获取函数
@@ -35,12 +40,14 @@ export default async function(ctx) {
 
       if (jEn.status === "success") {
         proxyData.ip = jEn.query;
-        // 💡 标题用中文，最精简
-        proxyData.title = jCn.country || "未知节点";
-        // 💡 详情用中文，并智能去重（解决新加坡重复问题）
-        proxyData.detail = cleanLoc(jCn.country, jCn.regionName, jCn.city);
         
-        // 处理 ISP 与 AS 重复
+        // 💡 恢复：标题用中文，包含国家、省、市，并智能去重
+        proxyData.title = cleanLoc(jCn.country, jCn.regionName, jCn.city) || "未知节点";
+        
+        // 💡 恢复：详情用英文，包含国家、省、市，并智能去重（解决你截图里变成中文的问题）
+        proxyData.detail = cleanLoc(jEn.country, jEn.regionName, jEn.city);
+        
+        // 💡 保留：处理 ISP 和 AS 名字重复的问题
         let ispName = jEn.isp || "";
         let asInfo = jEn.as || "";
         if (asInfo.toLowerCase().includes(ispName.split(' ')[0].toLowerCase())) {
@@ -81,9 +88,8 @@ export default async function(ctx) {
           let ljEn = await resEn.json();
           
           if(ljCn.status === "success") {
-            localData.title = ljCn.country || "本地";
-            // 💡 本地网络也应用纯中文去重
-            localData.detail = cleanLoc(ljCn.country, ljCn.regionName, ljCn.city);
+            localData.title = cleanLoc(ljCn.country, "", ljCn.city) || "本地";
+            localData.detail = cleanLoc(ljEn.country, ljEn.regionName, ljEn.city);
             localData.flag = flagEmoji(ljEn.countryCode);
             // 还原精准运营商识别
             let carrier = "Unicom";
@@ -97,8 +103,8 @@ export default async function(ctx) {
         } catch(e2) {}
         
         // 如果 ip-api 失败，兜底使用 ipip 的数据
-        localData.title = loc[0] || "本地";
-        localData.detail = cleanLoc(loc[0], loc[1], loc[2]);
+        localData.title = cleanLoc(loc[0]||"本地", "", loc[2]||"");
+        localData.detail = "China Location";
         localData.isp = loc[4] || "未知";
         localData.flag = "🇨🇳";
       }
@@ -202,7 +208,7 @@ export default async function(ctx) {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
                   { type: "text", text: proxyData.isDC ? "非原生" : "原生", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } },
-                  // 💡 修复：去掉了 (机房) 的括号
+                  // 💡 保留：去掉了 (机房) 的括号
                   { type: "text", text: proxyData.isDC ? "机房" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
                 ]
               },
