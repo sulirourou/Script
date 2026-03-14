@@ -1,5 +1,5 @@
 /**
- * 🌏 Egern IP 质量监测组件
+ * 🌏 Egern IP-API 质量监测组件
  */
 
 const API_BASE = "http://ip-api.com/json/";
@@ -13,10 +13,18 @@ export default async function(ctx) {
   let proxyData = { ip: "获取中...", title: "节点网络", detail: "未知", isp: "未知", flag: "🏳️", risk: 0, isDC: false, success: false };
   let localData = { ip: "获取中...", title: "本地网络", detail: "未知", isp: "未知", flag: "🏳️", success: false };
 
+  // 💡 智能去重函数：如果省份和城市跟国家同名（比如新加坡），自动剔除重复字眼
+  function cleanLoc(country, region, city) {
+      let arr = [];
+      if (country) arr.push(country);
+      if (region && !arr.includes(region)) arr.push(region);
+      if (city && !arr.includes(city)) arr.push(city);
+      return arr.join(" ").trim() || "未知位置";
+  }
+
   // 2. 数据获取函数
   async function fetchProxy() {
     try {
-      // 并发请求英文和中文接口
       let [resEn, resCn] = await Promise.all([
         ctx.http.get(`${API_BASE}${FIELDS}`, { timeout: TIMEOUT, headers: { 'User-Agent': UA } }),
         ctx.http.get(`${API_BASE}${FIELDS}&lang=zh-CN`, { timeout: TIMEOUT, headers: { 'User-Agent': UA } })
@@ -26,11 +34,22 @@ export default async function(ctx) {
 
       if (jEn.status === "success") {
         proxyData.ip = jEn.query;
-        // 标题用中文：国家 州/省 城市
-        proxyData.title = `${jCn.country || ""} ${jCn.regionName || ""} ${jCn.city || ""}`.replace(/\s+/g, ' ').trim() || "未知节点";
-        // 详情用英文
-        proxyData.detail = `${jEn.country || ""} ${jEn.regionName || ""} ${jEn.city || ""}`.replace(/\s+/g, ' ').trim();
-        proxyData.isp = `${jEn.isp || ""} (${jEn.as || ""})`;
+        
+        // 💡 修复 1：标题只显示国家，最干净利落
+        proxyData.title = jCn.country || "未知节点";
+        
+        // 💡 修复 2：详情改成纯中文，并调用智能去重，彻底告别英文和复读机
+        proxyData.detail = cleanLoc(jCn.country, jCn.regionName, jCn.city);
+        
+        // 处理 ISP 和 AS 名字重复的问题
+        let ispName = jEn.isp || "";
+        let asInfo = jEn.as || "";
+        if (asInfo.toLowerCase().includes(ispName.split(' ')[0].toLowerCase())) {
+            proxyData.isp = asInfo;
+        } else {
+            proxyData.isp = `${ispName} ${asInfo}`.trim();
+        }
+        
         proxyData.flag = flagEmoji(jEn.countryCode);
         proxyData.isDC = (jEn.hosting || jEn.proxy);
         
@@ -48,14 +67,12 @@ export default async function(ctx) {
 
   async function fetchLocal() {
     try {
-      // 获取本地 IP
       let resIp = await ctx.http.get(API_LOCAL_IP, { timeout: TIMEOUT, headers: { 'User-Agent': UA } });
       let jIp = await resIp.json();
       
       if (jIp.ret === "ok" && jIp.data && jIp.data.ip) {
         localData.ip = jIp.data.ip;
         let loc = jIp.data.location || [];
-        // 尝试用 ip-api 获取更详细的本地数据
         try {
           let resCn = await ctx.http.get(`${API_BASE}${localData.ip}${FIELDS}&lang=zh-CN`, { timeout: TIMEOUT });
           let resEn = await ctx.http.get(`${API_BASE}${localData.ip}${FIELDS}`, { timeout: TIMEOUT });
@@ -63,10 +80,10 @@ export default async function(ctx) {
           let ljEn = await resEn.json();
           
           if(ljCn.status === "success") {
-            localData.title = `${ljCn.country || ""} ${ljCn.city || ""}`.trim();
-            localData.detail = `${ljEn.country || ""} ${ljEn.regionName || ""} ${ljEn.city || ""}`.trim();
+            localData.title = ljCn.country || "本地";
+            // 💡 本地网络也应用纯中文智能去重
+            localData.detail = cleanLoc(ljCn.country, ljCn.regionName, ljCn.city);
             localData.flag = flagEmoji(ljEn.countryCode);
-            // 还原精准运营商识别
             let carrier = "Unicom";
             const ispRaw = (ljEn.isp || "").toLowerCase();
             if (/telecom|电信|ct/i.test(ispRaw)) carrier = "Telecom";
@@ -77,9 +94,8 @@ export default async function(ctx) {
           }
         } catch(e2) {}
         
-        // 如果 ip-api 失败，兜底使用 ipip 的数据
-        localData.title = `${loc[0]||"本地"} ${loc[2]||""}`.trim();
-        localData.detail = "China Location";
+        localData.title = loc[0] || "本地";
+        localData.detail = cleanLoc(loc[0], loc[1], loc[2]);
         localData.isp = loc[4] || "未知";
         localData.flag = "🇨🇳";
       }
@@ -108,7 +124,6 @@ export default async function(ctx) {
   }
 
   // 4. UI 构建器
-  // 左侧信息块构建器
   function buildInfoBlock(data, isLocal) {
     const titleColor = { light: "#333333", dark: "#FFFFFF" };
     const subColor = { light: "#666666", dark: "#AAAAAA" };
@@ -154,7 +169,7 @@ export default async function(ctx) {
       {
         type: "stack", direction: "row", alignItems: "center",
         children: [
-          // 左侧信息栏 (代理在上，本地在下)
+          // 左侧信息栏
           {
             type: "stack", direction: "column", gap: 12, flex: 1,
             children: [
@@ -167,7 +182,6 @@ export default async function(ctx) {
           {
             type: "stack", direction: "column", alignItems: "center", justifyContent: "center", width: 90, gap: 8,
             children: [
-              // 用 Egern 的 borderRadius 模拟圆形仪表盘
               {
                 type: "stack", direction: "column", alignItems: "center", justifyContent: "center",
                 width: 76, height: 76, borderRadius: 38,
@@ -183,7 +197,8 @@ export default async function(ctx) {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
                   { type: "text", text: proxyData.isDC ? "非原生" : "原生", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } },
-                  { type: "text", text: proxyData.isDC ? "(机房)" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
+                  // 💡 确保这里是无括号的“机房”
+                  { type: "text", text: proxyData.isDC ? "机房" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
                 ]
               },
               // 底部来源标识
