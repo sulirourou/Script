@@ -140,7 +140,7 @@ export default async function(ctx) {
       type: "stack", direction: "column", alignItems: "center", gap: 8, flex: 1,
       children: [
         { type: "text", text: name, font: { size: 22, weight: "medium" }, textColor: nameColor },
-        { type: "text", text: `¥${price}`, font: { size: 20, weight: "bold" }, textColor: "#FFFFFF" }
+        { type: "text", text: `${price}`, font: { size: 20, weight: "bold" }, textColor: "#FFFFFF" }
       ]
     };
   }
