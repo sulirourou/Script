@@ -1,5 +1,5 @@
 /**
- * 🌏 Egern IP 质量监测组件 18.0
+ * 🌏 Egern IP 质量监测组件 (IP-API 版本同步终极修复)
  */
 
 const API_BASE = "http://ip-api.com/json/";
@@ -9,37 +9,35 @@ const TIMEOUT = 3500;
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36';
 
 export default async function(ctx) {
-  // 1. 初始化数据容器
   let proxyData = { ip: "获取中...", title: "节点网络", detail: "未知", isp: "未知", flag: "🏳️", risk: 0, isDC: false, success: false };
   let localData = { ip: "获取中...", title: "本地网络", detail: "未知", isp: "未知", flag: "🏳️", success: false };
 
-  // 💡 终极智能去重：只要包含国家的英文名（如 Central Singapore 包含 Singapore），直接剔除
-  function cleanLoc(c, r, d, enCountry) {
-      let res = [];
-      let c_low = (c || "").toLowerCase();
-      let r_low = (r || "").toLowerCase();
-      let d_low = (d || "").toLowerCase();
-      let en_c = (enCountry || "").toLowerCase();
-      
-      if (c) res.push(c);
-      
-      // 省份如果不是国家名，且不包含国家英文名，才保留
-      if (r && r_low !== c_low && (!en_c || !r_low.includes(en_c))) {
-          res.push(r);
-      }
-      
-      // 城市如果不是国家名，不是省份名，且不包含国家英文名，才保留
-      if (d && d_low !== c_low && d_low !== r_low && (!en_c || !d_low.includes(en_c))) {
-          res.push(d);
-      }
-      
-      return res.join(" ").trim() || "未知";
+  const countryMap = { "united states": "美国", "us": "美国", "singapore": "新加坡", "japan": "日本", "hong kong": "香港", "taiwan": "台湾", "united kingdom": "英国", "uk": "英国", "korea": "韩国", "south korea": "韩国" };
+
+  function getCnTitle(c, r, d) {
+    let res = [];
+    const hasEng = (str) => /[a-zA-Z]/.test(str);
+    let c_cn = c;
+    if (c && hasEng(c) && countryMap[c.toLowerCase()]) c_cn = countryMap[c.toLowerCase()];
+    if (c_cn) res.push(c_cn);
+    if (r && r !== c_cn && !hasEng(r)) res.push(r);
+    if (d && d !== c_cn && d !== r && !hasEng(d)) res.push(d);
+    return res.join(" ").trim() || "未知节点";
   }
 
-  // 2. 数据获取函数
+  function getEnDetail(c, r, d) {
+    let res = [];
+    let c_low = (c || "").toLowerCase();
+    let r_low = (r || "").toLowerCase();
+    let d_low = (d || "").toLowerCase();
+    if (c) res.push(c);
+    if (r && r_low !== c_low && !r_low.includes(c_low)) res.push(r);
+    if (d && d_low !== c_low && d_low !== r_low && !d_low.includes(c_low)) res.push(d);
+    return res.join(" ").trim() || "未知";
+  }
+
   async function fetchProxy() {
     try {
-      // 并发请求英文和中文接口
       let [resEn, resCn] = await Promise.all([
         ctx.http.get(`${API_BASE}${FIELDS}`, { timeout: TIMEOUT, headers: { 'User-Agent': UA } }),
         ctx.http.get(`${API_BASE}${FIELDS}&lang=zh-CN`, { timeout: TIMEOUT, headers: { 'User-Agent': UA } })
@@ -49,12 +47,9 @@ export default async function(ctx) {
 
       if (jEn.status === "success") {
         proxyData.ip = jEn.query;
+        proxyData.title = getCnTitle(jCn.country, jCn.regionName, jCn.city);
+        proxyData.detail = getEnDetail(jEn.country, jEn.regionName, jEn.city);
         
-        // 💡 传入国家英文名 jEn.country 进行终极过滤拦截
-        proxyData.title = cleanLoc(jCn.country, jCn.regionName, jCn.city, jEn.country) || "未知节点";
-        proxyData.detail = cleanLoc(jEn.country, jEn.regionName, jEn.city, jEn.country);
-        
-        // 处理 ISP 和 AS 名字重复的问题
         let ispName = jEn.isp || "";
         let asInfo = jEn.as || "";
         if (asInfo.toLowerCase().includes(ispName.split(' ')[0].toLowerCase())) {
@@ -66,7 +61,6 @@ export default async function(ctx) {
         proxyData.flag = flagEmoji(jEn.countryCode);
         proxyData.isDC = (jEn.hosting || jEn.proxy);
         
-        // 风险计算逻辑还原
         let score = 0;
         if (jEn.proxy) score += 50;
         if (jEn.hosting) score += 40;
@@ -80,25 +74,20 @@ export default async function(ctx) {
 
   async function fetchLocal() {
     try {
-      // 获取本地 IP
       let resIp = await ctx.http.get(API_LOCAL_IP, { timeout: TIMEOUT, headers: { 'User-Agent': UA } });
       let jIp = await resIp.json();
-      
       if (jIp.ret === "ok" && jIp.data && jIp.data.ip) {
         localData.ip = jIp.data.ip;
         let loc = jIp.data.location || [];
-        // 尝试用 ip-api 获取更详细的本地数据
         try {
           let resCn = await ctx.http.get(`${API_BASE}${localData.ip}${FIELDS}&lang=zh-CN`, { timeout: TIMEOUT });
           let resEn = await ctx.http.get(`${API_BASE}${localData.ip}${FIELDS}`, { timeout: TIMEOUT });
           let ljCn = await resCn.json();
           let ljEn = await resEn.json();
-          
           if(ljCn.status === "success") {
-            localData.title = cleanLoc(ljCn.country, "", ljCn.city, ljEn.country) || "本地";
-            localData.detail = cleanLoc(ljEn.country, ljEn.regionName, ljEn.city, ljEn.country);
+            localData.title = getCnTitle(ljCn.country, "", ljCn.city) || "本地";
+            localData.detail = getEnDetail(ljEn.country, ljEn.regionName, ljEn.city);
             localData.flag = flagEmoji(ljEn.countryCode);
-            // 还原精准运营商识别
             let carrier = "Unicom";
             const ispRaw = (ljEn.isp || "").toLowerCase();
             if (/telecom|电信|ct/i.test(ispRaw)) carrier = "Telecom";
@@ -109,8 +98,7 @@ export default async function(ctx) {
           }
         } catch(e2) {}
         
-        // 如果 ip-api 失败，兜底使用 ipip 的数据
-        localData.title = cleanLoc(loc[0]||"本地", "", loc[2]||"", "");
+        localData.title = getCnTitle(loc[0]||"本地", "", loc[2]||"");
         localData.detail = "China Location";
         localData.isp = loc[4] || "未知";
         localData.flag = "🇨🇳";
@@ -120,10 +108,8 @@ export default async function(ctx) {
     }
   }
 
-  // 并发拉取
   await Promise.allSettled([fetchProxy(), fetchLocal()]);
 
-  // 3. 辅助格式化函数
   function flagEmoji(code) {
     if (!code || code.length !== 2) return "🏳️";
     if (code.toUpperCase() === "TW") code = "CN";
@@ -132,19 +118,16 @@ export default async function(ctx) {
   }
 
   function getRiskColor(score) {
-    if (score <= 20) return "#34C759"; // 绿
-    if (score <= 40) return "#32ADE6"; // 蓝
-    if (score <= 60) return "#FFCC00"; // 黄
-    if (score <= 80) return "#FF9500"; // 橙
-    return "#FF3B30"; // 红
+    if (score <= 20) return "#34C759"; 
+    if (score <= 40) return "#32ADE6"; 
+    if (score <= 60) return "#FFCC00"; 
+    if (score <= 80) return "#FF9500"; 
+    return "#FF3B30"; 
   }
 
-  // 4. UI 构建器
-  // 左侧信息块构建器
   function buildInfoBlock(data, isLocal) {
     const titleColor = { light: "#333333", dark: "#FFFFFF" };
     const subColor = { light: "#666666", dark: "#AAAAAA" };
-    
     return {
       type: "stack", direction: "column", gap: 3,
       children: [
@@ -176,7 +159,6 @@ export default async function(ctx) {
 
   const riskColor = getRiskColor(proxyData.risk);
 
-  // 5. 组装终极布局
   return {
     type: "widget",
     url: "egern://",
@@ -186,7 +168,6 @@ export default async function(ctx) {
       {
         type: "stack", direction: "row", alignItems: "center",
         children: [
-          // 左侧信息栏 (代理在上，本地在下)
           {
             type: "stack", direction: "column", gap: 12, flex: 1,
             children: [
@@ -194,12 +175,9 @@ export default async function(ctx) {
               buildInfoBlock(localData, true)
             ]
           },
-          
-          // 右侧风险评估盘
           {
             type: "stack", direction: "column", alignItems: "center", justifyContent: "center", width: 90, gap: 8,
             children: [
-              // 用 Egern 的 borderRadius 模拟圆形仪表盘
               {
                 type: "stack", direction: "column", alignItems: "center", justifyContent: "center",
                 width: 76, height: 76, borderRadius: 38,
@@ -210,7 +188,6 @@ export default async function(ctx) {
                   { type: "text", text: "风险指数", font: { size: 9, weight: "bold" }, textColor: { light: "#8E8E93", dark: "#636366" } }
                 ]
               },
-              // 原生/非原生状态标签
               {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
@@ -218,7 +195,6 @@ export default async function(ctx) {
                   { type: "text", text: proxyData.isDC ? "机房" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
                 ]
               },
-              // 底部来源标识
               { type: "text", text: "IP-API.COM", font: { size: 8, weight: "medium" }, textColor: "#8E8E93" }
             ]
           }
