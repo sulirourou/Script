@@ -1,5 +1,5 @@
 /**
- * 🌏 Egern IP 质量监测组件
+ * 🌏 Egern IP 质量监测组件 18
  */
 
 const API_MAIN = "https://my.ippure.com/v1/info";
