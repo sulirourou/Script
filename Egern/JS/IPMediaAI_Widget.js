@@ -233,7 +233,7 @@ export default async function(ctx) {
   let bodyContent;
 
   if (widgetType === "IP") {
-    titleText = "IP 与纯净度"; titleIcon = "sf-symbol:network"; titleColor = "#0A84FF";
+    titleText = "IP 纯净度"; titleIcon = "sf-symbol:network"; titleColor = "#0A84FF";
     
     bodyContent = {
       type: "stack", direction: "row", gap: 14, alignItems: "start",
