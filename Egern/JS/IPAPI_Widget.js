@@ -1,5 +1,5 @@
 /**
- * 🌏 Egern IP 质量监测组件
+ * 🌏 Egern IP 质量监测组件 18.0
  */
 
 const API_BASE = "http://ip-api.com/json/";
