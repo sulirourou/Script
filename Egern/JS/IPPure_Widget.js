@@ -1,5 +1,5 @@
 /**
- * 🌏 Egern IP 质量监测组件 18
+ * 🌏 Egern IP 质量监测组件
  */
 
 const API_MAIN = "https://my.ippure.com/v1/info";
@@ -12,25 +12,32 @@ export default async function(ctx) {
   let proxyData = { ip: "获取中...", title: "节点网络", detail: "未知", isp: "未知", flag: "🏳️", risk: 0, isDC: false, success: false };
   let localData = { ip: "获取中...", title: "本地网络", detail: "未知", isp: "未知", flag: "🇨🇳", success: false };
 
-  // 💡 终极智能去重函数 (中英文通用)：只要包含国家名，直接剔除重复
-  function cleanLoc(c, r, d, filterStr) {
-      let res = [];
-      let c_low = (c || "").toLowerCase();
-      let r_low = (r || "").toLowerCase();
-      let d_low = (d || "").toLowerCase();
-      let filter_low = (filterStr || "").toLowerCase();
+  // 💡 终极防线：常见国家名强制兜底字典
+  const countryMap = { "united states": "美国", "us": "美国", "singapore": "新加坡", "japan": "日本", "hong kong": "香港", "taiwan": "台湾", "united kingdom": "英国", "uk": "英国", "korea": "韩国", "south korea": "韩国" };
 
-      if (c) res.push(c);
-      
-      if (r && r_low !== c_low && (!filter_low || !r_low.includes(filter_low))) {
-          res.push(r);
-      }
-      
-      if (d && d_low !== c_low && d_low !== r_low && (!filter_low || !d_low.includes(filter_low))) {
-          res.push(d);
-      }
-      
-      return res.join(" ").trim() || "未知";
+  // 💡 终极防线：纯中文标题提取器（只要带英文直接丢弃去重）
+  function getCnTitle(c, r, d) {
+    let res = [];
+    const hasEng = (str) => /[a-zA-Z]/.test(str);
+    let c_cn = c;
+    if (c && hasEng(c) && countryMap[c.toLowerCase()]) c_cn = countryMap[c.toLowerCase()];
+    if (c_cn) res.push(c_cn);
+    // 省和市：只要包含任何英文字母，直接抛弃
+    if (r && r !== c_cn && !hasEng(r)) res.push(r);
+    if (d && d !== c_cn && d !== r && !hasEng(d)) res.push(d);
+    return res.join(" ").trim() || "未知节点";
+  }
+
+  // 💡 终极防线：纯英文详情提取器（包含国家名直接丢弃去重）
+  function getEnDetail(c, r, d) {
+    let res = [];
+    let c_low = (c || "").toLowerCase();
+    let r_low = (r || "").toLowerCase();
+    let d_low = (d || "").toLowerCase();
+    if (c) res.push(c);
+    if (r && r_low !== c_low && !r_low.includes(c_low)) res.push(r);
+    if (d && d_low !== c_low && d_low !== r_low && !d_low.includes(c_low)) res.push(d);
+    return res.join(" ").trim() || "未知";
   }
 
   // 2. 微软 Edge 翻译接口 (完全还原你的源码)
@@ -69,10 +76,10 @@ export default async function(ctx) {
         let proxyRegionCn = await msTranslate(region, "zh-Hans"); 
         let proxyCityCn = await msTranslate(city, "zh-Hans");
         
-        // 💡 修复：组装数据时加入智能去重，过滤中英文的重复词 (如新加坡)
-        proxyData.title = cleanLoc(proxyCountryCn, proxyRegionCn, proxyCityCn, proxyCountryCn) || "未知节点";
-        proxyData.detail = cleanLoc(country, region, city, country) || "未知";
-        
+        // 💡 应用终极提取器：标题强制纯中文，详情强制去重
+        proxyData.title = getCnTitle(proxyCountryCn, proxyRegionCn, proxyCityCn);
+        proxyData.detail = getEnDetail(country, region, city);
+
         proxyData.isp = `${rawMainData.asOrganization || ""} (AS${rawMainData.asn || ""})`.trim();
         proxyData.flag = flagEmoji(rawMainData.countryCode);
         proxyData.risk = rawMainData.fraudScore || 0;
@@ -106,15 +113,18 @@ export default async function(ctx) {
         }
         localData.isp = `China ${localCarrierEn}`;
         
-        // 标题行：中文 (💡 同样加入去重防御)
+        // 标题行：中文
         let localCountryCn = await msTranslate(country, "zh-Hans");
         let localCityCn = await msTranslate(city, "zh-Hans");
-        localData.title = cleanLoc(localCountryCn, "", localCityCn, localCountryCn) || "本地网络";
         
-        // 详情行：英文 (完全依赖微软翻译接口，不动源码逻辑)
+        // 💡 本地同样应用提取器防重
+        localData.title = getCnTitle(localCountryCn, "", localCityCn) || "本地网络";
+        
+        // 详情行：英文 (完全依赖微软翻译接口)
         let enProv = await msTranslate(prov, "en");
         let enCity = await msTranslate(city, "en");
-        localData.detail = `China ${enProv} ${enCity}`.replace(/\s+/g, ' ').trim();
+        localData.detail = getEnDetail("China", enProv, enCity);
+
         localData.flag = "🇨🇳";
         localData.success = true;
       } else {
@@ -218,7 +228,7 @@ export default async function(ctx) {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
                   { type: "text", text: proxyData.isDC ? "非原生" : "原生", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } },
-                  // 💡 修复：只把 "(机房)" 改为了 "机房"，完全没动别的
+                  // 💡 修改：彻底去除了括号
                   { type: "text", text: proxyData.isDC ? "机房" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
                 ]
               },
