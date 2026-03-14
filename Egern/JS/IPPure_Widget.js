@@ -196,7 +196,7 @@ export default async function(ctx) {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
                   { type: "text", text: proxyData.isDC ? "非原生" : "原生", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } },
-                  { type: "text", text: proxyData.isDC ? "(机房)" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
+                  { type: "text", text: proxyData.isDC ? "机房" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
                 ]
               },
               // 底部来源标识
