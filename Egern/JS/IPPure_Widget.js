@@ -233,7 +233,7 @@ export default async function(ctx) {
                 ]
               },
               // 底部来源标识
-              { type: "text", text: "IPPure", font: { size: 8, weight: "medium" }, textColor: "#8E8E93" }
+              { type: "text", text: "IPPure", font: { size: 8, weight: "medium" }, textColor: "#34C759" }
             ]
           }
         ]
