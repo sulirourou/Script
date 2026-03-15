@@ -220,7 +220,7 @@ export default async function(ctx) {
                 backgroundColor: { light: "#FFFFFF", dark: "#1C1C1E" },
                 children: [
                   { type: "text", text: `${proxyData.risk}`, font: { size: 28, weight: "heavy" }, textColor: riskColor },
-                  { type: "text", text: "风险指数", font: { size: 9, weight: "bold" }, textColor: { light: "#8E8E93", dark: "#636366" } }
+                  { type: "text", text: "风险指数", font: { size: 9, weight: "bold" }, textColor: { light: "#FF9F0A", dark: "#FF9F0A" } }
                 ]
               },
               // 原生/非原生状态标签
