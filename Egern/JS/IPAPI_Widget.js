@@ -195,7 +195,7 @@ export default async function(ctx) {
                   { type: "text", text: proxyData.isDC ? "机房" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
                 ]
               },
-              { type: "text", text: "IP-API", font: { size: 8, weight: "medium" }, textColor: "#8E8E93" }
+              { type: "text", text: "IP-API", font: { size: 8, weight: "medium" }, textColor: "#34C759" }
             ]
           }
         ]
