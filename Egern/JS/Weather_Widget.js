@@ -1,17 +1,11 @@
 /**
- * 🌤️ 和风天气 - Egern 小组件
+ * 🌤️ 和风天气 - Egern 小组件 (纯净自动定位版 + 支持区县)
  *
  * ⚠️ 重要提示
  * 环境变量：
  * KEY: 和风天气 API Key（必填）
  * API_HOST: 你的个人API Host（必填！从控制台获取）
- * LOCATION: 城市名，如"北京" （选填：不填则自动根据当前网络 IP 定位城市）
- *
- * ⚠️ 重要提示
- * 公共域名已停用： devapi.qweather.com 、 api.qweather.com  等将从2026年起逐步停止服务
- * 必须使用个人API Host：每个开发者账号都有独立的API Host
- * 从控制台复制：登录 https://console.qweather.com/ → 设置 → 复制API Host
- *
+ * LOCATION: 城市或区县名，如"北京"、"海淀"、"龙川" （选填：不填则全自动根据当前网络 IP 定位精确位置）
  */
 
 export default async function(ctx) {
@@ -21,7 +15,7 @@ export default async function(ctx) {
   // 防御性获取环境变量
   const apiKey     = (env.KEY || '').trim();
   const apiHostRaw = (env.API_HOST || '').trim();
-  // 💡 如果没填，留空，交给后面的定位函数处理
+  // 用户不填则为空，交给底层全自动定位
   const location   = (env.LOCATION || '').trim(); 
 
   if (!apiKey)     return renderError('缺少 KEY 环境变量');
@@ -30,7 +24,6 @@ export default async function(ctx) {
   const apiHost = normalizeHost(apiHostRaw);
 
   try {
-    // 传入 ctx 用于执行 HTTP 请求
     const { lon, lat, city } = await getLocation(ctx, location, apiKey, apiHost);
     const now = await fetchWeatherNow(ctx, apiKey, lon, lat, apiHost);
 
@@ -69,82 +62,33 @@ function isAccessoryFamily(family) {
   return family.startsWith('accessory');
 }
 
-// 💡 升级版定位函数：加入 IP 自动解析逻辑
+// 💡 纯净版定位函数：彻底移除内置写死城市，全靠 IP 动态解析与和风接口查询（支持区/县）
 async function getLocation(ctx, locName, key, host) {
   let finalLocName = locName;
 
-  // 1. 如果用户没有填定位，尝试通过 IP 获取当前城市
+  // 1. 如果用户没有填定位，全自动通过 IP 获取当前城市/区县
   if (!finalLocName) {
     try {
       const resIp = await ctx.http.get("https://myip.ipip.net/json", { timeout: 4000 });
       const jIp = await resIp.json();
       if (jIp.ret === "ok" && jIp.data && jIp.data.location) {
-        // 通常返回类似 ["中国", "广东", "广州", "电信"]，取市级
-        let cName = jIp.data.location[2] || jIp.data.location[1] || "";
-        // 清理后缀，保证和风API容易识别
-        finalLocName = cName.replace(/市|自治州|地区|盟|县/g, "");
+        let locArray = jIp.data.location;
+        // 尝试获取区/县 (索引3)，如果没有则获取市 (索引2) 或省 (索引1)
+        // 返回格式通常如 ["中国", "广东", "河源", "源城区", "电信"]
+        let cName = locArray[3] || locArray[2] || locArray[1] || "";
+        // 清理后缀，保证和风API容易精准匹配
+        finalLocName = cName.replace(/市|自治州|地区|盟|县|区/g, "");
       }
     } catch(e) {
         console.error("IP定位失败:", e);
     }
-    // 如果 IP 定位也失败了，给个最终兜底
+    // 终极断网兜底（防止整个脚本崩溃）
     if (!finalLocName) finalLocName = "北京";
   }
 
-  // 2. 内置热门城市坐标，加速查询，减轻接口压力
-  const presets = {
-    // ── 海南省 ──
-    '海口':       { lon: '110.3288', lat: '20.0310' },
-    '三亚':       { lon: '109.5119', lat: '18.2528' },
-    '儋州':       { lon: '109.5768', lat: '19.5209' },
-    '琼海':       { lon: '110.4746', lat: '19.2584' },
-    '万宁':       { lon: '110.3893', lat: '18.7953' },
-    '文昌':       { lon: '110.7530', lat: '19.6129' },
-    '东方':       { lon: '108.6536', lat: '19.1017' },
-    '五指山':     { lon: '109.5169', lat: '18.7752' },
-    '陵水':       { lon: '110.0372', lat: '18.5050' },
-    '保亭':       { lon: '109.7026', lat: '18.6390' },
-    '屯昌':       { lon: '110.1029', lat: '19.3638' },
-    '澄迈':       { lon: '110.0073', lat: '19.7364' },
-    '临高':       { lon: '109.6877', lat: '19.9084' },
-    '定安':       { lon: '110.3593', lat: '19.6849' },
-    '乐东':       { lon: '109.1717', lat: '18.7478' },
-    '昌江':       { lon: '109.0556', lat: '19.2983' },
-    '白沙':       { lon: '109.4515', lat: '19.2240' },
-    '琼中':       { lon: '109.8335', lat: '18.9982' },
-
-    // ── 其他热门城市 ──
-    '北京':       { lon: '116.4074', lat: '39.9042' },
-    '上海':       { lon: '121.4737', lat: '31.2304' },
-    '广州':       { lon: '113.2644', lat: '23.1291' },
-    '深圳':       { lon: '114.0579', lat: '22.5431' },
-    '杭州':       { lon: '120.1551', lat: '30.2741' },
-    '成都':       { lon: '104.0657', lat: '30.6595' },
-    '重庆':       { lon: '106.5049', lat: '29.5630' },
-    '武汉':       { lon: '114.2986', lat: '30.5844' },
-    '西安':       { lon: '108.9480', lat: '34.2632' },
-    '南京':       { lon: '118.7674', lat: '32.0415' },
-    '天津':       { lon: '117.2008', lat: '39.0842' },
-    '苏州':       { lon: '120.5853', lat: '31.2989' },
-    '青岛':       { lon: '120.3826', lat: '36.0671' },
-    '厦门':       { lon: '118.0894', lat: '24.4798' },
-    '长沙':       { lon: '112.9388', lat: '28.2282' },
-    '郑州':       { lon: '113.6654', lat: '34.7579' },
-    '沈阳':       { lon: '123.4315', lat: '41.8057' },
-    '大连':       { lon: '121.6147', lat: '38.9140' },
-    '昆明':       { lon: '102.8329', lat: '25.0406' },
-    '哈尔滨':     { lon: '126.5350', lat: '45.8038' },
-    '济南':       { lon: '117.0009', lat: '36.6758' },
-    '合肥':       { lon: '117.2272', lat: '31.8206' },
-    '福州':       { lon: '119.3062', lat: '26.0753' },
-  };
-
-  if (presets[finalLocName]) {
-    return { ...presets[finalLocName], city: finalLocName };
-  }
-
-  // 3. 如果没命中预设字典，请求和风接口查询经纬度
+  // 2. 将城市/区县名发送给和风天气，获取精确的经纬度
   try {
+    // adm 参数可以提高匹配精度（如果你搜索的县名在全国有重名）
     const url = `${host}/geo/v2/city/lookup?location=${encodeURIComponent(finalLocName)}&key=${key}&number=1&lang=zh`;
     const resp = await ctx.http.get(url, { timeout: 6000 });
     const data = await resp.json();
@@ -154,12 +98,13 @@ async function getLocation(ctx, locName, key, host) {
       return {
         lon: loc.lon,
         lat: loc.lat,
+        // 返回和风识别到的精准地名（如：海淀，龙川）
         city: loc.name || finalLocName
       };
     }
   } catch {}
 
-  // 4. 极端情况兜底
+  // 3. 极端情况兜底（API 挂了或查不到）
   return { lon: '116.4074', lat: '39.9042', city: finalLocName || '未知' };
 }
 
