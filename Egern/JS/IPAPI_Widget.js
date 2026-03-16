@@ -85,7 +85,8 @@ export default async function(ctx) {
           let ljCn = await resCn.json();
           let ljEn = await resEn.json();
           if(ljCn.status === "success") {
-            localData.title = getCnTitle(ljCn.country, "", ljCn.city) || "本地";
+            // 💡 修复：补上了 ljCn.regionName (省份)
+            localData.title = getCnTitle(ljCn.country, ljCn.regionName, ljCn.city) || "本地";
             localData.detail = getEnDetail(ljEn.country, ljEn.regionName, ljEn.city);
             localData.flag = flagEmoji(ljEn.countryCode);
             let carrier = "Unicom";
@@ -98,7 +99,8 @@ export default async function(ctx) {
           }
         } catch(e2) {}
         
-        localData.title = getCnTitle(loc[0]||"本地", "", loc[2]||"");
+        // 💡 修复：补上了 loc[1] (省份兜底)
+        localData.title = getCnTitle(loc[0]||"本地", loc[1]||"", loc[2]||"");
         localData.detail = "China Location";
         localData.isp = loc[4] || "未知";
         localData.flag = "🇨🇳";
