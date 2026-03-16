@@ -1,5 +1,5 @@
 /**
- * 🌏 Egern IP 质量监测组件 (IP-API 版本同步终极修复)
+ * 🌏 Egern IP-API 小组件
  */
 
 const API_BASE = "http://ip-api.com/json/";
@@ -85,7 +85,6 @@ export default async function(ctx) {
           let ljCn = await resCn.json();
           let ljEn = await resEn.json();
           if(ljCn.status === "success") {
-            // 💡 修复：补上了 ljCn.regionName (省份)
             localData.title = getCnTitle(ljCn.country, ljCn.regionName, ljCn.city) || "本地";
             localData.detail = getEnDetail(ljEn.country, ljEn.regionName, ljEn.city);
             localData.flag = flagEmoji(ljEn.countryCode);
@@ -99,7 +98,6 @@ export default async function(ctx) {
           }
         } catch(e2) {}
         
-        // 💡 修复：补上了 loc[1] (省份兜底)
         localData.title = getCnTitle(loc[0]||"本地", loc[1]||"", loc[2]||"");
         localData.detail = "China Location";
         localData.isp = loc[4] || "未知";
@@ -193,7 +191,8 @@ export default async function(ctx) {
               {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
-                  { type: "text", text: proxyData.isDC ? "非原生" : "原生", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } },
+                  // 💡 仅在此处将 "非原生" 改为 "商业"
+                  { type: "text", text: proxyData.isDC ? "商业" : "原生", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } },
                   { type: "text", text: proxyData.isDC ? "机房" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
                 ]
               },
