@@ -1,5 +1,5 @@
 /**
- * 🌏 Egern IP 质量监测组件
+ * 🌏 Egern IPPure 小组件
  */
 
 const API_MAIN = "https://my.ippure.com/v1/info";
@@ -223,12 +223,13 @@ export default async function(ctx) {
                   { type: "text", text: "风险指数", font: { size: 9, weight: "bold" }, textColor: { light: "#FF9F0A", dark: "#FF9F0A" } }
                 ]
               },
-              // 原生/非原生状态标签
+              // 原生/商业 状态标签
               {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
-                  { type: "text", text: proxyData.isDC ? "非原生" : "原生", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } },
-                  // 💡 修改：彻底去除了括号
+                  // 💡 真正修改这行：将 "非原生" 替换为 "商业"
+                  { type: "text", text: proxyData.isDC ? "商业" : "原生", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } },
+                  // 💡 恢复为原本的 "机房"
                   { type: "text", text: proxyData.isDC ? "机房" : "住宅", font: { size: 11, weight: "bold" }, textColor: { light: "#333333", dark: "#DDDDDD" } }
                 ]
               },
