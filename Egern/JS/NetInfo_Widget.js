@@ -56,7 +56,7 @@ export default async function(ctx) {
       else if (prov || city) pubLoc = prov || city;
       else pubLoc = locArr[0] || "未知";
       
-      flag = locArr[0] === "中国" ? ;
+      flag = locArr[0] === "中国" ? "🇨🇳" : "🏳️";
       pubIsp = fmtISP(locArr[4] || locArr[3]);
     }
   } catch (e) {}
