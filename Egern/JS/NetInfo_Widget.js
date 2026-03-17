@@ -1,5 +1,5 @@
 /**
- * 📌 桌面小组件: 📶 现代高级版网络信息 (无国旗版)
+ * 📌 桌面小组件: 📶 现代高级版网络信息 (防崩溃极致对齐版)
  */
 export default async function(ctx) {
   // ==========================================
@@ -61,26 +61,44 @@ export default async function(ctx) {
   } catch (e) {}
 
   // ==========================================
-  // 🎨 UI 积木块封装
+  // 🎨 UI 积木块封装 (引入强力弹簧 Spacer 确保安全左对齐)
   // ==========================================
-  function buildCard(title, ipText, icon1, detail1, icon2, detail2) {
+  function buildCard(title, ipText, label1, detail1, label2, detail2) {
     return {
       type: "stack", direction: "column", gap: 3,
       children: [
-        { type: "text", text: title, font: { size: 11, weight: "bold" }, textColor: C_TITLE, maxLines: 1 },
-        { type: "text", text: ipText, font: { size: 17, weight: "bold", family: "Menlo" }, textColor: C_IP, maxLines: 1 },
-        { 
-          type: "stack", direction: "row", alignItems: "center", gap: 4,
+        // 标题行
+        {
+          type: "stack", direction: "row", alignItems: "center",
           children: [
-            { type: "image", src: `sf-symbol:${icon1}`, color: C_SUB, width: 12, height: 12 },
-            { type: "text", text: detail1, font: { size: 12, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 }
+            { type: "text", text: title, font: { size: 11, weight: "bold" }, textColor: C_TITLE, maxLines: 1 },
+            { type: "spacer" } // 强力弹簧，推向左侧
           ]
         },
-        { 
-          type: "stack", direction: "row", alignItems: "center", gap: 4,
+        // IP行
+        {
+          type: "stack", direction: "row", alignItems: "center",
           children: [
-            { type: "image", src: `sf-symbol:${icon2}`, color: C_SUB, width: 12, height: 12 },
-            { type: "text", text: detail2, font: { size: 12, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 }
+            { type: "text", text: ipText, font: { size: 17, weight: "bold", family: "Menlo" }, textColor: C_IP, maxLines: 1 },
+            { type: "spacer" }
+          ]
+        },
+        // 详情第一行
+        { 
+          type: "stack", direction: "row", alignItems: "center", gap: 2,
+          children: [
+            { type: "text", text: label1, font: { size: 11, weight: "bold" }, textColor: C_SUB },
+            { type: "text", text: detail1, font: { size: 11, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 },
+            { type: "spacer" }
+          ]
+        },
+        // 详情第二行
+        { 
+          type: "stack", direction: "row", alignItems: "center", gap: 2,
+          children: [
+            { type: "text", text: label2, font: { size: 11, weight: "bold" }, textColor: C_SUB },
+            { type: "text", text: detail2, font: { size: 11, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 },
+            { type: "spacer" }
           ]
         }
       ]
@@ -103,9 +121,9 @@ export default async function(ctx) {
           {
             type: "stack", direction: "column", gap: 12, flex: 1,
             children: [
-              buildCard("内网IP", localIp, "network", netName, "router", `网关 ${gateway}`),
-              // 💡 直接传入 pubLoc，删除了 flag 变量
-              buildCard("公网IP", pubIp, "mappin.and.ellipse", pubLoc, "antenna.radiowaves.left.and.right", pubIsp)
+              // 💡 魔法生效点：使用全角空格将短词物理补齐，达到完美对齐！
+              buildCard("内网 IP", localIp, "网　络：", netName, "网　关：", gateway),
+              buildCard("公网 IP", pubIp, "位　置：", pubLoc, "运营商：", pubIsp)
             ]
           },
           
