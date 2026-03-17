@@ -1,19 +1,42 @@
 /**
- * 📌 桌面小组件: 📶 现代高级版网络信息 (图标完美同步版)
+ * 📌 桌面小组件: 📶 现代高级版网络信息 (全方位UI自定义遥控器版)
  */
 export default async function(ctx) {
   // ==========================================
   // 🎨 UI 个性化配置区 (全面支持系统自动深浅模式)
   // ==========================================
-  const BG_COLOR = { light: '#F2F2F7', dark: '#121212' }; // 最外层背景
-  const CARD_BG  = { light: '#FFFFFF', dark: '#1C1C1E' }; // 内层卡片背景
-  const C_TITLE  = { light: '#1A1A1A', dark: '#FFFFFF' }; // 主标题颜色
-  const C_SUB    = { light: '#8E8E93', dark: '#98989F' }; // 副标题颜色
-  const THEME_COLOR = { light: '#34C759', dark: '#30D158' }; // 统一主题色(绿)
-  const C_IP     = { light: '#1A1A1A', dark: '#FFFFFF' }; // IP 数字颜色
+  
+  // 1️⃣ 背景配置
+  const BG_COLOR = { light: '#F2F2F7', dark: '#121212' }; // 最外层大背景
+  const CARD_BG  = { light: '#FFFFFF', dark: '#1C1C1E' }; // 右侧大圆环内部底色
+
+  // 2️⃣ 左侧：模块标题 ("内网 IP" / "公网 IP")
+  const TITLE_SIZE  = 11;
+  const TITLE_COLOR = { light: '#1A1A1A', dark: '#FFFFFF' };
+
+  // 3️⃣ 左侧：核心 IP 数字 ("192.168.x.x" / "183.x.x.x")
+  const IP_SIZE  = 17;
+  const IP_COLOR = { light: '#1A1A1A', dark: '#FFFFFF' };
+
+  // 4️⃣ 左侧：详情小字 (包括小图标、网络名、网关、位置、运营商)
+  const DETAIL_ICON_SIZE = 11; // 小图标的尺寸
+  const DETAIL_TEXT_SIZE = 11; // 详情文字的尺寸
+  const DETAIL_COLOR     = { light: '#8E8E93', dark: '#98989F' }; // 图标和文字的统一颜色
+
+  // 5️⃣ 右侧：视觉大圆环主题色 (决定圆环线条和中心大图标的颜色)
+  const THEME_COLOR    = { light: '#34C759', dark: '#30D158' }; // 默认纯净绿
+  const RING_ICON_SIZE = 30; // 圆环内中心大图标的尺寸
+
+  // 6️⃣ 右侧：主状态文字 ("Wi-Fi" / "Cellular")
+  const STATUS_MAIN_SIZE  = 11;
+  const STATUS_MAIN_COLOR = { light: '#1A1A1A', dark: '#FFFFFF' };
+
+  // 7️⃣ 右侧：底部副状态文字 ("当前状态")
+  const STATUS_SUB_SIZE  = 9;
+  const STATUS_SUB_COLOR = { light: '#8E8E93', dark: '#98989F' };
 
   // ==========================================
-  // ⚙️ 核心数据获取逻辑
+  // ⚙️ 核心数据获取逻辑 (非必要勿动)
   // ==========================================
   const d = ctx.device || {};
   const isWifi = !!d.wifi?.ssid;
@@ -61,26 +84,26 @@ export default async function(ctx) {
   } catch (e) {}
 
   // ==========================================
-  // 🎨 UI 积木块封装 (居中对齐 + 小图标)
+  // 🎨 UI 积木块封装 (全面接入顶部的配置遥控器)
   // ==========================================
   function buildCard(title, ipText, icon1, detail1, icon2, detail2) {
     return {
       type: "stack", direction: "column", alignItems: "center", gap: 3,
       children: [
-        { type: "text", text: title, font: { size: 11, weight: "bold" }, textColor: C_TITLE, maxLines: 1 },
-        { type: "text", text: ipText, font: { size: 17, weight: "bold", family: "Menlo" }, textColor: C_IP, maxLines: 1 },
+        { type: "text", text: title, font: { size: TITLE_SIZE, weight: "bold" }, textColor: TITLE_COLOR, maxLines: 1 },
+        { type: "text", text: ipText, font: { size: IP_SIZE, weight: "bold", family: "Menlo" }, textColor: IP_COLOR, maxLines: 1 },
         { 
           type: "stack", direction: "row", alignItems: "center", gap: 4,
           children: [
-            { type: "image", src: `sf-symbol:${icon1}`, color: C_SUB, width: 11, height: 11 },
-            { type: "text", text: detail1, font: { size: 11, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 }
+            { type: "image", src: `sf-symbol:${icon1}`, color: DETAIL_COLOR, width: DETAIL_ICON_SIZE, height: DETAIL_ICON_SIZE },
+            { type: "text", text: detail1, font: { size: DETAIL_TEXT_SIZE, weight: "medium" }, textColor: DETAIL_COLOR, maxLines: 1, minScale: 0.8 }
           ]
         },
         { 
           type: "stack", direction: "row", alignItems: "center", gap: 4,
           children: [
-            { type: "image", src: `sf-symbol:${icon2}`, color: C_SUB, width: 11, height: 11 },
-            { type: "text", text: detail2, font: { size: 11, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 }
+            { type: "image", src: `sf-symbol:${icon2}`, color: DETAIL_COLOR, width: DETAIL_ICON_SIZE, height: DETAIL_ICON_SIZE },
+            { type: "text", text: detail2, font: { size: DETAIL_TEXT_SIZE, weight: "medium" }, textColor: DETAIL_COLOR, maxLines: 1, minScale: 0.8 }
           ]
         }
       ]
@@ -103,10 +126,8 @@ export default async function(ctx) {
           {
             type: "stack", direction: "column", alignItems: "center", gap: 12, flex: 1,
             children: [
-              // 💡 修复1：使用完整的 wifi.router.fill，路由器图标回来了！
-              buildCard("内网", localIp, "network", netName, "wifi.router.fill", gateway),
-              // 💡 修复2：使用 location.fill，和 IPPure/IP-API 组件的本地定位图标完全一致！
-              buildCard("外网", pubIp, "location.fill", pubLoc, "antenna.radiowaves.left.and.right", pubIsp)
+              buildCard("内网 IP", localIp, "network", netName, "wifi.router.fill", gateway),
+              buildCard("公网 IP", pubIp, "location.fill", pubLoc, "antenna.radiowaves.left.and.right", pubIsp)
             ]
           },
           
@@ -120,14 +141,14 @@ export default async function(ctx) {
                 borderWidth: 5, borderColor: THEME_COLOR,
                 backgroundColor: CARD_BG,
                 children: [
-                  { type: "image", src: `sf-symbol:${netIcon}`, color: THEME_COLOR, width: 30, height: 30 }
+                  { type: "image", src: `sf-symbol:${netIcon}`, color: THEME_COLOR, width: RING_ICON_SIZE, height: RING_ICON_SIZE }
                 ]
               },
               {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
-                  { type: "text", text: isWifi ? "Wi-Fi" : "Cellular", font: { size: 11, weight: "heavy" }, textColor: C_TITLE },
-                  { type: "text", text: "当前状态", font: { size: 9, weight: "bold" }, textColor: C_SUB }
+                  { type: "text", text: isWifi ? "Wi-Fi" : "Cellular", font: { size: STATUS_MAIN_SIZE, weight: "heavy" }, textColor: STATUS_MAIN_COLOR },
+                  { type: "text", text: "当前状态", font: { size: STATUS_SUB_SIZE, weight: "bold" }, textColor: STATUS_SUB_COLOR }
                 ]
               }
             ]
