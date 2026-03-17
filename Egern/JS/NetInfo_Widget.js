@@ -1,5 +1,5 @@
 /**
- * 📌 桌面小组件: 📶 现代高级版网络信息 (细节加粗提神版)
+ * 📌 桌面小组件: 📶 现代高级版网络信息 (无国旗版)
  */
 export default async function(ctx) {
   // ==========================================
@@ -42,7 +42,7 @@ export default async function(ctx) {
     return isp;
   };
 
-  let pubIp = "获取中...", pubLoc = "未知位置", pubIsp = "未知运营商", flag = "🏳️";
+  let pubIp = "获取中...", pubLoc = "未知位置", pubIsp = "未知运营商";
   try {
     const res = await ctx.http.get('https://myip.ipip.net/json', { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 4000 });
     const body = JSON.parse(await res.text());
@@ -56,7 +56,6 @@ export default async function(ctx) {
       else if (prov || city) pubLoc = prov || city;
       else pubLoc = locArr[0] || "未知";
       
-      flag = locArr[0] === "中国"?"🇨🇳":"🏳️";
       pubIsp = fmtISP(locArr[4] || locArr[3]);
     }
   } catch (e) {}
@@ -73,7 +72,6 @@ export default async function(ctx) {
         { 
           type: "stack", direction: "row", alignItems: "center", gap: 4,
           children: [
-            // 💡 图标放大到 12，字体放大到 12，并增加 weight: "medium" 提粗
             { type: "image", src: `sf-symbol:${icon1}`, color: C_SUB, width: 12, height: 12 },
             { type: "text", text: detail1, font: { size: 12, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 }
           ]
@@ -81,7 +79,6 @@ export default async function(ctx) {
         { 
           type: "stack", direction: "row", alignItems: "center", gap: 4,
           children: [
-            // 💡 图标放大到 12，字体放大到 12，并增加 weight: "medium" 提粗
             { type: "image", src: `sf-symbol:${icon2}`, color: C_SUB, width: 12, height: 12 },
             { type: "text", text: detail2, font: { size: 12, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 }
           ]
@@ -107,7 +104,8 @@ export default async function(ctx) {
             type: "stack", direction: "column", gap: 12, flex: 1,
             children: [
               buildCard("内网IP", localIp, "network", netName, "router", `网关 ${gateway}`),
-              buildCard("公网IP", pubIp, "mappin.and.ellipse", `${flag} ${pubLoc}`, "antenna.radiowaves.left.and.right", pubIsp)
+              // 💡 直接传入 pubLoc，删除了 flag 变量
+              buildCard("公网IP", pubIp, "mappin.and.ellipse", pubLoc, "antenna.radiowaves.left.and.right", pubIsp)
             ]
           },
           
