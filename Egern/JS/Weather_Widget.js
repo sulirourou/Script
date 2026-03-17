@@ -1,21 +1,64 @@
 /**
- * 🌤️ 和风天气 - Egern 小组件 (纯净自动定位版 + 支持区县)
+ * 🌤️ 和风天气 - Egern 小组件 (纯净自动定位版 + 全面UI自定义遥控器)
  *
  * ⚠️ 重要提示
  * 环境变量：
  * KEY: 和风天气 API Key（必填）
  * API_HOST: 你的个人API Host（必填！从控制台获取）
- * LOCATION: 城市或区县名，如"北京"、"海淀"、"龙川" （选填：不填则全自动根据当前网络 IP 定位精确位置）
+ * LOCATION: 城市或区县名，如"北京"、"海淀" （选填：不填则全自动根据当前网络 IP 定位精确位置）
  */
+
+// ==========================================
+// 🎨 UI 个性化配置区 (全面支持系统自动深浅模式)
+// ==========================================
+
+// 1️⃣ 背景颜色配置
+const BG_COLOR_SMALL  = { light: '#FFFFFF', dark: '#000000' }; // 小号组件背景
+const BG_COLOR_MEDIUM = { light: '#FFFFFF', dark: '#121212' }; // 中号组件背景
+
+// 2️⃣ 顶部信息栏配置 (城市名、定位图标、更新时间)
+const CITY_FONT_SIZE_S = 'caption1'; // 小号组件-城市字号
+const CITY_FONT_SIZE_M = 'title3';   // 中号组件-城市字号
+const CITY_TEXT_COLOR  = { light: '#000000', dark: '#FFFFFF' }; // 城市文字颜色
+const LOC_ICON_COLOR   = { light: '#FF3B30', dark: '#FF453A' }; // 定位小图标颜色 (默认红)
+const TIME_FONT_SIZE   = 'caption2'; // 更新时间字号
+const TIME_TEXT_COLOR  = { light: '#8E8E93', dark: '#8E8E93' }; // 更新时间颜色
+
+// 3️⃣ 核心天气数据配置 (主温度、天气描述)
+const TEMP_FONT_SIZE_S = 'title2';     // 小号组件-主温度字号
+const TEMP_FONT_SIZE_M = 'largeTitle'; // 中号组件-主温度字号
+const TEMP_TEXT_COLOR  = { light: '#000000', dark: '#FFFFFF' }; // 主温度颜色
+const DESC_FONT_SIZE_S = 'caption1';   // 小号组件-天气描述字号
+const DESC_FONT_SIZE_M = 'title3';     // 中号组件-天气描述字号
+const DESC_TEXT_COLOR  = { light: '#444444', dark: '#CCCCCC' }; // 天气描述颜色
+
+// 4️⃣ 空气质量 (AQI) 配置 (仅中号组件显示)
+const AQI_LABEL_SIZE   = 'caption2'; // "空气"两字字号
+const AQI_LABEL_COLOR  = { light: '#666666', dark: '#AAAAAA' }; // "空气"两字颜色
+const AQI_VALUE_SIZE_1 = 'caption1'; // 顶部小 AQI 提示字号
+const AQI_VALUE_SIZE_2 = 'title3';   // 右侧大 AQI 评价字号 (如"优", "良")
+// 注：AQI 的颜色是根据污染程度自动计算的，无需在此处定死
+
+// 5️⃣ 底部三要素配置 (湿度、风力、风速 - 仅中号组件显示)
+const INFO_LABEL_SIZE  = 'caption2'; // "湿度"等标签字号
+const INFO_LABEL_COLOR = { light: '#666666', dark: '#AAAAAA' }; // 标签文字颜色
+const INFO_VALUE_SIZE  = 'title3';   // "65%"等数值字号
+const INFO_VALUE_COLOR = { light: '#000000', dark: '#FFFFFF' }; // 数值文字颜色
+// 底部三个小图标的独立颜色
+const COLOR_HUMIDITY   = '#007AFF'; // 湿度图标色 (蓝)
+const COLOR_WIND_DIR   = '#5856D6'; // 风向图标色 (紫)
+const COLOR_WIND_SPEED = '#FF9500'; // 风速图标色 (橙)
+
+// ==========================================
+// ⚙️ 下方为核心代码区 (非必要请勿修改)
+// ==========================================
 
 export default async function(ctx) {
   const env = ctx.env || {};
   const widgetFamily = ctx.widgetFamily || 'systemMedium';
 
-  // 防御性获取环境变量
   const apiKey     = (env.KEY || '').trim();
   const apiHostRaw = (env.API_HOST || '').trim();
-  // 用户不填则为空，交给底层全自动定位
   const location   = (env.LOCATION || '').trim(); 
 
   if (!apiKey)     return renderError('缺少 KEY 环境变量');
@@ -62,49 +105,33 @@ function isAccessoryFamily(family) {
   return family.startsWith('accessory');
 }
 
-// 💡 纯净版定位函数：彻底移除内置写死城市，全靠 IP 动态解析与和风接口查询（支持区/县）
 async function getLocation(ctx, locName, key, host) {
   let finalLocName = locName;
 
-  // 1. 如果用户没有填定位，全自动通过 IP 获取当前城市/区县
   if (!finalLocName) {
     try {
       const resIp = await ctx.http.get("https://myip.ipip.net/json", { timeout: 4000 });
       const jIp = await resIp.json();
       if (jIp.ret === "ok" && jIp.data && jIp.data.location) {
         let locArray = jIp.data.location;
-        // 尝试获取区/县 (索引3)，如果没有则获取市 (索引2) 或省 (索引1)
-        // 返回格式通常如 ["中国", "广东", "河源", "源城区", "电信"]
         let cName = locArray[3] || locArray[2] || locArray[1] || "";
-        // 清理后缀，保证和风API容易精准匹配
         finalLocName = cName.replace(/市|自治州|地区|盟|县|区/g, "");
       }
-    } catch(e) {
-        console.error("IP定位失败:", e);
-    }
-    // 终极断网兜底（防止整个脚本崩溃）
+    } catch(e) {}
     if (!finalLocName) finalLocName = "北京";
   }
 
-  // 2. 将城市/区县名发送给和风天气，获取精确的经纬度
   try {
-    // adm 参数可以提高匹配精度（如果你搜索的县名在全国有重名）
     const url = `${host}/geo/v2/city/lookup?location=${encodeURIComponent(finalLocName)}&key=${key}&number=1&lang=zh`;
     const resp = await ctx.http.get(url, { timeout: 6000 });
     const data = await resp.json();
 
     if (data.code === '200' && data.location?.[0]) {
       const loc = data.location[0];
-      return {
-        lon: loc.lon,
-        lat: loc.lat,
-        // 返回和风识别到的精准地名（如：海淀，龙川）
-        city: loc.name || finalLocName
-      };
+      return { lon: loc.lon, lat: loc.lat, city: loc.name || finalLocName };
     }
   } catch {}
 
-  // 3. 极端情况兜底（API 挂了或查不到）
   return { lon: '116.4074', lat: '39.9042', city: finalLocName || '未知' };
 }
 
@@ -113,25 +140,18 @@ async function fetchWeatherNow(ctx, key, lon, lat, host) {
   const resp = await ctx.http.get(url, { timeout: 8000 });
   const data = await resp.json();
 
-  if (data.code !== '200') {
-    throw new Error(data.msg || `天气接口返回 ${data.code}`);
-  }
+  if (data.code !== '200') throw new Error(data.msg || `天气接口返回 ${data.code}`);
 
   const now = data.now;
   return {
-    temp: now.temp,
-    text: now.text,
-    icon: now.icon,
-    humidity: now.humidity,
-    windDir: now.windDir || '--',
-    windScale: now.windScale || '--',
-    windSpeed: now.windSpeed || '--'
+    temp: now.temp, text: now.text, icon: now.icon,
+    humidity: now.humidity, windDir: now.windDir || '--',
+    windScale: now.windScale || '--', windSpeed: now.windSpeed || '--'
   };
 }
 
 async function fetchAirQuality(ctx, key, lon, lat, host) {
   let aqiData = null;
-
   try {
     const url = `${host}/airquality/v1/current/${lat}/${lon}?key=${key}&lang=zh`;
     const resp = await ctx.http.get(url, { timeout: 7000 });
@@ -164,7 +184,6 @@ async function fetchAirQuality(ctx, key, lon, lat, host) {
       }
     } catch {}
   }
-
   return aqiData || { aqi: '--', category: '--', color: { light: '#999', dark: '#888' } };
 }
 
@@ -207,7 +226,7 @@ function getWeatherColor(code) {
 }
 
 // ────────────────────────────────────────────────
-// 渲染函数（已改为纯白/纯黑背景）
+// 渲染函数 (已全部接入UI配置区)
 // ────────────────────────────────────────────────
 
 function renderSmall(now, city) {
@@ -220,32 +239,25 @@ function renderSmall(now, city) {
     type: 'widget',
     padding: 14,
     gap: 6,
-    backgroundColor: { light: '#FFFFFF', dark: '#000000' },
+    backgroundColor: BG_COLOR_SMALL,
     children: [
       {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 8,
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 8,
         children: [
-          { type: 'text', text: city, font: { size: 'caption1', weight: 'bold' }, textColor: { light: '#000', dark: '#FFF' } },
+          { type: 'text', text: city, font: { size: CITY_FONT_SIZE_S, weight: 'bold' }, textColor: CITY_TEXT_COLOR },
           { type: 'spacer' },
-          { type: 'text', text: timeStr, font: { size: 'caption2' }, textColor: { light: '#8E8E93', dark: '#8E8E93' } }
+          { type: 'text', text: timeStr, font: { size: TIME_FONT_SIZE }, textColor: TIME_TEXT_COLOR }
         ]
       },
       {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 10,
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 10,
         children: [
           { type: 'image', src: `sf-symbol:${icon}`, width: 40, height: 40, color },
           {
-            type: 'stack',
-            direction: 'column',
+            type: 'stack', direction: 'column',
             children: [
-              { type: 'text', text: `${now.temp}°`, font: { size: 'title2', weight: 'bold' }, textColor: { light: '#000', dark: '#FFF' } },
-              { type: 'text', text: now.text, font: { size: 'caption1' }, textColor: { light: '#666', dark: '#AAA' } }
+              { type: 'text', text: `${now.temp}°`, font: { size: TEMP_FONT_SIZE_S, weight: 'bold' }, textColor: TEMP_TEXT_COLOR },
+              { type: 'text', text: now.text, font: { size: DESC_FONT_SIZE_S }, textColor: DESC_TEXT_COLOR }
             ]
           }
         ]
@@ -265,75 +277,51 @@ function renderMedium(now, air, city) {
     type: 'widget',
     padding: 16,
     gap: 12,
-    backgroundColor: { light: '#FFFFFF', dark: '#2C2C2E' },
+    backgroundColor: BG_COLOR_MEDIUM,
     children: [
       {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 8,
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 8,
         children: [
           {
-            type: 'stack',
-            direction: 'row',
-            alignItems: 'center',
-            gap: 6,
+            type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
             children: [
-              { type: 'image', src: 'sf-symbol:location.fill', width: 14, height: 14, color: { light: '#FF3B30', dark: '#FF453A' } },
-              { type: 'text', text: city, font: { size: 'title3', weight: 'bold' }, textColor: { light: '#000', dark: '#FFF' } }
+              { type: 'image', src: 'sf-symbol:location.fill', width: 14, height: 14, color: LOC_ICON_COLOR },
+              { type: 'text', text: city, font: { size: CITY_FONT_SIZE_M, weight: 'bold' }, textColor: CITY_TEXT_COLOR }
             ]
           },
           { type: 'spacer' },
-          {
-            type: 'text',
-            text: `AQI ${air.aqi}`,
-            font: { size: 'caption1', weight: 'semibold' },
-            textColor: aqiColor
-          },
-          { type: 'text', text: timeStr, font: { size: 'caption2' }, textColor: { light: '#8E8E93', dark: '#8E8E93' } }
+          { type: 'text', text: `AQI ${air.aqi}`, font: { size: AQI_VALUE_SIZE_1, weight: 'semibold' }, textColor: aqiColor },
+          { type: 'text', text: timeStr, font: { size: TIME_FONT_SIZE }, textColor: TIME_TEXT_COLOR }
         ]
       },
 
       {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 16,
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 16,
         children: [
           { type: 'image', src: `sf-symbol:${icon}`, width: 64, height: 64, color: iconColor },
-
           {
-            type: 'stack',
-            direction: 'column',
-            flex: 1,
-            gap: 4,
+            type: 'stack', direction: 'column', flex: 1, gap: 4,
             children: [
-              { type: 'text', text: `${now.temp}°C`, font: { size: 'largeTitle', weight: 'bold' }, textColor: { light: '#000', dark: '#FFF' } },
-              { type: 'text', text: now.text, font: { size: 'title3' }, textColor: { light: '#444', dark: '#CCC' } }
+              { type: 'text', text: `${now.temp}°C`, font: { size: TEMP_FONT_SIZE_M, weight: 'bold' }, textColor: TEMP_TEXT_COLOR },
+              { type: 'text', text: now.text, font: { size: DESC_FONT_SIZE_M }, textColor: DESC_TEXT_COLOR }
             ]
           },
-
           {
-            type: 'stack',
-            direction: 'column',
-            alignItems: 'center',
-            gap: 2,
+            type: 'stack', direction: 'column', alignItems: 'center', gap: 2,
             children: [
-              { type: 'text', text: '空气', font: { size: 'caption2' }, textColor: { light: '#666', dark: '#AAA' } },
-              { type: 'text', text: air.category, font: { size: 'title3', weight: 'bold' }, textColor: aqiColor }
+              { type: 'text', text: '空气', font: { size: AQI_LABEL_SIZE }, textColor: AQI_LABEL_COLOR },
+              { type: 'text', text: air.category, font: { size: AQI_VALUE_SIZE_2, weight: 'bold' }, textColor: aqiColor }
             ]
           }
         ]
       },
 
       {
-        type: 'stack',
-        direction: 'row',
-        gap: 12,
+        type: 'stack', direction: 'row', gap: 12,
         children: [
-          createInfoItem('drop.fill',   '湿度',   `${now.humidity}%`,   '#007AFF'),
-          createInfoItem('wind',        '风力',   `${now.windDir} ${now.windScale}级`, '#5856D6'),
-          createInfoItem('gauge.medium','风速',   `${now.windSpeed}km/h`,'#FF9500')
+          createInfoItem('drop.fill',   '湿度',   `${now.humidity}%`,   COLOR_HUMIDITY),
+          createInfoItem('wind',        '风力',   `${now.windDir} ${now.windScale}级`, COLOR_WIND_DIR),
+          createInfoItem('gauge.medium','风速',   `${now.windSpeed}km/h`, COLOR_WIND_SPEED)
         ]
       }
     ]
@@ -342,19 +330,14 @@ function renderMedium(now, air, city) {
 
 function createInfoItem(icon, label, value, iconColor) {
   return {
-    type: 'stack',
-    direction: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 8,
+    type: 'stack', direction: 'row', alignItems: 'center', flex: 1, gap: 8,
     children: [
       { type: 'image', src: `sf-symbol:${icon}`, width: 20, height: 20, color: { light: iconColor, dark: iconColor } },
       {
-        type: 'stack',
-        direction: 'column',
+        type: 'stack', direction: 'column',
         children: [
-          { type: 'text', text: label, font: { size: 'caption2' }, textColor: { light: '#666', dark: '#AAA' } },
-          { type: 'text', text: value,  font: { size: 'title3', weight: 'semibold' }, textColor: { light: '#000', dark: '#FFF' } }
+          { type: 'text', text: label, font: { size: INFO_LABEL_SIZE }, textColor: INFO_LABEL_COLOR },
+          { type: 'text', text: value,  font: { size: INFO_VALUE_SIZE, weight: 'semibold' }, textColor: INFO_VALUE_COLOR }
         ]
       }
     ]
@@ -366,16 +349,13 @@ function renderAccessoryCompact(now, city, family) {
   return {
     type: 'widget',
     padding: 8,
-    backgroundColor: { light: '#FFFFFF', dark: '#000000' },
+    backgroundColor: BG_COLOR_SMALL,
     children: [
       {
-        type: 'stack',
-        direction: 'row',
-        alignItems: 'center',
-        gap: 6,
+        type: 'stack', direction: 'row', alignItems: 'center', gap: 6,
         children: [
           { type: 'image', src: `sf-symbol:${icon}`, width: 24, height: 24, color: getWeatherColor(now.icon) },
-          { type: 'text', text: `${now.temp}° ${city.slice(0,4)}`, font: { size: family === 'accessoryInline' ? 'footnote' : 'subheadline' }, textColor: { light: '#000', dark: '#FFF' } }
+          { type: 'text', text: `${now.temp}° ${city.slice(0,4)}`, font: { size: family === 'accessoryInline' ? 'footnote' : 'subheadline' }, textColor: CITY_TEXT_COLOR }
         ]
       }
     ]
@@ -384,18 +364,13 @@ function renderAccessoryCompact(now, city, family) {
 
 function renderError(msg) {
   return {
-    type: 'widget',
-    padding: 16,
-    backgroundColor: { light: '#FFFFFF', dark: '#000000' },
+    type: 'widget', padding: 16, backgroundColor: BG_COLOR_SMALL,
     children: [
       {
-        type: 'stack',
-        direction: 'column',
-        alignItems: 'center',
-        gap: 8,
+        type: 'stack', direction: 'column', alignItems: 'center', gap: 8,
         children: [
-          { type: 'image', src: 'sf-symbol:exclamationmark.triangle.fill', width: 32, height: 32, color: { light: '#FF3B30', dark: '#FF453A' } },
-          { type: 'text', text: msg, font: { size: 'body' }, textColor: { light: '#FF3B30', dark: '#FF453A' }, textAlign: 'center' }
+          { type: 'image', src: 'sf-symbol:exclamationmark.triangle.fill', width: 32, height: 32, color: LOC_ICON_COLOR },
+          { type: 'text', text: msg, font: { size: 'body' }, textColor: LOC_ICON_COLOR, textAlign: 'center' }
         ]
       }
     ]
