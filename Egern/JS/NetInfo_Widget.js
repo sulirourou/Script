@@ -1,5 +1,5 @@
 /**
- * 📌 桌面小组件: 📶 现代高级版网络信息 (防崩溃极致对齐版)
+ * 📌 桌面小组件: 📶 现代高级版网络信息 (图标完美同步版)
  */
 export default async function(ctx) {
   // ==========================================
@@ -61,44 +61,26 @@ export default async function(ctx) {
   } catch (e) {}
 
   // ==========================================
-  // 🎨 UI 积木块封装 (引入强力弹簧 Spacer 确保安全左对齐)
+  // 🎨 UI 积木块封装 (居中对齐 + 小图标)
   // ==========================================
-  function buildCard(title, ipText, label1, detail1, label2, detail2) {
+  function buildCard(title, ipText, icon1, detail1, icon2, detail2) {
     return {
-      type: "stack", direction: "column", gap: 3,
+      type: "stack", direction: "column", alignItems: "center", gap: 3,
       children: [
-        // 标题行
-        {
-          type: "stack", direction: "row", alignItems: "center",
-          children: [
-            { type: "text", text: title, font: { size: 11, weight: "bold" }, textColor: C_TITLE, maxLines: 1 },
-            { type: "spacer" } // 强力弹簧，推向左侧
-          ]
-        },
-        // IP行
-        {
-          type: "stack", direction: "row", alignItems: "center",
-          children: [
-            { type: "text", text: ipText, font: { size: 17, weight: "bold", family: "Menlo" }, textColor: C_IP, maxLines: 1 },
-            { type: "spacer" }
-          ]
-        },
-        // 详情第一行
+        { type: "text", text: title, font: { size: 11, weight: "bold" }, textColor: C_TITLE, maxLines: 1 },
+        { type: "text", text: ipText, font: { size: 17, weight: "bold", family: "Menlo" }, textColor: C_IP, maxLines: 1 },
         { 
-          type: "stack", direction: "row", alignItems: "center", gap: 2,
+          type: "stack", direction: "row", alignItems: "center", gap: 4,
           children: [
-            { type: "text", text: label1, font: { size: 11, weight: "bold" }, textColor: C_SUB },
-            { type: "text", text: detail1, font: { size: 11, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 },
-            { type: "spacer" }
+            { type: "image", src: `sf-symbol:${icon1}`, color: C_SUB, width: 11, height: 11 },
+            { type: "text", text: detail1, font: { size: 11, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 }
           ]
         },
-        // 详情第二行
         { 
-          type: "stack", direction: "row", alignItems: "center", gap: 2,
+          type: "stack", direction: "row", alignItems: "center", gap: 4,
           children: [
-            { type: "text", text: label2, font: { size: 11, weight: "bold" }, textColor: C_SUB },
-            { type: "text", text: detail2, font: { size: 11, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 },
-            { type: "spacer" }
+            { type: "image", src: `sf-symbol:${icon2}`, color: C_SUB, width: 11, height: 11 },
+            { type: "text", text: detail2, font: { size: 11, weight: "medium" }, textColor: C_SUB, maxLines: 1, minScale: 0.8 }
           ]
         }
       ]
@@ -119,11 +101,12 @@ export default async function(ctx) {
         children: [
           // 👈 左侧信息双层堆叠
           {
-            type: "stack", direction: "column", gap: 12, flex: 1,
+            type: "stack", direction: "column", alignItems: "center", gap: 12, flex: 1,
             children: [
-              // 💡 魔法生效点：使用全角空格将短词物理补齐，达到完美对齐！
-              buildCard("内网 IP", localIp, "网　络：", netName, "网　关：", gateway),
-              buildCard("公网 IP", pubIp, "位　置：", pubLoc, "运营商：", pubIsp)
+              // 💡 修复1：使用完整的 wifi.router.fill，路由器图标回来了！
+              buildCard("内网 IP", localIp, "network", netName, "wifi.router.fill", gateway),
+              // 💡 修复2：使用 location.fill，和 IPPure/IP-API 组件的本地定位图标完全一致！
+              buildCard("公网 IP", pubIp, "location.fill", pubLoc, "antenna.radiowaves.left.and.right", pubIsp)
             ]
           },
           
