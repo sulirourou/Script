@@ -220,7 +220,7 @@ function renderSmall(now, city) {
     type: 'widget',
     padding: 14,
     gap: 6,
-    backgroundColor: { light: '#FFFFFF', dark: '#121212' },
+    backgroundColor: { light: '#FFFFFF', dark: '#BF5AF2' },
     children: [
       {
         type: 'stack',
