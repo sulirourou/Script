@@ -104,9 +104,9 @@ export default async function(ctx) {
             type: "stack", direction: "column", alignItems: "center", gap: 12, flex: 1,
             children: [
               // 💡 修复1：使用完整的 wifi.router.fill，路由器图标回来了！
-              buildCard("内网 IP", localIp, "network", netName, "wifi.router.fill", gateway),
+              buildCard("内网", localIp, "network", netName, "wifi.router.fill", gateway),
               // 💡 修复2：使用 location.fill，和 IPPure/IP-API 组件的本地定位图标完全一致！
-              buildCard("公网 IP", pubIp, "location.fill", pubLoc, "antenna.radiowaves.left.and.right", pubIsp)
+              buildCard("外网", pubIp, "location.fill", pubLoc, "antenna.radiowaves.left.and.right", pubIsp)
             ]
           },
           
