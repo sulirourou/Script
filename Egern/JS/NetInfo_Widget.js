@@ -1,55 +1,60 @@
 /**
- * 📌 桌面小组件: 📶 现代高级版网络信息 (全方位UI自定义遥控器版)
+ * 📌 桌面小组件: 📶 现代高级版网络信息 (精准显示 LTE/NR 版)
  */
 export default async function(ctx) {
   // ==========================================
   // 🎨 UI 个性化配置区 (全面支持系统自动深浅模式)
   // ==========================================
   
-  // 1️⃣ 背景配置
-  const BG_COLOR = { light: '#F2F2F7', dark: '#121212' }; // 最外层大背景
-  const CARD_BG  = { light: '#FFFFFF', dark: '#1C1C1E' }; // 右侧大圆环内部底色
-
-  // 2️⃣ 左侧：模块标题 ("内网 IP" / "公网 IP")
+  const BG_COLOR = { light: '#F2F2F7', dark: '#121212' }; 
+  const CARD_BG  = { light: '#FFFFFF', dark: '#1C1C1E' }; 
   const TITLE_SIZE  = 11;
   const TITLE_COLOR = { light: '#1A1A1A', dark: '#FFFFFF' };
-
-  // 3️⃣ 左侧：核心 IP 数字 ("192.168.x.x" / "183.x.x.x")
   const IP_SIZE  = 17;
   const IP_COLOR = { light: '#1A1A1A', dark: '#FFFFFF' };
-
-  // 4️⃣ 左侧：详情小字 (包括小图标、网络名、网关、位置、运营商)
-  const DETAIL_ICON_SIZE = 11; // 小图标的尺寸
-  const DETAIL_TEXT_SIZE = 11; // 详情文字的尺寸
-  const DETAIL_COLOR     = { light: '#8E8E93', dark: '#98989F' }; // 图标和文字的统一颜色
-
-  // 5️⃣ 右侧：视觉大圆环主题色 (决定圆环线条和中心大图标的颜色)
-  const THEME_COLOR    = { light: '#34C759', dark: '#30D158' }; // 默认纯净绿
-  const RING_ICON_SIZE = 30; // 圆环内中心大图标的尺寸
-
-  // 6️⃣ 右侧：主状态文字 ("Wi-Fi" / "Cellular")
+  const DETAIL_ICON_SIZE = 11; 
+  const DETAIL_TEXT_SIZE = 11; 
+  const DETAIL_COLOR     = { light: '#8E8E93', dark: '#98989F' }; 
+  const THEME_COLOR    = { light: '#34C759', dark: '#30D158' }; 
+  const RING_ICON_SIZE = 30; 
   const STATUS_MAIN_SIZE  = 11;
   const STATUS_MAIN_COLOR = { light: '#1A1A1A', dark: '#FFFFFF' };
-
-  // 7️⃣ 右侧：底部副状态文字 ("当前状态")
   const STATUS_SUB_SIZE  = 9;
   const STATUS_SUB_COLOR = { light: '#8E8E93', dark: '#98989F' };
 
   // ==========================================
-  // ⚙️ 核心数据获取逻辑 (非必要勿动)
+  // ⚙️ 核心数据获取逻辑
   // ==========================================
   const d = ctx.device || {};
   const isWifi = !!d.wifi?.ssid;
 
   let netName = "未连接", netIcon = "wifi.slash";
+  let rightStatus = "无连接"; // 💡 新增：专门用于右侧大圆环下的精准状态展示
+
   if (isWifi) {
     netName = d.wifi.ssid;
     netIcon = "wifi";
+    rightStatus = "Wi-Fi";
   } else if (d.cellular?.radio) {
-    const radioMap = { "GPRS": "2G", "EDGE": "2G", "WCDMA": "3G", "LTE": "4G", "NR": "5G", "NRNSA": "5G" };
     const rawRadio = d.cellular.radio.toUpperCase().replace(/\s+/g, "");
-    netName = `${radioMap[rawRadio] || rawRadio} 网络`;
+    
+    // 💡 精准解析蜂窝网络类型，直接暴露出 LTE 或 NR
+    if (rawRadio.includes("NR")) {
+      netName = `5G (${rawRadio})`;  // 左侧显示如：5G (NRNSA)
+      rightStatus = rawRadio;        // 右侧显示如：NRNSA 或 NR
+    } else if (rawRadio.includes("LTE")) {
+      netName = `4G (LTE)`;
+      rightStatus = "LTE";
+    } else if (rawRadio.includes("WCDMA")) {
+      netName = `3G (WCDMA)`;
+      rightStatus = "3G";
+    } else {
+      netName = `${rawRadio} 网络`;
+      rightStatus = rawRadio;
+    }
     netIcon = "antenna.radiowaves.left.and.right";
+  } else {
+    rightStatus = "Cellular";
   }
 
   const localIp = d.ipv4?.address || "获取失败";
@@ -84,7 +89,7 @@ export default async function(ctx) {
   } catch (e) {}
 
   // ==========================================
-  // 🎨 UI 积木块封装 (全面接入顶部的配置遥控器)
+  // 🎨 UI 积木块封装
   // ==========================================
   function buildCard(title, ipText, icon1, detail1, icon2, detail2) {
     return {
@@ -126,8 +131,8 @@ export default async function(ctx) {
           {
             type: "stack", direction: "column", alignItems: "center", gap: 12, flex: 1,
             children: [
-              buildCard("内网 IP", localIp, "network", netName, "wifi.router.fill", gateway),
-              buildCard("公网 IP", pubIp, "location.fill", pubLoc, "antenna.radiowaves.left.and.right", pubIsp)
+              buildCard("内网", localIp, "network", netName, "wifi.router.fill", gateway),
+              buildCard("外网", pubIp, "location.fill", pubLoc, "antenna.radiowaves.left.and.right", pubIsp)
             ]
           },
           
@@ -147,7 +152,8 @@ export default async function(ctx) {
               {
                 type: "stack", direction: "column", alignItems: "center", gap: 2,
                 children: [
-                  { type: "text", text: isWifi ? "Wi-Fi" : "Cellular", font: { size: STATUS_MAIN_SIZE, weight: "heavy" }, textColor: STATUS_MAIN_COLOR },
+                  // 💡 直接调用解析好的 rightStatus，如果是 4G 就会显示 LTE，5G 就显示 NR/NRNSA
+                  { type: "text", text: rightStatus, font: { size: STATUS_MAIN_SIZE, weight: "heavy" }, textColor: STATUS_MAIN_COLOR },
                   { type: "text", text: "当前状态", font: { size: STATUS_SUB_SIZE, weight: "bold" }, textColor: STATUS_SUB_COLOR }
                 ]
               }
