@@ -1,32 +1,52 @@
 /**
- * 📌 桌面小组件: 📶 现代高级版网络信息 (像素级统一画风版)
+ * 📌 桌面小组件: 📶 现代高级版网络信息 (像素级统一画风 + 保姆级配置说明)
  */
 export default async function(ctx) {
   // ==========================================
-  // 🎨 UI 个性化配置区 (全面对标 IPPure/IP-API 默认参数)
+  // 🎨 UI 个性化配置区 (全面支持系统自动深浅模式)
   // ==========================================
   
+  // 1️⃣ 【整体背景】
+  // BG_COLOR: 小组件最外层的大背景颜色
+  // CARD_BG: 右侧大圆环内部的底色（为了凸显圆环，通常比背景亮一点）
   const BG_COLOR = { light: '#F2F2F7', dark: '#121212' }; 
   const CARD_BG  = { light: '#FFFFFF', dark: '#1C1C1E' }; 
 
+  // 2️⃣ 【左侧模块标题】 (例如屏幕上显示的 "内网" 和 "外网" 这四个字)
+  // TITLE_SIZE: 标题字号大小
+  // TITLE_COLOR: 标题文字颜色
   const TITLE_SIZE  = 11;
   const TITLE_COLOR = { light: '#1A1A1A', dark: '#FFFFFF' };
 
-  // 💡 统一1：IP 字号改回 16
+  // 3️⃣ 【左侧核心 IP 数据】 (例如屏幕上显示的 "192.168.3.80" 这串大数字)
+  // IP_SIZE: IP 数字的字号大小 (已对标下方组件统一为 16)
+  // IP_COLOR: IP 数字的颜色
   const IP_SIZE  = 16;
   const IP_COLOR = { light: '#1A1A1A', dark: '#FFFFFF' };
 
-  // 💡 统一2：小图标和小字尺寸改回 10
+  // 4️⃣ 【左侧详情小字】 (IP 下方带小图标的说明，如 "5G(NR)网络"、"广东 广州")
+  // DETAIL_ICON_SIZE: 前面那个小图标的大小 (已对标下方组件统一为 10)
+  // DETAIL_TEXT_SIZE: 后面文字的大小 (已对标下方组件统一为 10)
+  // DETAIL_COLOR: 详情图标和文字统一使用的颜色 (默认灰色)
   const DETAIL_ICON_SIZE = 10; 
   const DETAIL_TEXT_SIZE = 10; 
   const DETAIL_COLOR     = { light: '#8E8E93', dark: '#98989F' }; 
 
-  const THEME_COLOR    = { light: '#34C759', dark: '#30D158' }; 
+  // 5️⃣ 【右侧视觉大圆环】
+  // THEME_COLOR: 决定圆环的线条颜色，以及圆环中间那个大 WiFi/天线 图标的颜色
+  // RING_ICON_SIZE: 圆环中间那个大 WiFi/天线 图标的大小
+  const THEME_COLOR    = { light: '#34C759', dark: '#30D158' }; // 默认纯净绿
   const RING_ICON_SIZE = 30; 
 
+  // 6️⃣ 【右侧主状态文字】 (圆环正下方那行粗体字，如 "Wi-Fi", "LTE", "NRNSA")
+  // STATUS_MAIN_SIZE: 主状态字号大小
+  // STATUS_MAIN_COLOR: 主状态文字颜色
   const STATUS_MAIN_SIZE  = 11;
   const STATUS_MAIN_COLOR = { light: '#1A1A1A', dark: '#FFFFFF' };
 
+  // 7️⃣ 【右侧副状态文字】 (最底部那行极小的字 "当前状态")
+  // STATUS_SUB_SIZE: 副状态字号大小
+  // STATUS_SUB_COLOR: 副状态文字颜色
   const STATUS_SUB_SIZE  = 9;
   const STATUS_SUB_COLOR = { light: '#8E8E93', dark: '#98989F' };
 
@@ -37,7 +57,7 @@ export default async function(ctx) {
   const isWifi = !!d.wifi?.ssid;
 
   let netName = "未连接", netIcon = "wifi.slash";
-  let rightStatus = "无连接";
+  let rightStatus = "无连接"; 
 
   if (isWifi) {
     netName = d.wifi.ssid;
@@ -45,9 +65,11 @@ export default async function(ctx) {
     rightStatus = "Wi-Fi";
   } else if (d.cellular?.radio) {
     const rawRadio = d.cellular.radio.toUpperCase().replace(/\s+/g, "");
+    
+    // 精准解析蜂窝网络类型，直接暴露出 LTE 或 NR
     if (rawRadio.includes("NR")) {
-      netName = `5G (${rawRadio})`;
-      rightStatus = rawRadio;
+      netName = `5G (${rawRadio})`;  
+      rightStatus = rawRadio;        
     } else if (rawRadio.includes("LTE")) {
       netName = `4G (LTE)`;
       rightStatus = "LTE";
@@ -95,29 +117,26 @@ export default async function(ctx) {
   } catch (e) {}
 
   // ==========================================
-  // 🎨 UI 积木块封装
+  // 🎨 UI 积木块封装 (已应用苹果默认字体，取消加粗)
   // ==========================================
   function buildCard(title, ipText, icon1, detail1, icon2, detail2) {
     return {
       type: "stack", direction: "column", alignItems: "center", gap: 3,
       children: [
         { type: "text", text: title, font: { size: TITLE_SIZE, weight: "bold" }, textColor: TITLE_COLOR, maxLines: 1 },
-        // 💡 统一3：彻底去除了 family: "Menlo"，回归苹果默认字体
-        { type: "text", text: ipText, font: { size: IP_SIZE, weight: "bold" }, textColor: IP_COLOR, maxLines: 1 },
+        { type: "text", text: ipText, font: { size: IP_SIZE, weight: "bold" }, textColor: IP_COLOR, maxLines: 1 }, // 移除了 family: "Menlo"
         { 
           type: "stack", direction: "row", alignItems: "center", gap: 4,
           children: [
             { type: "image", src: `sf-symbol:${icon1}`, color: DETAIL_COLOR, width: DETAIL_ICON_SIZE, height: DETAIL_ICON_SIZE },
-            // 💡 统一4：去除了 weight: "medium"，回归默认粗细
-            { type: "text", text: detail1, font: { size: DETAIL_TEXT_SIZE }, textColor: DETAIL_COLOR, maxLines: 1, minScale: 0.8 }
+            { type: "text", text: detail1, font: { size: DETAIL_TEXT_SIZE }, textColor: DETAIL_COLOR, maxLines: 1, minScale: 0.8 } // 移除了 weight: "medium"
           ]
         },
         { 
           type: "stack", direction: "row", alignItems: "center", gap: 4,
           children: [
             { type: "image", src: `sf-symbol:${icon2}`, color: DETAIL_COLOR, width: DETAIL_ICON_SIZE, height: DETAIL_ICON_SIZE },
-            // 💡 统一4：去除了 weight: "medium"，回归默认粗细
-            { type: "text", text: detail2, font: { size: DETAIL_TEXT_SIZE }, textColor: DETAIL_COLOR, maxLines: 1, minScale: 0.8 }
+            { type: "text", text: detail2, font: { size: DETAIL_TEXT_SIZE }, textColor: DETAIL_COLOR, maxLines: 1, minScale: 0.8 } // 移除了 weight: "medium"
           ]
         }
       ]
