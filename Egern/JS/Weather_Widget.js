@@ -1,11 +1,11 @@
 /**
- * 🌤️ 和风天气 - Egern 小组件 (纯净自动定位版 + 全面UI自定义遥控器)
+ * 🌤️ 和风天气 - Egern 小组件 (修复显示不完整版)
  *
  * ⚠️ 重要提示
  * 环境变量：
  * KEY: 和风天气 API Key（必填）
  * API_HOST: 你的个人API Host（必填！从控制台获取）
- * LOCATION: 城市或区县名，如"北京"、"海淀" （选填：不填则全自动根据当前网络 IP 定位精确位置）
+ * LOCATION: 城市或区县名，如"北京" （选填）
  */
 
 // ==========================================
@@ -13,41 +13,40 @@
 // ==========================================
 
 // 1️⃣ 背景颜色配置
-const BG_COLOR_SMALL  = { light: '#FFFFFF', dark: '#000000' }; // 小号组件背景
-const BG_COLOR_MEDIUM = { light: '#FFFFFF', dark: '#121212' }; // 中号组件背景
+const BG_COLOR_SMALL  = { light: '#FFFFFF', dark: '#000000' };
+const BG_COLOR_MEDIUM = { light: '#FFFFFF', dark: '#121212' };
 
-// 2️⃣ 顶部信息栏配置 (城市名、定位图标、更新时间)
-const CITY_FONT_SIZE_S = 'caption1'; // 小号组件-城市字号
-const CITY_FONT_SIZE_M = 'title3';   // 中号组件-城市字号
-const CITY_TEXT_COLOR  = { light: '#000000', dark: '#FFFFFF' }; // 城市文字颜色
-const LOC_ICON_COLOR   = { light: '#FF3B30', dark: '#FF453A' }; // 定位小图标颜色 (默认红)
-const TIME_FONT_SIZE   = 'caption2'; // 更新时间字号
-const TIME_TEXT_COLOR  = { light: '#8E8E93', dark: '#8E8E93' }; // 更新时间颜色
+// 2️⃣ 顶部信息栏配置
+const CITY_FONT_SIZE_S = 'caption1';
+const CITY_FONT_SIZE_M = 'title3';
+const CITY_TEXT_COLOR  = { light: '#000000', dark: '#FFFFFF' };
+const LOC_ICON_COLOR   = { light: '#FF3B30', dark: '#FF453A' };
+const TIME_FONT_SIZE   = 'caption2';
+const TIME_TEXT_COLOR  = { light: '#8E8E93', dark: '#8E8E93' };
 
-// 3️⃣ 核心天气数据配置 (主温度、天气描述)
-const TEMP_FONT_SIZE_S = 'title2';     // 小号组件-主温度字号
-const TEMP_FONT_SIZE_M = 'largeTitle'; // 中号组件-主温度字号
-const TEMP_TEXT_COLOR  = { light: '#000000', dark: '#FFFFFF' }; // 主温度颜色
-const DESC_FONT_SIZE_S = 'caption1';   // 小号组件-天气描述字号
-const DESC_FONT_SIZE_M = 'title3';     // 中号组件-天气描述字号
-const DESC_TEXT_COLOR  = { light: '#444444', dark: '#CCCCCC' }; // 天气描述颜色
+// 3️⃣ 核心天气数据配置
+const TEMP_FONT_SIZE_S = 'title2';
+const TEMP_FONT_SIZE_M = 'largeTitle';
+const TEMP_TEXT_COLOR  = { light: '#000000', dark: '#FFFFFF' };
+const DESC_FONT_SIZE_S = 'caption1';
+const DESC_FONT_SIZE_M = 'title3';
+const DESC_TEXT_COLOR  = { light: '#444444', dark: '#CCCCCC' };
 
-// 4️⃣ 空气质量 (AQI) 配置 (仅中号组件显示)
-const AQI_LABEL_SIZE   = 'caption2'; // "空气"两字字号
-const AQI_LABEL_COLOR  = { light: '#666666', dark: '#AAAAAA' }; // "空气"两字颜色
-const AQI_VALUE_SIZE_1 = 'caption1'; // 顶部小 AQI 提示字号
-const AQI_VALUE_SIZE_2 = 'title3';   // 右侧大 AQI 评价字号 (如"优", "良")
-// 注：AQI 的颜色是根据污染程度自动计算的，无需在此处定死
+// 4️⃣ 空气质量 (AQI) 配置
+const AQI_LABEL_SIZE   = 'caption2';
+const AQI_LABEL_COLOR  = { light: '#666666', dark: '#AAAAAA' };
+const AQI_VALUE_SIZE_1 = 'caption1';
+const AQI_VALUE_SIZE_2 = 'title3';
 
-// 5️⃣ 底部三要素配置 (湿度、风力、风速 - 仅中号组件显示)
-const INFO_LABEL_SIZE  = 'caption2'; // "湿度"等标签字号
-const INFO_LABEL_COLOR = { light: '#666666', dark: '#AAAAAA' }; // 标签文字颜色
-const INFO_VALUE_SIZE  = 'title3';   // "65%"等数值字号
-const INFO_VALUE_COLOR = { light: '#000000', dark: '#FFFFFF' }; // 数值文字颜色
-// 底部三个小图标的独立颜色
-const COLOR_HUMIDITY   = '#007AFF'; // 湿度图标色 (蓝)
-const COLOR_WIND_DIR   = '#5856D6'; // 风向图标色 (紫)
-const COLOR_WIND_SPEED = '#FF9500'; // 风速图标色 (橙)
+// 5️⃣ 底部三要素配置
+const INFO_LABEL_SIZE  = 'caption2';
+const INFO_LABEL_COLOR = { light: '#666666', dark: '#AAAAAA' };
+const INFO_VALUE_SIZE  = 'title3';
+const INFO_VALUE_COLOR = { light: '#000000', dark: '#FFFFFF' };
+
+const COLOR_HUMIDITY   = '#007AFF';
+const COLOR_WIND_DIR   = '#5856D6';
+const COLOR_WIND_SPEED = '#FF9500';
 
 // ==========================================
 // ⚙️ 下方为核心代码区 (非必要请勿修改)
@@ -91,10 +90,6 @@ export default async function(ctx) {
   }
 }
 
-// ────────────────────────────────────────────────
-// 辅助函数
-// ────────────────────────────────────────────────
-
 function normalizeHost(host) {
   let h = host;
   if (!/^https?:\/\//i.test(h)) h = 'https://' + h;
@@ -107,7 +102,6 @@ function isAccessoryFamily(family) {
 
 async function getLocation(ctx, locName, key, host) {
   let finalLocName = locName;
-
   if (!finalLocName) {
     try {
       const resIp = await ctx.http.get("https://myip.ipip.net/json", { timeout: 4000 });
@@ -120,18 +114,15 @@ async function getLocation(ctx, locName, key, host) {
     } catch(e) {}
     if (!finalLocName) finalLocName = "北京";
   }
-
   try {
     const url = `${host}/geo/v2/city/lookup?location=${encodeURIComponent(finalLocName)}&key=${key}&number=1&lang=zh`;
     const resp = await ctx.http.get(url, { timeout: 6000 });
     const data = await resp.json();
-
     if (data.code === '200' && data.location?.[0]) {
       const loc = data.location[0];
       return { lon: loc.lon, lat: loc.lat, city: loc.name || finalLocName };
     }
   } catch {}
-
   return { lon: '116.4074', lat: '39.9042', city: finalLocName || '未知' };
 }
 
@@ -139,9 +130,7 @@ async function fetchWeatherNow(ctx, key, lon, lat, host) {
   const url = `${host}/v7/weather/now?location=${lon},${lat}&key=${key}&lang=zh`;
   const resp = await ctx.http.get(url, { timeout: 8000 });
   const data = await resp.json();
-
   if (data.code !== '200') throw new Error(data.msg || `天气接口返回 ${data.code}`);
-
   const now = data.now;
   return {
     temp: now.temp, text: now.text, icon: now.icon,
@@ -156,7 +145,6 @@ async function fetchAirQuality(ctx, key, lon, lat, host) {
     const url = `${host}/airquality/v1/current/${lat}/${lon}?key=${key}&lang=zh`;
     const resp = await ctx.http.get(url, { timeout: 7000 });
     const data = await resp.json();
-
     if (data.indexes && data.indexes.length > 0) {
       const cnMee = data.indexes.find(i => i.code === 'cn-mee') || data.indexes[0];
       if (cnMee?.aqi != null) {
@@ -168,7 +156,6 @@ async function fetchAirQuality(ctx, key, lon, lat, host) {
       }
     }
   } catch (e) {}
-
   if (!aqiData) {
     try {
       const url = `${host}/v7/air/now?location=${lon},${lat}&key=${key}&lang=zh`;
@@ -220,13 +207,13 @@ function getWeatherColor(code) {
   const n = Number(code);
   if (n >= 100 && n <= 104) return { light: '#FF9500', dark: '#FFB340' };
   if (n >= 300 && n <= 399) return { light: '#007AFF', dark: '#0A84FF' };
-  if (n >= 400 && n <= 499) return { light: '#5856D6', dark: '#5E5CE6' };
+  if (n >= 400 && n <= 499) return { light: '#5856D6', dark: '#5CE6' };
   if (n >= 500 && n <= 515) return { light: '#8E8E93', dark: '#98989D' };
   return { light: '#FF9500', dark: '#FFB340' };
 }
 
 // ────────────────────────────────────────────────
-// 渲染函数 (已全部接入UI配置区)
+// 渲染函数 (修复显示不完整问题)
 // ────────────────────────────────────────────────
 
 function renderSmall(now, city) {
@@ -275,7 +262,7 @@ function renderMedium(now, air, city) {
 
   return {
     type: 'widget',
-    padding: 16,
+    padding: 12, // 🛠️ 稍微收窄外边距，增加内容宽度
     gap: 12,
     backgroundColor: BG_COLOR_MEDIUM,
     children: [
@@ -317,7 +304,7 @@ function renderMedium(now, air, city) {
       },
 
       {
-        type: 'stack', direction: 'row', gap: 12,
+        type: 'stack', direction: 'row', gap: 6, // 🛠️ 缩小三要素间距
         children: [
           createInfoItem('drop.fill',   '湿度',   `${now.humidity}%`,   COLOR_HUMIDITY),
           createInfoItem('wind',        '风力',   `${now.windDir} ${now.windScale}级`, COLOR_WIND_DIR),
@@ -330,14 +317,15 @@ function renderMedium(now, air, city) {
 
 function createInfoItem(icon, label, value, iconColor) {
   return {
-    type: 'stack', direction: 'row', alignItems: 'center', flex: 1, gap: 8,
+    type: 'stack', direction: 'row', alignItems: 'center', flex: 1, gap: 4, // 🛠️ 缩小内部间距
     children: [
       { type: 'image', src: `sf-symbol:${icon}`, width: 20, height: 20, color: { light: iconColor, dark: iconColor } },
       {
         type: 'stack', direction: 'column',
         children: [
           { type: 'text', text: label, font: { size: INFO_LABEL_SIZE }, textColor: INFO_LABEL_COLOR },
-          { type: 'text', text: value,  font: { size: INFO_VALUE_SIZE, weight: 'semibold' }, textColor: INFO_VALUE_COLOR }
+          // 🛠️ 增加 minimumScaleFactor 保证长文本不被省略号截断
+          { type: 'text', text: value,  font: { size: INFO_VALUE_SIZE, weight: 'semibold' }, textColor: INFO_VALUE_COLOR, minimumScaleFactor: 0.7 }
         ]
       }
     ]
