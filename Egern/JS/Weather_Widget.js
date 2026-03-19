@@ -220,10 +220,7 @@ function getWeatherColor(code) {
   return { light: '#FF9500', dark: '#FFB340' };
 }
 
-// ────────────────────────────────────────────────
-// 渲染函数 (已修复显示不完整问题)
-// ────────────────────────────────────────────────
-
+// 渲染函数 (修复显示不完整 + 强制左对齐)
 function renderSmall(now, city) {
   const icon = getWeatherIcon(now.icon);
   const color = getWeatherColor(now.icon);
@@ -270,8 +267,8 @@ function renderMedium(now, air, city) {
 
   return {
     type: 'widget',
-    padding: 12, // 🛠️ 缩小边距以获得更多横向空间
-    gap: 10,     // 🛠️ 缩小整体间距
+    padding: 10, // 🛠️ 缩小内边距
+    gap: 10,
     backgroundColor: BG_COLOR_MEDIUM,
     children: [
       {
@@ -312,11 +309,12 @@ function renderMedium(now, air, city) {
       },
 
       {
-        type: 'stack', direction: 'row', gap: 6, // 🛠️ 缩小三要素间距
+        type: 'stack', direction: 'row', gap: 8, // 🛠️ 紧凑布局
         children: [
           createInfoItem('drop.fill',   '湿度',   `${now.humidity}%`,   COLOR_HUMIDITY),
           createInfoItem('wind',        '风力',   `${now.windDir} ${now.windScale}级`, COLOR_WIND_DIR),
-          createInfoItem('gauge.medium','风速',   `${now.windSpeed}km/h`, COLOR_WIND_SPEED)
+          createInfoItem('gauge.medium','风速',   `${now.windSpeed}km/h`, COLOR_WIND_SPEED),
+          { type: 'spacer' } // 🛡️ 强制左对齐
         ]
       }
     ]
@@ -325,15 +323,15 @@ function renderMedium(now, air, city) {
 
 function createInfoItem(icon, label, value, iconColor) {
   return {
-    type: 'stack', direction: 'row', alignItems: 'center', flex: 1, gap: 4, // 🛠️ 缩小内部图标间距
+    type: 'stack', direction: 'row', alignItems: 'center', gap: 4, 
     children: [
       { type: 'image', src: `sf-symbol:${icon}`, width: 20, height: 20, color: { light: iconColor, dark: iconColor } },
       {
-        type: 'stack', direction: 'column',
+        type: 'stack', direction: 'column', flex: 1,
         children: [
-          { type: 'text', text: label, font: { size: INFO_LABEL_SIZE }, textColor: INFO_LABEL_COLOR },
-          // 🛠️ 增加 minimumScaleFactor 保证长文本（如风级）不被省略号截断
-          { type: 'text', text: value,  font: { size: INFO_VALUE_SIZE, weight: 'semibold' }, textColor: INFO_VALUE_COLOR, minimumScaleFactor: 0.7 }
+          { type: 'text', text: label, font: { size: INFO_LABEL_SIZE }, textColor: INFO_LABEL_COLOR, lineLimit: 1 },
+          // 🛠️ 增加 minimumScaleFactor 强制桌面端缩小显示，不许变省略号
+          { type: 'text', text: value,  font: { size: INFO_VALUE_SIZE, weight: 'semibold' }, textColor: INFO_VALUE_COLOR, lineLimit: 1, minimumScaleFactor: 0.5 }
         ]
       }
     ]
