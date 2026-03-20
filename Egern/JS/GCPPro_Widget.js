@@ -2,7 +2,7 @@
  * 📌 桌面大组件: 🖥️ GCP Pro (简洁左对齐·使用说明补完版)
  * * 📖 【使用指南 · 必读】
  * 1. 🔐 环境变量配置 (Environment Variables)：
- * 👉 Host: 服务器 IP (例如 35.212.188.11)
+ * 👉 Host: 服务器 IP (例如 IP)
  * 👉 User: 登录用户名 (例如 root)
  * 👉 Privatekey: SSH 私钥 (私钥登录使用)
  * 👉 Password: 登录密码 (密码登录使用)
