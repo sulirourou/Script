@@ -1,9 +1,10 @@
- // 作者原创链接:https://raw.githubusercontent.com/egerndaddy/quick-start/main/modules/server-monitor.js
+// 作者原创链接:https://raw.githubusercontent.com/egerndaddy/quick-start/main/modules/server-monitor.js
 
  // 修复私钥问题
 
-// Server Monitor Widget for Egern
 
+// Server Monitor Widget for Egern
+//
 // Required env: host, username, password (or privateKey), port (default 22)
 
 export default async function (ctx) {
@@ -21,7 +22,7 @@ export default async function (ctx) {
   try {
     const { host, username, password, privateKey, port } = ctx.env;
 
-    // 🛠️ 暴力修复私钥格式
+    // 🛠️ 暴力修复私钥格式开始
     let finalKey = privateKey;
     if (privateKey && typeof privateKey === 'string') {
         const raw = privateKey.trim();
@@ -43,6 +44,7 @@ export default async function (ctx) {
             finalKey = raw.replace(/\\n/g, '\n');
         }
     }
+    // 🛠️ 暴力修复私钥格式结束
 
     const session = await ctx.ssh.connect({
       host, port: Number(port || 22), username,
