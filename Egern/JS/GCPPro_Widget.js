@@ -1,15 +1,15 @@
 /**
- * 📌 桌面大组件: 🖥️ GCP Pro (简洁左对齐·使用说明补完版)
+ * 📌 桌面大组件: 🖥️ GCP Pro (简洁左对齐·自定义排版版)
  * * 📖 【使用指南 · 必读】
  * 1. 🔐 环境变量配置 (Environment Variables)：
- * 👉 Host: 服务器 IP (例如 IP)
+ * 👉 Host: 服务器 IP (例如 192.168.1.1)
  * 👉 User: 登录用户名 (例如 root)
  * 👉 Privatekey: SSH 私钥 (私钥登录使用)
  * 👉 Password: 登录密码 (密码登录使用)
  * 👉 Port: SSH 端口 (如果不填，代码会自动默认 22)
- * 2. 🎨 颜色自定义：在代码下方的 CONFIG_COLORS 对象里，修改十六进制代码（如 #34C759）即可。
- * 3. 🛠️ 布局说明：此版本已移除底部热力条，图标与两行文字强制左对齐。
- * ----------------------------------------------------------------
+ * 2. 🎨 界面自定义：
+ * 👉 你可以在下方的【UI 颜色与字体手动配置区】自由调整底部文字的字号和颜色。
+ * 
  */
 
 export default async function(ctx) {
@@ -26,8 +26,12 @@ export default async function(ctx) {
     return `${headerMatch[0]}\n${body.match(/.{1,64}/g)?.join('\n') || body}\n${footerMatch[0]}`;
   }
 
-  // 🎨🎨🎨 【UI 颜色手动配置区】 🎨🎨🎨
+  // 🎨🎨🎨 【UI 颜色与字体手动配置区】 🎨🎨🎨
+  // 💡 使用说明：
+  // 1. 修改颜色：请修改单引号里的十六进制代码（如 '#34C759'）。
+  // 2. 修改字号：请直接修改对应的数字大小（如 12、10）。
   const CONFIG_COLORS = {
+    // --- 基础界面颜色 ---
     green:  '#34C759', 
     blue:   '#007AFF', 
     yellow: '#FFCC00', 
@@ -36,8 +40,21 @@ export default async function(ctx) {
     avg1:   '#AF52DE', 
     avg2:   '#FFCC00', 
     avg3:   '#FF3B30', 
-    uptime: '#34C759', 
-    bg:     '#121212'  
+    bg:     '#121212',  
+
+    // --- 👇 底部专属排版配置 👇 ---
+    
+    // 1. Linux 系统信息行 (第一行)
+    linuxText_color: '#8E8E93', // 字体颜色 (默认灰色)
+    linuxText_size: 12,         // 字体大小 (默认12)
+
+    // 2. Up 运行时间行 (第二行左侧)
+    uptime_color: '#34C759',    // 字体颜色 (默认绿色)
+    uptime_size: 12,            // 字体大小 (默认与Linux行保持一致为12)
+
+    // 3. 右下角动态跳动时间 (第二行右侧)
+    time_color: '#32ADE6',      // 字体颜色 (默认亮蓝色)
+    time_size: 12               // 字体大小 (默认10)
   };
 
   // 🔐 环境变量映射
@@ -59,10 +76,11 @@ export default async function(ctx) {
     return C_PURPLE;
   }
 
+  // ✨ 必须加入缩写逻辑 (w/d/h/m)，否则物理空间装不下必定换行
   const linuxCommand = `
     export LC_ALL=C;
     u=$(awk '{print $1}' /proc/uptime);
-    up_detail=$(uptime -p | sed 's/up //');
+    up_detail=$(uptime -p | sed 's/up //; s/ weeks/w/; s/ week/w/; s/ days/d/; s/ day/d/; s/ hours/h/; s/ hour/h/; s/ minutes/m/; s/ minute/m/; s/,//g');
     read l1 l5 l15 _ < /proc/loadavg;
     cores=$(nproc 2>/dev/null || echo 1);
     c=$(vmstat 1 2 | tail -1 | awk '{print 100-$15}');
@@ -74,10 +92,12 @@ export default async function(ctx) {
     net1=$(get_stats); r1=$(echo $net1 | awk '{print $1}'); t1=$(echo $net1 | awk '{print $2}');
     sleep 1;
     net2=$(get_stats); r2=$(echo $net2 | awk '{print $1}'); t2=$(echo $net2 | awk '{print $2}');
-    echo "{\\"uptime\\":$u,\\"up_detail\\":\\"$up_detail\\",\\"l1\\":$l1,\\"l5\\":$l5,\\"l15\\":$l15,\\"cores\\":$cores,\\"cpu\\":$c,\\"mem_tot\\":$mt,\\"mem_used\\":$mu,\\"swap_tot\\":$st,\\"swap_used\\":$su,\\"disk_pct\\":$dp,\\"procs\\":\\"$procs\\",\\"net_rx\\":$((r2-r1)),\\"net_tx\\":$((t2-t1)),\\"net_rxt\\":$r2,\\"net_txt\\":$t2}"
+    os=$(cat /etc/os-release 2>/dev/null | grep -w PRETTY_NAME | cut -d'"' -f2 | awk '{print $1,$2}' | head -n 1 || uname -s);
+    kernel=$(uname -r | cut -d'-' -f1); users=$(who | wc -l | tr -d ' '); loc=$(curl -s --max-time 2 ipinfo.io/country || echo "Unknown");
+    echo "{\\"uptime\\":$u,\\"up_detail\\":\\"$up_detail\\",\\"l1\\":$l1,\\"l5\\":$l5,\\"l15\\":$l15,\\"cores\\":$cores,\\"cpu\\":$c,\\"mem_tot\\":$mt,\\"mem_used\\":$mu,\\"swap_tot\\":$st,\\"swap_used\\":$su,\\"disk_pct\\":$dp,\\"disk_tot\\":\\"$dt\\",\\"procs\\":\\"$procs\\",\\"net_rx\\":$((r2-r1)),\\"net_tx\\":$((t2-t1)),\\"net_rxt\\":$r2,\\"net_txt\\":$t2,\\"os\\":\\"$os\\",\\"kernel\\":\\"$kernel\\",\\"users\\":$users,\\"loc\\":\\"$loc\\"}"
   `;
 
-  let sys = { uptime: 0, up_detail: "offline", l1:0, l5:0, l15:0, cores: 1, cpu: 0, mem_tot: 1024, mem_used: 0, swap_tot: 0, swap_used: 0, disk_pct: 0, procs: "", isReal: false, ping: 0 };
+  let sys = { uptime: 0, up_detail: "offline", l1:0, l5:0, l15:0, cores: 1, cpu: 0, mem_tot: 1024, mem_used: 0, swap_tot: 0, swap_used: 0, disk_pct: 0, disk_tot: "0G", procs: "", isReal: false, ping: 0, os: "", kernel: "", users: 0, loc: "" };
 
   if (Host && (Privatekey || Password) && ctx.ssh) {
     const startTime = Date.now();
@@ -137,14 +157,16 @@ export default async function(ctx) {
         ]}
       ]
     },
+    // 🔥 物理护栏：增加首行与下方配置项之间的垂直间距
+    { type: "spacer", height: 8 }, 
     // Metrics
     {
       type: "stack", direction: "row",
       children: [
-        { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [{ type: "text", text: `${sys.cpu}%`, font: { size: 12, weight: "bold" }, textColor: getHeatColor(sys.cpu) }, buildPixelMatrix(sys.cpu, getHeatColor(sys.cpu), isLarge?6:5, isLarge?6:5), { type: "text", text: "CPU", font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }] },
-        { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [{ type: "text", text: `${mPct}%`, font: { size: 12, weight: "bold" }, textColor: getHeatColor(mPct) }, buildPixelMatrix(mPct, getHeatColor(mPct), isLarge?6:5, isLarge?6:5), { type: "text", text: "Mem", font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }] },
-        { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [{ type: "text", text: `${sys.disk_pct}%`, font: { size: 12, weight: "bold" }, textColor: getHeatColor(sys.disk_pct) }, buildPixelMatrix(sys.disk_pct, getHeatColor(sys.disk_pct), isLarge?6:5, isLarge?6:5), { type: "text", text: "Disk", font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }] },
-        { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [{ type: "text", text: `${sPct}%`, font: { size: 12, weight: "bold" }, textColor: getHeatColor(sPct) }, buildPixelMatrix(sPct, getHeatColor(sPct), isLarge?6:5, isLarge?6:5), { type: "text", text: "Swap", font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }] }
+        { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [{ type: "text", text: `${sys.cpu}%`, font: { size: 12, weight: "bold" }, textColor: getHeatColor(sys.cpu) }, buildPixelMatrix(sys.cpu, getHeatColor(sys.cpu), isLarge?6:5, isLarge?6:5), { type: "text", text: `CPU ${sys.cores}核`, font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }] },
+        { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [{ type: "text", text: `${mPct}%`, font: { size: 12, weight: "bold" }, textColor: getHeatColor(mPct) }, buildPixelMatrix(mPct, getHeatColor(mPct), isLarge?6:5, isLarge?6:5), { type: "text", text: `Mem ${Math.round(sys.mem_tot/1024)}G`, font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }] },
+        { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [{ type: "text", text: `${sys.disk_pct}%`, font: { size: 12, weight: "bold" }, textColor: getHeatColor(sys.disk_pct) }, buildPixelMatrix(sys.disk_pct, getHeatColor(sys.disk_pct), isLarge?6:5, isLarge?6:5), { type: "text", text: `Disk ${sys.disk_tot}`, font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }] },
+        { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [{ type: "text", text: `${sPct}%`, font: { size: 12, weight: "bold" }, textColor: getHeatColor(sPct) }, buildPixelMatrix(sPct, getHeatColor(sPct), isLarge?6:5, isLarge?6:5), { type: "text", text: `Swap ${Math.round(sys.swap_tot/1024)}G`, font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }] }
       ]
     },
     // Net / IO
@@ -190,26 +212,27 @@ export default async function(ctx) {
           })
         ]
       },
-      // 🛠️ 底部排版终极对齐版：移除热力条，全员死磕最左侧
+      // 🛠️ 将底部两行装进一个 gap 较小的 stack 中拉近距离
       {
-        type: "stack", direction: "column", gap: 4,
+        type: "stack", direction: "column", gap: 2, 
         children: [
-          // 第一行：[图标] [文字] [Spacer 强行顶向左边]
           {
             type: "stack", direction: "row", alignItems: "center", gap: 8,
             children: [
               { type: "image", src: "sf-symbol:cat.fill", width: 14, height: 14, color: C_YELLOW },
-              { type: "text", text: "Linux server:", font: { size: 12, weight: "bold" }, textColor: TEXT_SUB },
-              { type: "spacer" } // 🛡️ 物理护栏，确保文字靠左
+              { type: "text", text: sys.os ? `Linux: ${sys.os} · Ker: ${sys.kernel} · ${sys.users}usr · ${sys.loc}` : "Linux: Unknown", font: { size: CONFIG_COLORS.linuxText_size, weight: "bold" }, textColor: CONFIG_COLORS.linuxText_color },
+              { type: "spacer" }
             ]
           },
-          // 第二行：[对齐缩进垫片] [Uptime 文字] [Spacer 强行顶向左边]
           { 
-            type: "stack", direction: "row", 
+            type: "stack", direction: "row", alignItems: "center",
             children: [
-              { type: "spacer", width: 22 }, // 对齐 Linux 文字开头
-              { type: "text", text: `up ${sys.up_detail}`, font: { size: 11, weight: "bold" }, textColor: CONFIG_COLORS.uptime },
-              { type: "spacer" } // 🛡️ 物理护栏，确保文字靠左
+              { type: "stack", width: 22, height: 14 }, // 对齐垫片
+              { type: "text", text: `Up: ${sys.up_detail}`, font: { size: CONFIG_COLORS.uptime_size, weight: "bold" }, textColor: CONFIG_COLORS.uptime_color }, 
+              
+              { type: "spacer" }, // 推力器
+              
+              { type: "date", date: new Date().toISOString(), format: "relative", font: { size: CONFIG_COLORS.time_size, weight: "bold" }, textColor: CONFIG_COLORS.time_color, textAlign: "right" }
             ]
           }
         ]
