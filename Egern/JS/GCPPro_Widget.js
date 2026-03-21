@@ -26,12 +26,9 @@ export default async function(ctx) {
     return `${headerMatch[0]}\n${body.match(/.{1,64}/g)?.join('\n') || body}\n${footerMatch[0]}`;
   }
 
-  // 🎨🎨🎨 【UI 颜色与字体手动配置区】 🎨🎨🎨
-  // 💡 使用说明：
-  // 1. 修改颜色：请修改单引号里的十六进制代码（如 '#34C759'）。
-  // 2. 修改字号：请直接修改对应的数字大小（如 12、10）。
+  // 🎨🎨🎨 【UI 颜色、字号与间距手动配置区】 🎨🎨🎨
   const CONFIG_COLORS = {
-    // --- 基础界面颜色 ---
+    // --- 1. 基础界面颜色 ---
     green:  '#34C759', 
     blue:   '#007AFF', 
     yellow: '#FFCC00', 
@@ -42,19 +39,24 @@ export default async function(ctx) {
     avg3:   '#FF3B30', 
     bg:     '#121212',  
 
-    // --- 👇 底部专属排版配置 👇 ---
-    
-    // 1. Linux 系统信息行 (第一行)
+    // --- 2. 底部系统信息字号与颜色 ---
     linuxText_color: '#8E8E93', // 字体颜色 (默认灰色)
     linuxText_size: 12,         // 字体大小 (默认12)
+    uptime_color: '#34C759',    // 运行时间颜色
+    uptime_size: 12,            // 运行时间字号
+    time_color: '#32ADE6',      // 动态时间颜色
+    time_size: 12,              // 动态时间字号
 
-    // 2. Up 运行时间行 (第二行左侧)
-    uptime_color: '#34C759',    // 字体颜色 (默认绿色)
-    uptime_size: 12,            // 字体大小 (默认与Linux行保持一致为12)
-
-    // 3. 右下角动态跳动时间 (第二行右侧)
-    time_color: '#32ADE6',      // 字体颜色 (默认亮蓝色)
-    time_size: 12               // 字体大小 (默认10)
+    // --- 3. 📏 垂直间距调整 (数字越大，距离越宽) ---
+    // 💡 注意：如果修改数字后位置没变，请尝试增大数值（如 10 或 20）
+    gap_header_metrics: 0,  // 顶部标题 与 CPU指标块 之间的距离
+    gap_metrics_net:    8,  // CPU指标块 与 Net网络流量 之间的距离 (调大此数字可下移流量行)
+    gap_net_load:       8,  // Net网络流量 与 Load负载详情 之间的距离
+    gap_load_avg:       2,  // Load负载详情 与 Avg进度行 之间的距离
+    
+    // --- 4. 整体布局基础间距 ---
+    main_gap_large:    12,  // 大组件行间距
+    main_gap_small:     8   // 中组件行间距
   };
 
   // 🔐 环境变量映射
@@ -76,7 +78,6 @@ export default async function(ctx) {
     return C_PURPLE;
   }
 
-  // ✨ 必须加入缩写逻辑 (w/d/h/m)，否则物理空间装不下必定换行
   const linuxCommand = `
     export LC_ALL=C;
     u=$(awk '{print $1}' /proc/uptime);
@@ -138,7 +139,7 @@ export default async function(ctx) {
   const l15Pct = Math.min(100, Math.round((sys.l15 / sys.cores) * 100));
 
   const uiContent = [
-    // Header (四色田字格)
+    // 1. Header
     {
       type: "stack", direction: "row", alignItems: "center",
       children: [
@@ -157,9 +158,9 @@ export default async function(ctx) {
         ]}
       ]
     },
-    // 🔥 物理护栏：增加首行与下方配置项之间的垂直间距
-    { type: "spacer", height: 8 }, 
-    // Metrics
+    { type: "stack", height: CONFIG_COLORS.gap_header_metrics }, 
+    
+    // 2. Metrics (CPU/Mem/Disk/Swap)
     {
       type: "stack", direction: "row",
       children: [
@@ -169,21 +170,51 @@ export default async function(ctx) {
         { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [{ type: "text", text: `${sPct}%`, font: { size: 12, weight: "bold" }, textColor: getHeatColor(sPct) }, buildPixelMatrix(sPct, getHeatColor(sPct), isLarge?6:5, isLarge?6:5), { type: "text", text: `Swap ${Math.round(sys.swap_tot/1024)}G`, font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }] }
       ]
     },
-    // Net / IO
+
+    // 3. Net / IO
     {
-      type: "stack", direction: "row", gap: 10,
+      type: "stack", direction: "column",
       children: [
-        { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 6, children: [ { type: "text", text: "Net", font: { size: 11, weight: "bold" }, textColor: TEXT_SUB }, { type: "stack", direction: "column", children: [ { type: "text", text: `↑ ${formatSpeed(sys.net_tx)} · ${formatSize(sys.net_txt)}`, font: { size: 10, family: "Menlo", weight: "bold" }, textColor: C_RED }, { type: "text", text: `↓ ${formatSpeed(sys.net_rx)} · ${formatSize(sys.net_rxt)}`, font: { size: 10, family: "Menlo", weight: "bold" }, textColor: C_GREEN } ] } ]},
-        { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 6, children: [ { type: "text", text: "I/O", font: { size: 11, weight: "bold" }, textColor: TEXT_SUB }, { type: "stack", direction: "column", children: [ { type: "text", text: `↑ ${formatSpeed(sys.net_tx/6)} · 1.9G`, font: { size: 10, family: "Menlo", weight: "bold" }, textColor: C_RED }, { type: "text", text: `↓ ${formatSpeed(sys.net_rx/5)} · 1.8G`, font: { size: 10, family: "Menlo", weight: "bold" }, textColor: C_GREEN } ] } ]}
+        { type: "stack", height: CONFIG_COLORS.gap_metrics_net },
+        {
+          type: "stack", direction: "row", gap: 10,
+          children: [
+            { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 6, children: [ { type: "text", text: "Net", font: { size: 11, weight: "bold" }, textColor: TEXT_SUB }, { type: "stack", direction: "column", children: [ { type: "text", text: `↑ ${formatSpeed(sys.net_tx)} · ${formatSize(sys.net_txt)}`, font: { size: 10, family: "Menlo", weight: "bold" }, textColor: C_RED }, { type: "text", text: `↓ ${formatSpeed(sys.net_rx)} · ${formatSize(sys.net_rxt)}`, font: { size: 10, family: "Menlo", weight: "bold" }, textColor: C_GREEN } ] } ]},
+            { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 6, children: [ { type: "text", text: "I/O", font: { size: 11, weight: "bold" }, textColor: TEXT_SUB }, { type: "stack", direction: "column", children: [ { type: "text", text: `↑ ${formatSpeed(sys.net_tx/6)} · 1.9G`, font: { size: 10, family: "Menlo", weight: "bold" }, textColor: C_RED }, { type: "text", text: `↓ ${formatSpeed(sys.net_rx/5)} · 1.8G`, font: { size: 10, family: "Menlo", weight: "bold" }, textColor: C_GREEN } ] } ]}
+          ]
+        }
       ]
     },
-    // Load Rows
+
+    // 4. Load 详情行
     {
-      type: "stack", direction: "row", gap: 8,
+      type: "stack", direction: "column",
       children: [
-        { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 4, children: [ { type: "stack", width: 10, height: 10, backgroundColor: CONFIG_COLORS.avg1, borderRadius: 2 }, { type: "text", text: `Avg1: ${sys.l1}·${l1Pct}%`, font: { size: 10, weight: "bold" }, textColor: CONFIG_COLORS.avg1 } ] },
-        { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 4, children: [ { type: "stack", width: 10, height: 10, backgroundColor: CONFIG_COLORS.avg2, borderRadius: 2 }, { type: "text", text: `Avg2: ${sys.l5}·${l5Pct}%`, font: { size: 10, weight: "bold" }, textColor: CONFIG_COLORS.avg2 } ] },
-        { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 4, children: [ { type: "stack", width: 10, height: 10, backgroundColor: CONFIG_COLORS.avg3, borderRadius: 2 }, { type: "text", text: `Avg3: ${sys.l15}·${l15Pct}%`, font: { size: 10, weight: "bold" }, textColor: CONFIG_COLORS.avg3 } ] }
+        { type: "stack", height: CONFIG_COLORS.gap_net_load },
+        {
+          type: "stack", direction: "row", gap: 8,
+          children: [
+            { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [ { type: "text", text: "Load 1", font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }, { type: "text", text: `${sys.l1} · ${l1Pct}%`, font: { size: 11, weight: "heavy" }, textColor: CONFIG_COLORS.avg1 } ] },
+            { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [ { type: "text", text: "Load 5", font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }, { type: "text", text: `${sys.l5} · ${l5Pct}%`, font: { size: 11, weight: "heavy" }, textColor: CONFIG_COLORS.avg2 } ] },
+            { type: "stack", direction: "column", flex: 1, alignItems: "center", children: [ { type: "text", text: "Load 15", font: { size: 10, weight: "bold" }, textColor: TEXT_SUB }, { type: "text", text: `${sys.l15} · ${l15Pct}%`, font: { size: 11, weight: "heavy" }, textColor: CONFIG_COLORS.avg3 } ] }
+          ]
+        }
+      ]
+    },
+
+    // 5. Avg 进度行
+    {
+      type: "stack", direction: "column",
+      children: [
+        { type: "stack", height: CONFIG_COLORS.gap_load_avg },
+        {
+          type: "stack", direction: "row", gap: 8,
+          children: [
+            { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 4, children: [ { type: "stack", width: 10, height: 10, backgroundColor: CONFIG_COLORS.avg1, borderRadius: 2 }, { type: "text", text: `Avg1: ${sys.l1}·${l1Pct}%`, font: { size: 10, weight: "bold" }, textColor: CONFIG_COLORS.avg1 } ] },
+            { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 4, children: [ { type: "stack", width: 10, height: 10, backgroundColor: CONFIG_COLORS.avg2, borderRadius: 2 }, { type: "text", text: `Avg2: ${sys.l5}·${l5Pct}%`, font: { size: 10, weight: "bold" }, textColor: CONFIG_COLORS.avg2 } ] },
+            { type: "stack", direction: "row", flex: 1, alignItems: "center", gap: 4, children: [ { type: "stack", width: 10, height: 10, backgroundColor: CONFIG_COLORS.avg3, borderRadius: 2 }, { type: "text", text: `Avg3: ${sys.l15}·${l15Pct}%`, font: { size: 10, weight: "bold" }, textColor: CONFIG_COLORS.avg3 } ] }
+          ]
+        }
       ]
     }
   ];
@@ -212,7 +243,6 @@ export default async function(ctx) {
           })
         ]
       },
-      // 🛠️ 将底部两行装进一个 gap 较小的 stack 中拉近距离
       {
         type: "stack", direction: "column", gap: 2, 
         children: [
@@ -227,11 +257,9 @@ export default async function(ctx) {
           { 
             type: "stack", direction: "row", alignItems: "center",
             children: [
-              { type: "stack", width: 22, height: 14 }, // 对齐垫片
+              { type: "stack", width: 22, height: 14 },
               { type: "text", text: `Up: ${sys.up_detail}`, font: { size: CONFIG_COLORS.uptime_size, weight: "bold" }, textColor: CONFIG_COLORS.uptime_color }, 
-              
-              { type: "spacer" }, // 推力器
-              
+              { type: "spacer" },
               { type: "date", date: new Date().toISOString(), format: "relative", font: { size: CONFIG_COLORS.time_size, weight: "bold" }, textColor: CONFIG_COLORS.time_color, textAlign: "right" }
             ]
           }
@@ -240,5 +268,5 @@ export default async function(ctx) {
     );
   }
 
-  return { type: 'widget', url: "egern://", padding: padding, backgroundColor: CONFIG_COLORS.bg, children: [{ type: "stack", direction: "column", flex: 1, gap: isLarge ? 12 : 8, children: uiContent }] };
+  return { type: 'widget', url: "egern://", padding: padding, backgroundColor: CONFIG_COLORS.bg, children: [{ type: "stack", direction: "column", flex: 1, gap: isLarge ? CONFIG_COLORS.main_gap_large : CONFIG_COLORS.main_gap_small, children: uiContent }] };
 }
