@@ -162,7 +162,7 @@ export default async function (ctx) {
   const C = {
     bg1: '#0d1117', bg2: '#161b22',
     barBg: '#30363d',
-    text: '#e6edf3', muted: '#7d8590', dim: '#484f58',
+    text: '#e6edf3', muted: '#9198a1', dim: '#6e7681',
     cpu: '#3fb950', mem: '#58a6ff', swap: '#a371f7',
     net: '#f778ba', disk: '#d29922', temp: '#ff7b72',
   };
