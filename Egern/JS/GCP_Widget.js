@@ -1,5 +1,5 @@
 /**
- * 📌 桌面小组件: 🖥️ GCP (五彩热力感应版 · 流量上色版)
+ * 📌 桌面小组件: 🖥️ GCP (五彩热力感应版)
  * * 📖 【保姆级环境变量设置指南】
  * 请在 Egern 的界面中配置以下环境变量：
  * 👉 Host: 服务器 IP (必填)
@@ -33,16 +33,18 @@ export default async function(ctx) {
   const Password = (env.Password || "").trim();
   const Port = parseInt(env.Port || "22");
 
-  // 🎨 调色盘
-  const BG_COLOR = { light: '#1C1C1E', dark: '#121212' }; 
-  const TEXT_MAIN  = '#FFFFFF'; 
-  const TEXT_SUB   = '#8E8E93'; 
+  // 🎨 调色盘 (自适应深浅模式)
+  const isDark = ctx.displayAppearance !== 'light';
+  const BG_COLOR = isDark ? '#121212' : '#FFFFFF'; 
+  const TEXT_MAIN  = isDark ? '#FFFFFF' : '#000000'; 
+  const TEXT_SUB   = isDark ? '#8E8E93' : '#636366'; 
+  const DIVIDER_COLOR = isDark ? '#2C2C2E' : '#E5E5EA';
   
-  const C_GREEN  = '#34C759'; // 20%
-  const C_BLUE   = '#007AFF'; // 40%
-  const C_YELLOW = '#FFCC00'; // 60%
-  const C_RED    = '#FF3B30'; // 80%
-  const C_PURPLE = '#AF52DE'; // 100%
+  const C_GREEN  = isDark ? '#34C759' : '#1A7F37'; // 20%
+  const C_BLUE   = isDark ? '#007AFF' : '#0969DA'; // 40%
+  const C_YELLOW = isDark ? '#FFCC00' : '#9A6700'; // 60%
+  const C_RED    = isDark ? '#FF3B30' : '#CF222E'; // 80%
+  const C_PURPLE = isDark ? '#AF52DE' : '#8250DF'; // 100%
 
   // 💡 五彩热力逻辑
   function getHeatColor(pct) {
@@ -177,9 +179,9 @@ export default async function(ctx) {
           },
           
           { type: "stack", direction: "row", children: [buildStatCell("CPU", sys.cpu, sys.cpu), buildStatCell("Memory", sys.mem_used, Math.round((sys.mem_used/sys.mem_tot)*100)), buildStatCell("Disk", sys.disk_pct, sys.disk_pct), buildStatCell("Swap", sys.swap_used, Math.round((sys.swap_used/sys.swap_tot)*100)||0)] },
-          { type: "stack", height: 1, backgroundColor: '#2C2C2E', margin: { left: -10, right: -10 } },
+          { type: "stack", height: 1, backgroundColor: DIVIDER_COLOR, margin: { left: -10, right: -10 } },
           { type: "stack", direction: "row", children: [buildLoadCell("Load 1", sys.l1, sys.cores), buildLoadCell("Load 5", sys.l5, sys.cores), buildLoadCell("Load 15", sys.l15, sys.cores)] },
-          { type: "stack", height: 1, backgroundColor: '#2C2C2E', margin: { left: -10, right: -10 } },
+          { type: "stack", height: 1, backgroundColor: DIVIDER_COLOR, margin: { left: -10, right: -10 } },
           { type: "stack", direction: "row", children: [buildTrafficBox("Net", sys.net_tx, sys.net_txt, sys.net_rx, sys.net_rxt), buildTrafficBox("I/O", sys.io_w, sys.io_w, sys.io_r, sys.io_r)] }
         ]
       }
