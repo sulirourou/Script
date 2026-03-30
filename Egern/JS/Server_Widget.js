@@ -159,12 +159,19 @@ export default async function (ctx) {
 
   // ─── Theme ──────────────────────────────────
 
-  const C = {
+  const isDark = ctx.displayAppearance !== 'light';
+  const C = isDark ? {
     bg1: '#0d1117', bg2: '#161b22',
     barBg: '#30363d',
     text: '#e6edf3', muted: '#9198a1', dim: '#6e7681',
     cpu: '#3fb950', mem: '#58a6ff', swap: '#a371f7',
     net: '#f778ba', disk: '#d29922', temp: '#ff7b72',
+  } : {
+    bg1: '#ffffff', bg2: '#f6f8fa',
+    barBg: '#ebedef',
+    text: '#1f2328', muted: '#656d76', dim: '#8c959f',
+    cpu: '#1a7f37', mem: '#0969da', swap: '#8250df',
+    net: '#bf3989', disk: '#9a6700', temp: '#cf222e',
   };
 
   const pctColor = (pct, lo, hi) => pct >= hi ? C.temp : pct >= lo ? C.disk : C.cpu;
