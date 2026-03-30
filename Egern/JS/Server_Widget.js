@@ -159,7 +159,7 @@ export default async function (ctx) {
 
   // ─── Theme ──────────────────────────────────
 
-  const isDark = ctx.displayAppearance !== 'light';
+  const isDark = ctx.displayAppearance === 'dark';
   const C = isDark ? {
     bg1: '#0d1117', bg2: '#161b22',
     barBg: '#30363d',
