@@ -1,5 +1,5 @@
 /**
- * 📌 桌面大组件: 🖥️ GCP Pro (简洁左对齐·自定义排版版)
+ * 📌 桌面大组件: 🖥️ Server
  * * 📖 【使用指南 · 必读】
  * 1. 🔐 环境变量配置 (Environment Variables)：
  * 👉 Host: 服务器 IP (例如 192.168.1.1)
@@ -8,9 +8,8 @@
  * 👉 Password: 登录密码 (密码登录使用)
  * 👉 Port: SSH 端口 (如果不填，代码会自动默认 22)
  * 2. 🎨 界面自定义：
- * 👉 你可以在下方的【UI 颜色与字体手动配置区】自由调整底部文字的字号和颜色。
- * 
- */
+ * 👉 你可以在下方的【UI 颜色与字体手动配置区】自由调整底部文字的字号 and 颜色。
+ * */
 
 export default async function(ctx) {
   
@@ -28,36 +27,39 @@ export default async function(ctx) {
 
   // 🎨🎨🎨 【UI 颜色、字号与间距手动配置区】 🎨🎨🎨
   const CONFIG_COLORS = {
-    // --- 1. 基础界面颜色 ---
-    green:  '#34C759', 
-    blue:   '#007AFF', 
-    yellow: '#FFCC00', 
-    red:    '#FF3B30', 
-    purple: '#AF52DE', 
-    avg1:   '#AF52DE', 
-    avg2:   '#FFCC00', 
-    avg3:   '#FF3B30', 
-    bg:     '#121212',  
+    // --- 1. 基础界面颜色 (已适配自适应模式) ---
+    green:  { light: '#28A745', dark: '#34C759' }, 
+    blue:   { light: '#007AFF', dark: '#007AFF' }, 
+    yellow: { light: '#FF9500', dark: '#FFCC00' }, 
+    red:    { light: '#FF3B30', dark: '#FF3B30' }, 
+    purple: { light: '#5856D6', dark: '#AF52DE' }, 
+    avg1:   { light: '#5856D6', dark: '#AF52DE' }, 
+    avg2:   { light: '#FF9500', dark: '#FFCC00' }, 
+    avg3:   { light: '#FF3B30', dark: '#FF3B30' }, 
+    bg:     { light: '#FFFFFF', dark: '#121212' },  
 
     // --- 2. 底部系统信息字号与颜色 ---
-    linuxText_color: '#8E8E93', // 字体颜色 (默认灰色)
+    linuxText_color: { light: '#3A3A3C', dark: '#8E8E93' }, // 字体颜色 (自适应)
     linuxText_size: 12,         // 字体大小 (默认12)
-    uptime_color: '#34C759',    // 运行时间颜色
+    uptime_color: { light: '#28A745', dark: '#34C759' },    // 运行时间颜色
     uptime_size: 12,            // 运行时间字号
-    time_color: '#32ADE6',      // 动态时间颜色
+    time_color: { light: '#007AFF', dark: '#32ADE6' },      // 动态时间颜色
     time_size: 12,              // 动态时间字号
 
-    // --- 3. 📏 垂直间距调整 (数字越大，距离越宽) ---
-    // 💡 注意：如果修改数字后位置没变，请尝试增大数值（如 10 或 20）
-    gap_header_metrics: 0,  // 顶部标题 与 CPU指标块 之间的距离
-    gap_metrics_net:    8,  // CPU指标块 与 Net网络流量 之间的距离 (调大此数字可下移流量行)
-    gap_net_load:       8,  // Net网络流量 与 Load负载详情 之间的距离
-    gap_load_avg:       2,  // Load负载详情 与 Avg进度行 之间的距离
+    // --- 3. 📏 垂直间距调整 ---
+    gap_header_metrics: 0,  
+    gap_metrics_net:    8,  
+    gap_net_load:       8,  
+    gap_load_avg:       2,  
     
     // --- 4. 整体布局基础间距 ---
-    main_gap_large:    12,  // 大组件行间距
-    main_gap_small:     8   // 中组件行间距
+    main_gap_large:    12,  
+    main_gap_small:     8   
   };
+
+  // 辅助变量：用于处理原本写死在代码里的深色背景
+  const PIXEL_BG = { light: '#E5E5EA', dark: '#2C2C2E' };
+  const BOX_BG   = { light: '#F2F2F7', dark: '#1C1C1E' };
 
   // 🔐 环境变量映射
   const env = ctx.env || {};
@@ -69,7 +71,8 @@ export default async function(ctx) {
 
   const C_GREEN = CONFIG_COLORS.green, C_BLUE = CONFIG_COLORS.blue, C_YELLOW = CONFIG_COLORS.yellow; 
   const C_RED = CONFIG_COLORS.red, C_PURPLE = CONFIG_COLORS.purple;
-  const TEXT_MAIN = '#FFFFFF', TEXT_SUB = '#8E8E93';
+  const TEXT_MAIN = { light: '#000000', dark: '#FFFFFF' }; 
+  const TEXT_SUB = { light: '#636366', dark: '#8E8E93' };
 
   function getHeatColor(pct) {
     const n = Number(pct) || 0;
@@ -95,7 +98,7 @@ export default async function(ctx) {
     net2=$(get_stats); r2=$(echo $net2 | awk '{print $1}'); t2=$(echo $net2 | awk '{print $2}');
     os=$(cat /etc/os-release 2>/dev/null | grep -w PRETTY_NAME | cut -d'"' -f2 | awk '{print $1,$2}' | head -n 1 || uname -s);
     kernel=$(uname -r | cut -d'-' -f1); users=$(who | wc -l | tr -d ' '); loc=$(curl -s --max-time 2 ipinfo.io/country || echo "Unknown");
-    echo "{\\"uptime\\":$u,\\"up_detail\\":\\"$up_detail\\",\\"l1\\":$l1,\\"l5\\":$l5,\\"l15\\":$l15,\\"cores\\":$cores,\\"cpu\\":$c,\\"mem_tot\\":$mt,\\"mem_used\\":$mu,\\"swap_tot\\":$st,\\"swap_used\\":$su,\\"disk_pct\\":$dp,\\"disk_tot\\":\\"$dt\\",\\"procs\\":\\"$procs\\",\\"net_rx\\":$((r2-r1)),\\"net_tx\\":$((t2-t1)),\\"net_rxt\\":$r2,\\"net_txt\\":$t2,\\"os\\":\\"$os\\",\\"kernel\\":\\"$kernel\\",\\"users\\":$users,\\"loc\\":\\"$loc\\"}"
+    echo "{\\"uptime\\":$u,\\"up_detail\\":\\"$up_detail\\",\\"l1\\":$l1,\\"l5\\":$l5,\\"l15\\":$l15,\\"cores\\":$cores,\\"cpu\\":$c,\\"mem_tot\\":$mt,\\"mem_used\\":$mu,\\"swap_tot\\":$st,\\"swap_used\\":$su,\\"disk_pct\\":$dp,\\"disk_tot\\":\\"$dt\\",\\"procs\\":\\"$procs\\",\\"net_rx\\":$((r2-r1)),\\"net_tx\\":$((nt2-nt1)),\\"net_rxt\\":$r2,\\"net_txt\\":$t2,\\"os\\":\\"$os\\",\\"kernel\\":\\"$kernel\\",\\"users\\":$users,\\"loc\\":\\"$loc\\"}"
   `;
 
   let sys = { uptime: 0, up_detail: "offline", l1:0, l5:0, l15:0, cores: 1, cpu: 0, mem_tot: 1024, mem_used: 0, swap_tot: 0, swap_used: 0, disk_pct: 0, disk_tot: "0G", procs: "", isReal: false, ping: 0, os: "", kernel: "", users: 0, loc: "" };
@@ -125,8 +128,8 @@ export default async function(ctx) {
       children: Array.from({length: 10}).map((_, i) => ({
         type: "stack", direction: "column", gap: 2,
         children: [
-          { type: "stack", width: w, height: h, borderRadius: w/4, backgroundColor: i < filled ? color : '#2C2C2E' },
-          { type: "stack", width: w, height: h, borderRadius: w/4, backgroundColor: i < filled ? color : '#2C2C2E' }
+          { type: "stack", width: w, height: h, borderRadius: w/4, backgroundColor: i < filled ? color : PIXEL_BG },
+          { type: "stack", width: w, height: h, borderRadius: w/4, backgroundColor: i < filled ? color : PIXEL_BG }
         ]
       }))
     };
@@ -222,7 +225,7 @@ export default async function(ctx) {
   if (isLarge) {
     uiContent.push(
       {
-        type: "stack", direction: "column", gap: 4, backgroundColor: '#1C1C1E', padding: 10, borderRadius: 10,
+        type: "stack", direction: "column", gap: 4, backgroundColor: BOX_BG, padding: 10, borderRadius: 10,
         children: [
           { type: "stack", direction: "row", children: [{ type: "text", text: "Top Processes", font: { size: 12, weight: "heavy" }, textColor: C_GREEN }, { type: "spacer" }, { type: "text", text: "memory   CPU bar", font: { size: 11 }, textColor: TEXT_SUB }] },
           ...sys.procs.split('|').filter(p => p).map((p, i) => {
@@ -236,7 +239,7 @@ export default async function(ctx) {
                 { type: "image", src: "sf-symbol:shippingbox.fill", width: 12, height: 12, color: TEXT_MAIN },
                 { type: "text", text: n.substring(0, 12), font: { size: 11, weight: "bold" }, textColor: TEXT_MAIN, flex: 1 },
                 { type: "text", text: `${Math.round(r/1024)}MB`, font: { size: 11 }, textColor: TEXT_MAIN, width: 45 },
-                { type: "stack", direction: "row", gap: 1.5, children: Array.from({length: 6}).map((_, idx) => ({ type: "stack", width: 4, height: 8, backgroundColor: idx < Math.ceil(cp/15) ? hc : '#2C2C2E' })) },
+                { type: "stack", direction: "row", gap: 1.5, children: Array.from({length: 6}).map((_, idx) => ({ type: "stack", width: 4, height: 8, backgroundColor: idx < Math.ceil(cp/15) ? hc : PIXEL_BG })) },
                 { type: "text", text: ` ${cp}%`, font: { size: 11, family: "Menlo" }, textColor: TEXT_MAIN, width: 35, textAlign: "right" }
               ]
             }
