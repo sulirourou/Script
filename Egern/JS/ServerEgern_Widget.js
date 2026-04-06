@@ -1,6 +1,6 @@
 // 作者原创链接:https://raw.githubusercontent.com/egerndaddy/quick-start/main/modules/server-monitor.js
 
-// 修复私钥问题 2.0
+// 修复私钥问题
 
 
 // Server Monitor Widget for Egern
@@ -159,20 +159,20 @@ export default async function (ctx) {
 
   // ─── Theme ──────────────────────────────────
 
-  // 🛠️ 彻底修复深浅模式：使用 Egern 标准接口 ctx.colorScheme，抛弃原作者容易卡死的逻辑
-  const isDark = ctx.colorScheme === 'dark';
-  const C = isDark ? {
-    bg1: '#0d1117', bg2: '#161b22',
-    barBg: '#30363d',
-    text: '#e6edf3', muted: '#9198a1', dim: '#6e7681',
-    cpu: '#3fb950', mem: '#58a6ff', swap: '#a371f7',
-    net: '#f778ba', disk: '#d29922', temp: '#ff7b72',
-  } : {
-    bg1: '#ffffff', bg2: '#f6f8fa',
-    barBg: '#ebedef',
-    text: '#1f2328', muted: '#656d76', dim: '#8c959f',
-    cpu: '#1a7f37', mem: '#0969da', swap: '#8250df',
-    net: '#bf3989', disk: '#9a6700', temp: '#cf222e',
+  // 🛠️ 终极修复：使用 Egern 官方原生对象格式，彻底解决无法自动切换深浅模式的问题
+  const C = {
+    bg1:   { light: '#ffffff', dark: '#0d1117' },
+    bg2:   { light: '#f6f8fa', dark: '#161b22' },
+    barBg: { light: '#ebedef', dark: '#30363d' },
+    text:  { light: '#1f2328', dark: '#e6edf3' },
+    muted: { light: '#656d76', dark: '#9198a1' },
+    dim:   { light: '#8c959f', dark: '#6e7681' },
+    cpu:   { light: '#1a7f37', dark: '#3fb950' },
+    mem:   { light: '#0969da', dark: '#58a6ff' },
+    swap:  { light: '#8250df', dark: '#a371f7' },
+    net:   { light: '#bf3989', dark: '#f778ba' },
+    disk:  { light: '#9a6700', dark: '#d29922' },
+    temp:  { light: '#cf222e', dark: '#ff7b72' },
   };
 
   const pctColor = (pct, lo, hi) => pct >= hi ? C.temp : pct >= lo ? C.disk : C.cpu;
@@ -203,9 +203,15 @@ export default async function (ctx) {
       type: 'stack', direction: 'row', alignItems: 'end', height: h, gap: 1,
       children: data.map(v => {
         const r = v / mx;
+        const aHex = alphaHex(0.3 + 0.7 * r);
+        // 🛠️ 同步修复：配合自动深浅模式，提取并附加动态色的透明度
+        const bg = typeof color === 'string'
+          ? color + aHex
+          : { light: color.light + aHex, dark: color.dark + aHex };
+
         return {
           type: 'stack', flex: 1, borderRadius: 1, children: [],
-          backgroundColor: color + alphaHex(0.3 + 0.7 * r),
+          backgroundColor: bg,
           height: Math.max(1, Math.round(r * h)),
         };
       }),
