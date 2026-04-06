@@ -1,6 +1,6 @@
 // 作者原创链接:https://raw.githubusercontent.com/egerndaddy/quick-start/main/modules/server-monitor.js
 
-// 修复私钥问题 v1.0
+// 修复私钥问题 2.0
 
 
 // Server Monitor Widget for Egern
@@ -159,8 +159,8 @@ export default async function (ctx) {
 
   // ─── Theme ──────────────────────────────────
 
-  // 🛠️ 关键修复：Egern 系统读取深浅模式的正确参数是 ctx.colorScheme
-  const isDark = ctx.env.theme ? ctx.env.theme === 'dark' : ctx.colorScheme === 'dark';
+  // 🛠️ 彻底修复深浅模式：使用 Egern 标准接口 ctx.colorScheme，抛弃原作者容易卡死的逻辑
+  const isDark = ctx.colorScheme === 'dark';
   const C = isDark ? {
     bg1: '#0d1117', bg2: '#161b22',
     barBg: '#30363d',
