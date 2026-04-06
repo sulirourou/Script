@@ -1,6 +1,6 @@
 // 作者原创链接:https://raw.githubusercontent.com/egerndaddy/quick-start/main/modules/server-monitor.js
 
-// 修复私钥问题
+// 修复私钥问题 v1.0
 
 
 // Server Monitor Widget for Egern
