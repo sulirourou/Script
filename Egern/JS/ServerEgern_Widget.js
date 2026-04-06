@@ -159,7 +159,8 @@ export default async function (ctx) {
 
   // ─── Theme ──────────────────────────────────
 
-  const isDark = ctx.env.theme ? ctx.env.theme === 'dark' : ctx.displayAppearance === 'dark';
+  // 🛠️ 关键修复：Egern 系统读取深浅模式的正确参数是 ctx.colorScheme
+  const isDark = ctx.env.theme ? ctx.env.theme === 'dark' : ctx.colorScheme === 'dark';
   const C = isDark ? {
     bg1: '#0d1117', bg2: '#161b22',
     barBg: '#30363d',
