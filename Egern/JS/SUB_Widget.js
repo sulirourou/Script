@@ -42,7 +42,7 @@ export default async function (ctx) {
 
   // 🛠️ 彻底修复深浅模式：使用原生 { light, dark } 对象，让 iOS 系统接管自动切换
   const C = {
-    bg:       { light: "#FFFFFF", dark: "#1C1C1E" },
+    bg:       { light: "#FFFFFF", dark: "#121212" },
     textMain: { light: "#000000", dark: "#FFFFFF" },
     barTrack: { light: "#E5E5EA", dark: "#3A3A3C" },
     valTotal: "#0A84FF",
