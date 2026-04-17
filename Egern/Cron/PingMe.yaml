@@ -1,0 +1,27 @@
+# ====================== PingMe 自动化签到+视频奖励 ======================
+# @Name：PingMe 自动化签到+视频奖励
+# @Author：怎么肥事
+# @modify 奶思修改支持 Egern
+# @date 2026-04-17
+
+# ---------------------- 重写 (Rewrite) ----------------------
+rewrite:
+  - name: PingMe 获取Cookie
+    enable: true
+    type: http-request
+    pattern: ^https:\/\/api\.pingmeapp\.net\/app\/queryBalanceAndBonus
+    script-path: https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/cookie/get_cookie.js
+    # 需要请求体时可添加 requires-body: true（此脚本为 request-header，通常不需要）
+
+# ---------------------- 定时任务 (Task) ----------------------
+task:
+  - name: PingMe签到
+    enable: true
+    cron: "30 8,20 * * *"          # 每天 8:30 和 20:30 执行
+    script-path: https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/PingMe/PingMeSignin.js
+    # img-url 参数 Egern 暂不支持直接显示，可忽略或在 UI 中手动设置图标
+
+# ---------------------- MITM (中间人) ----------------------
+mitm:
+  hostname:
+    - api.pingmeapp.net
