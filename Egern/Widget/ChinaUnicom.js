@@ -38,7 +38,7 @@ export default async function(ctx) {
 
   // 🎨 绝对安全的底色方案 (弃用会导致崩溃的 8位透明度 HEX，直接使用安全的 6位极浅 HEX)
   const colors = {
-    bg: { light: "#F4F5F9", dark: "#121212" },
+    bg: { light: "#FFFFFF", dark: "#121212" },
     title: { light: "#8E8E93", dark: "#98989D" },
     unicomRed: "#E60012", 
     themeFee: { 

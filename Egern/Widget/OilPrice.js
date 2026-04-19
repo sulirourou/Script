@@ -17,7 +17,7 @@
 // ==========================================
 
 // 1️⃣ 小组件背景颜色 { light: 白天颜色, dark: 黑夜颜色 }
-const WIDGET_BG_COLOR = { light: "#F2F2F7", dark: "#121212" };
+const WIDGET_BG_COLOR = { light: "#FFFFFF", dark: "#121212" };
 
 // 2️⃣ 顶部标题设置 (“中国油价·XX” 和 水滴图标)
 const TITLE_FONT_SIZE = 14;

@@ -195,7 +195,7 @@ export default async function(ctx) {
     type: "widget",
     url: "egern://",
     padding: 16,
-    backgroundColor: { light: "#F2F2F7", dark: "#121212" },
+    backgroundColor: { light: "#FFFFFF", dark: "#121212" },
     children: [
       {
         type: "stack", direction: "row", alignItems: "center",
