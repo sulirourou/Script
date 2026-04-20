@@ -1,14 +1,14 @@
-name: PingMe Auto2
+name: PingMe Auto3
 description: 只控制获取Cookie（已获取后建议关闭）
 
 compat_arguments:
-  获取Cookie: 'false'      # 默认 false：禁用获取Cookie；需要获取时改为 true
+  获取Cookie: 'false'      # 面板默认显示 false
 
 compat_arguments_desc: |-
   - 获取Cookie 参数：[true, false]
 
-  true = 启用获取Cookie（首次使用或需要重新抓取时打开）
-  false = 禁用获取Cookie（推荐！已获取成功后请设为 false）
+  true = 启用获取Cookie（需要重新抓取时打开）
+  false = 禁用获取Cookie（推荐已获取成功后设为false）
 
 scriptings:
   - http_request:
@@ -16,7 +16,7 @@ scriptings:
       match: ^https:\/\/api\.pingmeapp\.net\/app\/queryBalanceAndBonus
       script_url: https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/cookie/get_cookie.js
       timeout: 60
-      # 通过 compat_arguments 控制，Egern 会自动识别并传递该参数给脚本
+      enable: {获取Cookie}   # Egern 会在底层把面板里的 true/false 文本替换到这里
 
   - schedule:
       name: PingMe 自动化签到+视频奖励
