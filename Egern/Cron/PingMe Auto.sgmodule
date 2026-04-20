@@ -1,0 +1,27 @@
+name: PingMe 签到 + 视频奖励
+description: 支持一键开关获取Cookie和签到任务
+
+compat_arguments:
+  获取Cookie: 'false'           # true = 启用获取Cookie，false = 禁用（推荐已获取后设为false）
+  运行签到任务: 'true'         # true = 每天自动签到+视频奖励，false = 完全关闭签到
+
+scriptings:
+  # 获取 Cookie（可通过参数开关）
+  - http_request:
+      name: PingMe 获取cookie
+      match: ^https:\/\/api\.pingmeapp\.net\/app\/queryBalanceAndBonus
+      script_url: https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/cookie/get_cookie.js
+      timeout: 60
+      disabled: "{{获取Cookie == 'false'}}"   # 参数控制禁用
+
+  # 签到 + 视频奖励任务
+  - schedule:
+      name: PingMe 自动化签到+视频奖励
+      cron: "30 10,18,22 * * *"
+      script_url: https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/PingMe/PingMeSignin.js
+      timeout: 60
+      disabled: "{{运行签到任务 == 'false'}}"   # 参数控制禁用
+
+mitm:
+  hostnames:
+    - api.pingmeapp.net
