@@ -1,5 +1,5 @@
 name: PingMe Auto
-description: 只控制获取Cookie（已获取后建议关闭）
+description: Cookie获取+自动化签到+视频奖励
 
 compat_arguments:
   获取Cookie: 'false'      # true = 启用获取Cookie，false = 禁用获取Cookie
