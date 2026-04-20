@@ -1,19 +1,19 @@
-name: PingMe 签到 + 视频奖励
-description: 只控制获取Cookie（已获取成功后建议关闭）
+name: PingMe Auto
+description: 只控制获取Cookie（已获取后建议关闭）
 
 compat_arguments:
-  获取Cookie: 'false'      # true=启用获取Cookie，false=禁用获取Cookie（推荐设为false）
+  获取Cookie: 'false'      # true = 启用获取Cookie，false = 禁用获取Cookie
+
+compat_arguments_desc: "- 获取Cookie 参数：[true, false]\n\ntrue = 启用获取Cookie（需要重新抓取时打开）\nfalse = 禁用获取Cookie（推荐已获取成功后设为false）"
 
 scriptings:
-  # 获取 Cookie（通过开关控制）
   - http_request:
       name: PingMe 获取cookie
       match: ^https:\/\/api\.pingmeapp\.net\/app\/queryBalanceAndBonus
       script_url: https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/cookie/get_cookie.js
       timeout: 60
-      disabled: "{{获取Cookie == 'false'}}"     # 开关控制
+      # 通过 compat_arguments 控制（Egern 会自动处理）
 
-  # 签到 + 视频奖励任务（一直保持运行，不受开关影响）
   - schedule:
       name: PingMe 自动化签到+视频奖励
       cron: "30 10,18,22 * * *"
