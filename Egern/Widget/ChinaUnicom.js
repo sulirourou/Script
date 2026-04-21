@@ -60,7 +60,7 @@ export default async function(ctx) {
 
   // 🌟 生成右上角的刷新时间
   const now = new Date();
-  const refreshTime = `↻ ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const refreshTime = ` ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
   let data = {
     packageName: "中国联通", 
