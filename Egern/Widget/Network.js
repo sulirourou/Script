@@ -280,7 +280,7 @@ export default async function(ctx) {
               Row(nativeIc, nativeCol, "属性", nativeText, C.text), 
               Row(riskIc, riskCol, "纯净", riskTxt, riskCol),
               Row("timer", C.mem, "延迟", proxyDelay, C.text), 
-              Row("cpu", C.mem, "AI", textAI, C.text) 
+              Row("cpu", C.mem, "智能", textAI, C.text) 
           ]}
       ]},
       { type: 'spacer' }
