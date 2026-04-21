@@ -1,90 +1,51 @@
-name: "PingMe Auto CheckIn"1
-description: "获取Cookie + 自动化签到 + 视频奖励。支持 UI 交互开关控制。"
-author: "Egern Port"
-icon: "message.badge.filled"
+#!name=PingMe Auto CheckIn
+#!desc=获取Cookie + 自动化签到 + 视频奖励。支持 UI 交互开关控制。
+#!author=Egern Port
+#!icon=message.badge.filled
 
-# ================= UI 交互配置 =================
 env_schema:
   CAPTURE_ENABLED:
     name: "账号抓取 - 启用"
     description: "关闭后抓包脚本不再处理任何请求"
-    options:
-      - "true"
-      - "false"
+    options: ["true", "false"]
     default_value: "true"
-
   TASK_ENABLED:
     name: "签到任务 - 总开关"
     description: "关闭后定时任务不执行任何操作"
-    options:
-      - "true"
-      - "false"
+    options: ["true", "false"]
     default_value: "true"
-
   ENABLE_CHECKIN:
     name: "签到任务 - 执行签到"
     description: "是否执行每日签到"
-    options:
-      - "true"
-      - "false"
+    options: ["true", "false"]
     default_value: "true"
-
   ENABLE_VIDEO:
     name: "签到任务 - 执行视频奖励"
     description: "是否领取视频奖励金币"
-    options:
-      - "true"
-      - "false"
+    options: ["true", "false"]
     default_value: "true"
-
   MAX_VIDEO:
     name: "签到任务 - 最大视频次数"
     description: "每账号每次最多领取视频奖励次数 (1-10)"
     default_value: "5"
 
-# ================= 网络拦截 =================
 mitm:
-  hostnames:
-    - "api.pingmeapp.net"
+  hostnames: ["api.pingmeapp.net"]
 
 http_captures:
-  - "api.pingmeapp.net"
+  - "^https://api\\.pingmeapp\\.net/app/queryBalanceAndBonus"
 
-# ================= 脚本逻辑 =================
 scriptings:
-  # 1. 账号抓取脚本 (带 UI 开关逻辑)
   - http_request:
       name: "PingMe 账号抓取"
       match: "^https://api\\.pingmeapp\\.net/app/queryBalanceAndBonus"
       timeout: 60
-      script_base64: |
-        if ($env.CAPTURE_ENABLED === "false" || $env.CAPTURE_ENABLED === false) {
-          $done({});
-        } else {
-          $httpClient.get("https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/cookie/get_cookie.js", (error, response, data) => {
-            if (data) {
-              eval(data);
-            } else {
-              $done({});
-            }
-          });
-        }
+      # 下面是带逻辑判断的 Base64 脚本
+      script_base64: "Y29uc3QgaXNFbmFibGVkID0gJGVudi5DQVBUVVJFX0VOQUJMRUQgPT09ICJ0cnVlIiB8fCAkZW52LkNBUFRVUkVfRU5BQkxFRCA9PT0gdHJ1ZTsKaWYgKCFpc0VuYWJsZWQpIHsKICAkZG9uZSh7fSk7Cn0gZWxzZSB7CiAgJGh0dHBDbGllbnQuZ2V0KCJodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20vZm16MjAwL3dvb2xfc2NyaXB0cy9tYWluL1NjcmlwdHMvY29va2llL2dldF9jb29raWUuanMiLCAoZXJyb3IsIHJlc3BvbnNlLCBkYXRhKSA9PiB7CiAgICBpZiAoZGF0YSkgewogICAgICBldmFsKGRhdGEpOwogICAgfSBlbHNlIHsKICAgICAgJGRvbmUoe30pOwogICAgfQogIH0pOwp9"
 
-  # 2. 自动化任务脚本 (带 UI 开关逻辑)
   - schedule:
       name: "PingMe 签到任务"
       cron: "30 10,18,22 * * *"
-      timeout: 120
-      script_base64: |
-        if ($env.TASK_ENABLED === "false" || $env.TASK_ENABLED === false) {
-          console.log("PingMe 签到任务已通过 UI 关闭");
-          $done();
-        } else {
-          $httpClient.get("https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/PingMe/PingMeSignin.js", (error, response, data) => {
-            if (data) {
-              eval(data);
-            } else {
-              $done();
-            }
-          });
-        }
+      timeout: 150
+      # 下面是带逻辑判断的 Base64 脚本
+      script_base64: "Y29uc3QgaXNFbmFibGVkID0gJGVudi5UQVNLX0VOQUJMRUQgPT09ICJ0cnVlIiB8fCAkZW52LlRBU0tfRU5BQkxFRCA9PT0gdHJ1ZTsKaWYgKCFpc0VuYWJsZWQpIHsKICAkZG9uZSgpOwp9IGVsc2UgewogICRodHRwQ2xpZW50LmdldCgiaHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2ZtejIwMC93b29sX3NjcmlwdHMvbWFpbi9TY3JpcHRzL1BpbmctTWUvUGluZ01lU2lnbmluLmpzIiwgKGVycm9yLCByZXNwb25zZSwgZGF0YSkgPT4gewogICAgaWYgKGRhdGEpIHsKICAgICAgZXZhbChkYXRhKTsKICAgIH0gZWxzZSB7CiAgICAgICRkb25lKCk7CiAgICB9CiAgfSk7Cn0="
