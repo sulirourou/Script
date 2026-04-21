@@ -1,9 +1,9 @@
 name: "PingMe Auto CheckIn"
-description: "获取Cookie + 自动化签到 + 视频奖励，支持多账号及 UI 模式切换。"
-author: "Egern Config"
+description: "获取Cookie + 自动化签到 + 视频奖励。支持 UI 交互开关控制。"
+author: "Egern Port"
 icon: "message.badge.filled"
 
-# UI 交互模式设置
+# ================= UI 交互配置 =================
 env_schema:
   CAPTURE_ENABLED:
     name: "账号抓取 - 启用"
@@ -42,6 +42,7 @@ env_schema:
     description: "每账号每次最多领取视频奖励次数 (1-10)"
     default_value: "5"
 
+# ================= 网络拦截 =================
 mitm:
   hostnames:
     - "api.pingmeapp.net"
@@ -49,16 +50,41 @@ mitm:
 http_captures:
   - "api.pingmeapp.net"
 
+# ================= 脚本逻辑 =================
 scriptings:
+  # 1. 账号抓取脚本 (带 UI 开关逻辑)
   - http_request:
       name: "PingMe 账号抓取"
       match: "^https://api\\.pingmeapp\\.net/app/queryBalanceAndBonus"
-      script_url: "https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/cookie/get_cookie.js"
       timeout: 60
+      script_base64: |
+        if ($env.CAPTURE_ENABLED === "false" || $env.CAPTURE_ENABLED === false) {
+          $done({});
+        } else {
+          $httpClient.get("https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/cookie/get_cookie.js", (error, response, data) => {
+            if (data) {
+              eval(data);
+            } else {
+              $done({});
+            }
+          });
+        }
 
+  # 2. 自动化任务脚本 (带 UI 开关逻辑)
   - schedule:
       name: "PingMe 签到任务"
-      # 保持你原来的 Cron 时间: 10:30, 18:30, 22:30
       cron: "30 10,18,22 * * *"
-      script_url: "https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/PingMe/PingMeSignin.js"
       timeout: 120
+      script_base64: |
+        if ($env.TASK_ENABLED === "false" || $env.TASK_ENABLED === false) {
+          console.log("PingMe 签到任务已通过 UI 关闭");
+          $done();
+        } else {
+          $httpClient.get("https://raw.githubusercontent.com/fmz200/wool_scripts/main/Scripts/PingMe/PingMeSignin.js", (error, response, data) => {
+            if (data) {
+              eval(data);
+            } else {
+              $done();
+            }
+          });
+        }
