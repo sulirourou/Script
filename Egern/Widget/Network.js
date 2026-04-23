@@ -1,41 +1,34 @@
 /**
- * 📌 桌面小组件: 🛡️ 🌏IP 信息面板 (全栈解锁 Pro 版 - 终极美化版 v1.1)
- * 🎨 采用全新 System UI 规范色系 | 纯色背景解决暗黑圆角
+ * 桌面小组件: IP 信息面板 - 终极美化版)
  */
 export default async function(ctx) {
-  // 1. 统一 UI 规范颜色 (全局 C 对象)
   const C = {
     bg: { light: '#FFFFFF', dark: '#121212' },       
     barBg: { light: '#0000001A', dark: '#FFFFFF22' },
     text: { light: '#1C1C1E', dark: '#FFFFFF' },     
     dim: { light: '#8E8E93', dark: '#8E8E93' },      
-    
-    cpu: { light: '#007AFF', dark: '#0A84FF' },      // 用于左侧本地列
-    mem: { light: '#AF52DE', dark: '#BF5AF2' },      // 用于右侧代理列
-    disk: { light: '#FF9500', dark: '#FF9F0A' },     // 用于中危/机房
-    netRx: { light: '#34C759', dark: '#30D158' },    // 用于纯净/原生住宅
-    netTx: { light: '#5856D6', dark: '#5E5CE6' },    
-    
-    // 补充：用于网络雷达极危状态的衍生色
+    cpu: { light: '#007AFF', dark: '#0A84FF' },
+    mem: { light: '#AF52DE', dark: '#BF5AF2' },
+    disk: { light: '#FF9500', dark: '#FF9F0A' },
+    netRx: { light: '#34C759', dark: '#30D158' },
+    netTx: { light: '#5856D6', dark: '#5E5CE6' },
     yellow: { light: '#FFCC00', dark: '#FFD60A' },
     red: { light: '#FF3B30', dark: '#FF453A' }
   };
 
-  // --- 辅助与解析函数 ---
   const fmtProxyISP = (isp) => {
     if (!isp) return "未知";
     let s = String(isp);
-    // 🌟 [v1.1] 遵令：彻底删掉纯数字的内置字典，一劳永逸！只保留基础英文名优化。
     if (/it7/i.test(s)) return "IT7 Network";
     if (/dmit/i.test(s)) return "DMIT Network";
     if (/cloudflare/i.test(s)) return "Cloudflare";
     if (/akamai/i.test(s)) return "Akamai";
     if (/amazon|aws/i.test(s)) return "AWS";
-    if (/google/i.test(s)) return "Google Cloud"; 
+    if (/google/i.test(s)) return "Google Cloud";
     if (/microsoft|azure/i.test(s)) return "Azure";
     if (/alibaba|aliyun/i.test(s)) return "阿里云";
     if (/tencent/i.test(s)) return "腾讯云";
-    if (/oracle/i.test(s)) return "Oracle Cloud"; 
+    if (/oracle/i.test(s)) return "Oracle Cloud";
     if (/racknerd/i.test(s)) return "RackNerd";
     return s.length > 11 ? s.substring(0, 11) + "..." : s; 
   };
@@ -48,6 +41,8 @@ export default async function(ctx) {
 
   const BASE_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36";
   const commonHeaders = { "User-Agent": BASE_UA, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" };
+
+  // 统一 body 读取，兼容 Egern 各版本响应对象
   const readBody = async (r) => {
     if (!r) return "";
     if (typeof r.body === "string" && r.body.length) return r.body;
@@ -73,12 +68,17 @@ export default async function(ctx) {
     gateway = "蜂窝内网";
   }
 
-  // 3. 基础网络请求
+  // 3. 基础网络请求（全部统一用 readBody）
   const fetchLocal = async () => {
     try {
       const res = await ctx.http.get('https://myip.ipip.net/json', { headers: commonHeaders, timeout: 4000 });
-      const body = JSON.parse(await res.text());
-      if (body?.data?.ip) return { ip: body.data.ip, loc: `${body.data.location[1] || ""} ${body.data.location[2] || ""}`.trim() };
+      const rawText = await readBody(res);
+      if (!rawText) throw new Error("empty body");
+      const body = JSON.parse(rawText);
+      if (body?.data?.ip) return {
+        ip: body.data.ip,
+        loc: `${body.data.location?.[1] || ""} ${body.data.location?.[2] || ""}`.trim()
+      };
     } catch (e) {}
     return { ip: "获取失败", loc: "未知" };
   };
@@ -86,38 +86,28 @@ export default async function(ctx) {
   const fetchProxy = async () => {
     try {
       const res = await ctx.http.get('https://my.ippure.com/v1/info', { timeout: 4000 });
-      const data = JSON.parse(await res.text());
+      const rawText = await readBody(res);
+      if (!rawText) throw new Error("empty body");
+      const data = JSON.parse(rawText);
       const flag = getFlag(data.countryCode || data.country_code);
       
-      // 🌟 [v1.1 核心逻辑] 不调任何容易超时的外部接口，在本地强力洗牌过滤！
-      let rawIsp = "";
-      
-      // 解析可能藏得很深的 asn 字段
-      let asnName = "";
-      if (typeof data.asn === 'object' && data.asn !== null) {
-          asnName = data.asn.name || data.asn.org || "";
+      let rawIsp = data.isp || data.ISP || data.org || data.organization || data.network || data.as || data.company;
+      if (typeof rawIsp === 'object' && rawIsp !== null) {
+        rawIsp = rawIsp.name || rawIsp.org || JSON.stringify(rawIsp);
       }
-
-      // 把接口返回的所有可能包含厂名的字段全拉出来，排成一排
-      const candidates = [
-          data.org, data.organization, data.company, data.isp, data.ISP,
-          asnName, data.network, data.as
-      ];
-
-      // 像篦子一样逐个检查
-      for (let item of candidates) {
-          let val = String(item || "").trim();
-          // 【绝杀过滤规则】：字符串必须存在，且必须包含字母或汉字，坚决不要 "15169" 或 "AS15169" 这种纯数字格式！
-          if (val && val !== "undefined" && val !== "null" && /[a-zA-Z\u4e00-\u9fa5]/.test(val) && !/^AS\d+$/i.test(val)) {
-              rawIsp = val;
-              break; // 一旦找到带字母的真名，立刻停止搜查！
-          }
+      if (!rawIsp && data.asn) {
+        rawIsp = typeof data.asn === 'object' ? (data.asn.name || data.asn.org) : String(data.asn);
       }
-
-      if (!rawIsp) {
-          rawIsp = "未知";
+      if (/^\d+$/.test(String(rawIsp).trim()) || /^AS\d+/i.test(String(rawIsp).trim())) {
+        const lowerJson = rawText.toLowerCase();
+        if (lowerJson.includes('google')) rawIsp = "Google";
+        else if (lowerJson.includes('oracle')) rawIsp = "Oracle";
+        else if (lowerJson.includes('amazon') || lowerJson.includes('aws')) rawIsp = "AWS";
+        else if (lowerJson.includes('cloudflare')) rawIsp = "Cloudflare";
+        else if (lowerJson.includes('alibaba') || lowerJson.includes('aliyun')) rawIsp = "Aliyun";
+        else if (lowerJson.includes('tencent')) rawIsp = "Tencent";
+        else if (lowerJson.includes('microsoft') || lowerJson.includes('azure')) rawIsp = "Microsoft";
       }
-
       return { ip: data.ip || "获取失败", loc: `${flag} ${data.city || data.country || ""}`.trim(), isp: fmtProxyISP(rawIsp), cc: data.countryCode || data.country_code || "XX" };
     } catch (e) { return { ip: "获取失败", loc: "未知", isp: "未知", cc: "XX" }; }
   };
@@ -125,7 +115,9 @@ export default async function(ctx) {
   const fetchPurity = async () => {
     try {
       const res = await ctx.http.get('https://my.ippure.com/v1/info', { timeout: 4000 });
-      return JSON.parse(await res.text());
+      const rawText = await readBody(res);
+      if (!rawText) return {};
+      return JSON.parse(rawText);
     } catch (e) { return {}; }
   };
 
@@ -250,7 +242,7 @@ export default async function(ctx) {
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const TIME_COL = { light: 'rgba(0,0,0,0.3)', dark: 'rgba(255,255,255,0.3)' };
 
-  // 5. 网格行组件 (采用 C.dim 和 C.text)
+  // 5. 网格行组件
   const Row = (ic, icCol, label, val, valCol) => ({
     type: 'stack', direction: 'row', alignItems: 'center', gap: 5,
     children: [
@@ -265,21 +257,16 @@ export default async function(ctx) {
   return {
     type: 'widget', 
     padding: 14,
-    backgroundColor: C.bg, // 完美融合暗黑圆角
+    backgroundColor: C.bg,
     children: [
-      // 顶部 Header
       { type: 'stack', direction: 'row', alignItems: 'center', gap: 6, children: [
           { type: 'image', src: 'sf-symbol:waveform.path.ecg', color: C.text, width: 16, height: 16 },
-          { type: 'text', text: '🌏IP 信息面板', font: { size: 14, weight: 'bold' }, textColor: C.text },
+          { type: 'text', text: 'IP 信息面板', font: { size: 14, weight: 'bold' }, textColor: C.text },
           { type: 'spacer' },
           { type: 'text', text: timeStr, font: { size: 10, weight: 'medium' }, textColor: TIME_COL }
       ]},
       { type: 'spacer', length: 12 }, 
-      
-      // 双列网格
       { type: 'stack', direction: 'row', gap: 10, children: [
-          
-          // 【左列】：本地与影视 (使用 C.cpu 科技蓝)
           { type: 'stack', direction: 'column', gap: 4.5, flex: 1, children: [
               Row(netIcon, C.cpu, "环境", netName, C.text),
               Row("wifi.router.fill", C.cpu, "网关", gateway, C.text),
@@ -289,11 +276,7 @@ export default async function(ctx) {
               Row("timer", C.cpu, "延迟", localDelay, C.text), 
               Row("play.tv.fill", C.cpu, "影视", textVideo, C.text) 
           ]},
-
-          // ✂️ 【中轴线】：使用 C.barBg 分割
           { type: 'stack', width: 0.5, backgroundColor: C.barBg },
-          
-          // 【右列】：代理与 AI (使用 C.mem 高贵紫)
           { type: 'stack', direction: 'column', gap: 4.5, flex: 1, children: [
               Row("paperplane.fill", C.mem, "出口", proxyData.ip, C.text),
               Row("mappin.and.ellipse", C.mem, "落地", proxyData.loc, C.text),
