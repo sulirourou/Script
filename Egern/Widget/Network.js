@@ -30,12 +30,12 @@ export default async function(ctx) {
     if (/cloudflare/i.test(s)) return "Cloudflare";
     if (/akamai/i.test(s)) return "Akamai";
     if (/amazon|aws/i.test(s)) return "AWS";
-    if (/google|19527|396982/i.test(s)) return "Google Cloud"; // 🌟 加入谷歌云的 ASN 编号识别
+    if (/google/i.test(s)) return "Google Cloud"; 
     if (/microsoft|azure/i.test(s)) return "Azure";
     if (/alibaba|aliyun/i.test(s)) return "阿里云";
     if (/tencent/i.test(s)) return "腾讯云";
-    if (/oracle|31898/i.test(s)) return "Oracle Cloud"; // 🌟 加入甲骨文的 ASN 编号识别
-    if (/racknerd|35916/i.test(s)) return "RackNerd";
+    if (/oracle/i.test(s)) return "Oracle Cloud"; 
+    if (/racknerd/i.test(s)) return "RackNerd";
     return s.length > 11 ? s.substring(0, 11) + "..." : s; 
   };
 
@@ -88,13 +88,17 @@ export default async function(ctx) {
       const data = JSON.parse(await res.text());
       const flag = getFlag(data.countryCode || data.country_code);
       
-      // 深度提取厂商名，兼容 ippure 的所有嵌套层级
-      let rawIsp = data.isp || data.ISP || data.org || data.organization || data.network || data.as || data.company;
-      if (typeof rawIsp === 'object' && rawIsp !== null) {
-          rawIsp = rawIsp.name || rawIsp.org || JSON.stringify(rawIsp);
-      }
-      if (!rawIsp && data.asn) {
-          rawIsp = typeof data.asn === 'object' ? (data.asn.name || data.asn.org) : String(data.asn);
+      // 深度提取厂商名，智能跳过纯数字(ASN)，强制寻找文本名称
+      let rawIsp = "未知";
+      const keys = [data.org, data.organization, data.company, data.isp, data.ISP, data.asn, data.network, data.as];
+      for (let k of keys) {
+        let val = typeof k === 'object' && k !== null ? (k.name || k.org) : String(k || "");
+        val = val.replace(/^AS\d+\s*/i, "").trim(); // 自动剥离类似 "AS15169 " 这种前缀，只留后面名字
+        // 确保不为空，且不是纯数字
+        if (val && val !== "undefined" && val !== "null" && !/^\d+$/.test(val)) {
+          rawIsp = val;
+          break;
+        }
       }
 
       return { ip: data.ip || "获取失败", loc: `${flag} ${data.city || data.country || ""}`.trim(), isp: fmtProxyISP(rawIsp), cc: data.countryCode || data.country_code || "XX" };
