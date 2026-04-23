@@ -1,5 +1,5 @@
 /**
- * 📌 桌面小组件: 🛡️ IP 信息面板 (全栈解锁 Pro 版 - 终极美化版)11
+ * 📌 桌面小组件: 🛡️ IP 信息面板 (全栈解锁 Pro 版 - 终极美化版 v1.0)
  * 🎨 采用全新 System UI 规范色系 | 纯色背景解决暗黑圆角
  */
 export default async function(ctx) {
@@ -30,12 +30,12 @@ export default async function(ctx) {
     if (/cloudflare/i.test(s)) return "Cloudflare";
     if (/akamai/i.test(s)) return "Akamai";
     if (/amazon|aws/i.test(s)) return "AWS";
-    if (/google|19527|396982/i.test(s)) return "Google Cloud"; // 🌟 加入谷歌云的 ASN 编号识别
+    if (/google/i.test(s)) return "Google Cloud"; // 🌟 [v1.0] 已彻底拔除数字字典
     if (/microsoft|azure/i.test(s)) return "Azure";
     if (/alibaba|aliyun/i.test(s)) return "阿里云";
     if (/tencent/i.test(s)) return "腾讯云";
-    if (/oracle|31898/i.test(s)) return "Oracle Cloud"; // 🌟 加入甲骨文的 ASN 编号识别
-    if (/racknerd|35916/i.test(s)) return "RackNerd";
+    if (/oracle/i.test(s)) return "Oracle Cloud"; // 🌟 [v1.0] 已彻底拔除数字字典
+    if (/racknerd/i.test(s)) return "RackNerd";   // 🌟 [v1.0] 已彻底拔除数字字典
     return s.length > 11 ? s.substring(0, 11) + "..." : s; 
   };
 
@@ -97,14 +97,18 @@ export default async function(ctx) {
           rawIsp = typeof data.asn === 'object' ? (data.asn.name || data.asn.org) : String(data.asn);
       }
 
-      // 🌟 终极智能修复：如果 ippure 接口很坑，只给了纯数字(ASN)没给文本，直接用国际 BGP 数据库动态反查真实厂名，彻底告别手动更新字典！
-      if (/^\d+$/.test(String(rawIsp).trim()) || /^AS\d+/i.test(String(rawIsp).trim())) {
-         let asnNum = String(rawIsp).replace(/\D/g, '');
+      // 🌟 [v1.0核心修复] 智能动态反查引擎：发现纯数字，立即通过全球最稳的 RIPE 官方接口秒查户口本
+      let cleanIsp = String(rawIsp).trim();
+      if (/^\d+$/.test(cleanIsp) || /^AS\d+/i.test(cleanIsp)) {
+         let asnNum = cleanIsp.replace(/\D/g, ''); // 提取纯数字部分
          if (asnNum) {
              try {
-                const asnRes = await ctx.http.get(`https://api.bgpview.io/asn/${asnNum}`, { timeout: 2500 });
-                const asnData = JSON.parse(await asnRes.text());
-                if (asnData?.data?.name) rawIsp = asnData.data.name; 
+                const ripeRes = await ctx.http.get(`https://stat.ripe.net/data/as-overview/data.json?resource=${asnNum}`, { headers: commonHeaders, timeout: 3500 });
+                const ripeData = JSON.parse(await ripeRes.text());
+                if (ripeData?.data?.holder) {
+                   // RIPE 返回格式通常为 "GOOGLE, US"，截取逗号前的主体名称
+                   rawIsp = ripeData.data.holder.split(',')[0].trim();
+                }
              } catch(e) {}
          }
       }
