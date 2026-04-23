@@ -1,5 +1,5 @@
 /**
- * 📌 桌面小组件: 🛡️ IP 信息面板 (全栈解锁 Pro 版 - 终极美化版 v1.0)
+ * 📌 桌面小组件: 🛡️ 🌏IP 信息面板 (全栈解锁 Pro 版 - 终极美化版 v1.1)
  * 🎨 采用全新 System UI 规范色系 | 纯色背景解决暗黑圆角
  */
 export default async function(ctx) {
@@ -25,17 +25,18 @@ export default async function(ctx) {
   const fmtProxyISP = (isp) => {
     if (!isp) return "未知";
     let s = String(isp);
+    // 🌟 [v1.1] 遵令：彻底删掉纯数字的内置字典，一劳永逸！只保留基础英文名优化。
     if (/it7/i.test(s)) return "IT7 Network";
     if (/dmit/i.test(s)) return "DMIT Network";
     if (/cloudflare/i.test(s)) return "Cloudflare";
     if (/akamai/i.test(s)) return "Akamai";
     if (/amazon|aws/i.test(s)) return "AWS";
-    if (/google/i.test(s)) return "Google Cloud"; // 🌟 [v1.0] 已彻底拔除数字字典
+    if (/google/i.test(s)) return "Google Cloud"; 
     if (/microsoft|azure/i.test(s)) return "Azure";
     if (/alibaba|aliyun/i.test(s)) return "阿里云";
     if (/tencent/i.test(s)) return "腾讯云";
-    if (/oracle/i.test(s)) return "Oracle Cloud"; // 🌟 [v1.0] 已彻底拔除数字字典
-    if (/racknerd/i.test(s)) return "RackNerd";   // 🌟 [v1.0] 已彻底拔除数字字典
+    if (/oracle/i.test(s)) return "Oracle Cloud"; 
+    if (/racknerd/i.test(s)) return "RackNerd";
     return s.length > 11 ? s.substring(0, 11) + "..." : s; 
   };
 
@@ -88,29 +89,33 @@ export default async function(ctx) {
       const data = JSON.parse(await res.text());
       const flag = getFlag(data.countryCode || data.country_code);
       
-      // 深度提取厂商名，兼容 ippure 的所有嵌套层级
-      let rawIsp = data.isp || data.ISP || data.org || data.organization || data.network || data.as || data.company;
-      if (typeof rawIsp === 'object' && rawIsp !== null) {
-          rawIsp = rawIsp.name || rawIsp.org || JSON.stringify(rawIsp);
-      }
-      if (!rawIsp && data.asn) {
-          rawIsp = typeof data.asn === 'object' ? (data.asn.name || data.asn.org) : String(data.asn);
+      // 🌟 [v1.1 核心逻辑] 不调任何容易超时的外部接口，在本地强力洗牌过滤！
+      let rawIsp = "";
+      
+      // 解析可能藏得很深的 asn 字段
+      let asnName = "";
+      if (typeof data.asn === 'object' && data.asn !== null) {
+          asnName = data.asn.name || data.asn.org || "";
       }
 
-      // 🌟 [v1.0核心修复] 智能动态反查引擎：发现纯数字，立即通过全球最稳的 RIPE 官方接口秒查户口本
-      let cleanIsp = String(rawIsp).trim();
-      if (/^\d+$/.test(cleanIsp) || /^AS\d+/i.test(cleanIsp)) {
-         let asnNum = cleanIsp.replace(/\D/g, ''); // 提取纯数字部分
-         if (asnNum) {
-             try {
-                const ripeRes = await ctx.http.get(`https://stat.ripe.net/data/as-overview/data.json?resource=${asnNum}`, { headers: commonHeaders, timeout: 3500 });
-                const ripeData = JSON.parse(await ripeRes.text());
-                if (ripeData?.data?.holder) {
-                   // RIPE 返回格式通常为 "GOOGLE, US"，截取逗号前的主体名称
-                   rawIsp = ripeData.data.holder.split(',')[0].trim();
-                }
-             } catch(e) {}
-         }
+      // 把接口返回的所有可能包含厂名的字段全拉出来，排成一排
+      const candidates = [
+          data.org, data.organization, data.company, data.isp, data.ISP,
+          asnName, data.network, data.as
+      ];
+
+      // 像篦子一样逐个检查
+      for (let item of candidates) {
+          let val = String(item || "").trim();
+          // 【绝杀过滤规则】：字符串必须存在，且必须包含字母或汉字，坚决不要 "15169" 或 "AS15169" 这种纯数字格式！
+          if (val && val !== "undefined" && val !== "null" && /[a-zA-Z\u4e00-\u9fa5]/.test(val) && !/^AS\d+$/i.test(val)) {
+              rawIsp = val;
+              break; // 一旦找到带字母的真名，立刻停止搜查！
+          }
+      }
+
+      if (!rawIsp) {
+          rawIsp = "未知";
       }
 
       return { ip: data.ip || "获取失败", loc: `${flag} ${data.city || data.country || ""}`.trim(), isp: fmtProxyISP(rawIsp), cc: data.countryCode || data.country_code || "XX" };
@@ -265,7 +270,7 @@ export default async function(ctx) {
       // 顶部 Header
       { type: 'stack', direction: 'row', alignItems: 'center', gap: 6, children: [
           { type: 'image', src: 'sf-symbol:waveform.path.ecg', color: C.text, width: 16, height: 16 },
-          { type: 'text', text: 'IP 信息面板', font: { size: 14, weight: 'bold' }, textColor: C.text },
+          { type: 'text', text: '🌏IP 信息面板', font: { size: 14, weight: 'bold' }, textColor: C.text },
           { type: 'spacer' },
           { type: 'text', text: timeStr, font: { size: 10, weight: 'medium' }, textColor: TIME_COL }
       ]},
