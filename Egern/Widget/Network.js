@@ -1,5 +1,5 @@
 /**
- * 📌 桌面小组件: 🛡️ IP 信息面板 (全栈解锁 Pro 版 - 终极美化版)
+ * 📌 桌面小组件: 🛡️ IP 信息面板 (全栈解锁 Pro 版 - 终极美化版)1
  * 🎨 采用全新 System UI 规范色系 | 纯色背景解决暗黑圆角
  */
 export default async function(ctx) {
