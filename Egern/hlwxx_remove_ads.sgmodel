@@ -3,6 +3,7 @@
 #!homepage=https://raw.githubusercontent.com/ZenmoFeiShi/Qx/refs/heads/main/hlwxx_remove_ads.snippet
 #!author=怎么肥事
 #!update=2026-04-18
+icon: https://hlwxx.com/static/pc/icons/hllogo.png
 
 [URL Rewrite]
 ^https?:\/\/stats\.kwvprfcr\.xyz - reject
