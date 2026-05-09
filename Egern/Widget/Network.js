@@ -1,5 +1,5 @@
 /**
- * 桌面小组件: IP 信息面板 - 终极美化版)
+ * 桌面小组件: 🌏 IP 信息面板 - 终极美化版 (IPIP + cip.cc 双核定位)
  */
 export default async function(ctx) {
   const C = {
@@ -42,7 +42,6 @@ export default async function(ctx) {
   const BASE_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36";
   const commonHeaders = { "User-Agent": BASE_UA, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" };
 
-  // 统一 body 读取，兼容 Egern 各版本响应对象
   const readBody = async (r) => {
     if (!r) return "";
     if (typeof r.body === "string" && r.body.length) return r.body;
@@ -52,7 +51,6 @@ export default async function(ctx) {
     return "";
   };
 
-  // 2. 获取本地网络数据
   const d = ctx.device || {};
   const isWifi = !!d.wifi?.ssid;
   let netName = "未连接", netIcon = "antenna.radiowaves.left.and.right";
@@ -68,18 +66,43 @@ export default async function(ctx) {
     gateway = "蜂窝内网";
   }
 
-  // 3. 基础网络请求（全部统一用 readBody）
+  // 🚀 核心更新：保留 IPIP，引入 cip.cc 并使用 curl 伪装极速获取纯文本
   const fetchLocal = async () => {
+    // 方案 1: IPIP.net (首选，信息全面)
     try {
-      const res = await ctx.http.get('https://myip.ipip.net/json', { headers: commonHeaders, timeout: 4000 });
+      const res = await ctx.http.get('https://myip.ipip.net/json', { headers: commonHeaders, timeout: 2500 });
       const rawText = await readBody(res);
-      if (!rawText) throw new Error("empty body");
-      const body = JSON.parse(rawText);
-      if (body?.data?.ip) return {
-        ip: body.data.ip,
-        loc: `${body.data.location?.[1] || ""} ${body.data.location?.[2] || ""}`.trim()
-      };
+      if (rawText) {
+        const body = JSON.parse(rawText);
+        if (body?.data?.ip) return {
+          ip: body.data.ip,
+          loc: `${body.data.location?.[1] || ""} ${body.data.location?.[2] || ""}`.trim()
+        };
+      }
     } catch (e) {}
+
+    // 方案 2: cip.cc (国内极客最爱备用，精准带位置)
+    try {
+      const res2 = await ctx.http.get('http://www.cip.cc/', { 
+        headers: { "User-Agent": "curl/7.81.0" }, // 伪装成 curl，cip.cc 会直接返回纯净文本，解析极快
+        timeout: 2500 
+      });
+      const rawText2 = await readBody(res2);
+      if (rawText2) {
+        // cip.cc 返回格式如: "IP : 1.2.3.4 \n 地址 : 中国 广东 深圳"
+        const ipMatch = rawText2.match(/IP\s*:\s*([0-9\.]+)/i);
+        const locMatch = rawText2.match(/地址\s*:\s*([^\n\r]+)/i);
+        if (ipMatch && ipMatch[1]) {
+          // 清理掉多余的 "中国" 和重复空格，让排版更好看
+          let loc = locMatch ? locMatch[1].replace(/中国/g, '').replace(/\s+/g, ' ').trim() : "未知";
+          return {
+            ip: ipMatch[1],
+            loc: loc || "未知"
+          };
+        }
+      }
+    } catch (e2) {}
+
     return { ip: "获取失败", loc: "未知" };
   };
 
@@ -131,7 +154,6 @@ export default async function(ctx) {
     try { await ctx.http.get('http://cp.cloudflare.com/generate_204', { timeout: 2000 }); return `${Date.now() - start} ms`; } catch (e) { return "超时"; }
   };
 
-  // 🎬 流媒体解锁测试 
   async function checkNetflix() {
     try {
       const checkStatus = async (id) => {
@@ -167,7 +189,6 @@ export default async function(ctx) {
     } catch { return "❌"; }
   }
 
-  // 🤖 AI 解锁测试
   async function checkChatGPT() {
     try {
       const traceRes = await ctx.http.get("https://chatgpt.com/cdn-cgi/trace", { timeout: 3000 }).catch(() => null);
@@ -207,14 +228,12 @@ export default async function(ctx) {
     } catch { return "❌"; }
   }
 
-  // 🚦 并发执行所有核心网络请求
   const [localData, proxyData, purityData, localDelay, proxyDelay, rNF, rDP, rTK, rGPT, rCL, rGM] = await Promise.all([
     fetchLocal(), fetchProxy(), fetchPurity(), fetchLocalDelay(), fetchProxyDelay(),
     checkNetflix(), checkDisney(), checkTikTok(), 
     checkChatGPT(), checkClaude(), checkGemini()
   ]);
 
-  // 4. 数据清洗与渲染逻辑
   const isRes = purityData.isResidential;
   let nativeText = "未知属性", nativeIc = "questionmark.building.fill", nativeCol = C.dim;
   if (isRes === true) { nativeText = "原生住宅"; nativeIc = "house.fill"; nativeCol = C.netRx; } 
@@ -242,7 +261,6 @@ export default async function(ctx) {
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const TIME_COL = { light: 'rgba(0,0,0,0.3)', dark: 'rgba(255,255,255,0.3)' };
 
-  // 5. 网格行组件
   const Row = (ic, icCol, label, val, valCol) => ({
     type: 'stack', direction: 'row', alignItems: 'center', gap: 5,
     children: [
@@ -253,7 +271,6 @@ export default async function(ctx) {
     ]
   });
 
-  // 6. 最终渲染
   return {
     type: 'widget', 
     padding: 14,
@@ -261,7 +278,7 @@ export default async function(ctx) {
     children: [
       { type: 'stack', direction: 'row', alignItems: 'center', gap: 6, children: [
           { type: 'image', src: 'sf-symbol:waveform.path.ecg', color: C.text, width: 16, height: 16 },
-          { type: 'text', text: 'IP 信息面板', font: { size: 14, weight: 'bold' }, textColor: C.text },
+          { type: 'text', text: '🌏 IP 信息面板', font: { size: 14, weight: 'bold' }, textColor: C.text },
           { type: 'spacer' },
           { type: 'text', text: timeStr, font: { size: 10, weight: 'medium' }, textColor: TIME_COL }
       ]},
