@@ -1,7 +1,7 @@
 #!name=Wise Direct Rules
 #!desc=Wise (TransferWise) 完整直连规则，包含核心业务、验证及支付网关，防止风控。
 #!author=Gemini
-icon: https://raw.githubusercontent.com/sulirourou/Script/main/ico/Wise.png
+#!icon=https://raw.githubusercontent.com/sulirourou/Script/main/ico/Wise.png
 
 [Rule]
 # --- Wise (TransferWise) 合并互补完整版 ---
