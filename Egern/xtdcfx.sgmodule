@@ -1,5 +1,9 @@
 #!name=系统电池分析
-#!desc=2026-09-17
+#!desc=先开启规则，在进入软件登录即可！
+#!openUrl=https://apps.apple.com/app
+#!author=ddm1023
+#!homepage=https://t.me/ddm1023
+#!icon=https://raw.githubusercontent.com/sulirourou/Script/main/ico/AppStore.png
 
 [Script]
 xtdcfx = type=http-response, pattern=^https?:\/\/apis\.zhangthree\.cn\/vip\/storekit\/purchases\/sync, script-path=https://raw.githubusercontent.com/chxm1023/Rewrite/main/xtdcfx.js, requires-body=true, max-size=-1, timeout=60
