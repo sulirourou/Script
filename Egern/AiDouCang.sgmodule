@@ -1,0 +1,8 @@
+#!name=aidoucang
+#!desc=aidoucang
+
+[Script]
+aidoucang = type=http-response, pattern=^https?:\/\/api\.aidoucang\.cn\/api\/me, script-path=https://raw.githubusercontent.com/chxm1023/Rewrite/main/aidoucang.js, requires-body=true, max-size=-1, timeout=60
+
+[MITM]
+hostname = %APPEND% api.aidoucang.cn
