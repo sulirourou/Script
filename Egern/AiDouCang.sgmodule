@@ -1,5 +1,9 @@
-#!name=aidoucang
-#!desc=aidoucang
+#!name=AiDouCang
+#!desc=高级会员
+#!homepage=https://t.me/ddm1023
+#!author=@ddm1023
+#!update=2026-08-10
+#!icon=https://hlwxx.com/static/pc/icons/hllogo.png?v=1
 
 [Script]
 aidoucang = type=http-response, pattern=^https?:\/\/api\.aidoucang\.cn\/api\/me, script-path=https://raw.githubusercontent.com/chxm1023/Rewrite/main/aidoucang.js, requires-body=true, max-size=-1, timeout=60
