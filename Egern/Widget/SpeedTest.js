@@ -1,9 +1,12 @@
 /**
 * 📌 桌面小组件: Speedtest 极简官方复刻版
-* 版本：v2.7 (2026-10-30)
+* 版本：v2.8 (2026-10-31)
 * 环境变量 (可选):
 * 名称：POLICY
 * 值：自定义策略组节点名称，例如 美国节点；不填则全部测速请求按 Egern 默认规则路由
+*
+* 🔧 v2.8 变更: 大号底部指标组整体下移: 其上方间距 10 -> 18 (与上传曲线
+* 拉开距离); 同时页眉后与分隔线后间距各收 2, 总高只净增约 4。测速不变。
 *
 * 🔧 v2.7 变更: 大号右上空白区新增本次测速线路的 IP 信息 (官网同款四项):
 * 出口 IP、网络 (运营商+AS号)、服务器城市、IPv4/IPv6。数据来自 Cloudflare
@@ -562,13 +565,13 @@ if (ulChart) { ulKids.push(p90Caption); ulKids.push(ulChart); }
 
 content = [
 makeHeader(false),
-{ type: 'spacer', length: 8},
+{ type: 'spacer', length: 6},
 { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: dlKids},
 { type: 'spacer', length: 8},
 { type: 'stack', height: 1, backgroundColor: C.divider},
-{ type: 'spacer', length: 8},
+{ type: 'spacer', length: 6},
 { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: ulKids},
-{ type: 'spacer', length: 10},
+{ type: 'spacer', length: 18},
 {
 type: 'stack', direction: 'row', alignItems: 'start', gap: 8,
 children: [
