@@ -1,6 +1,12 @@
 /**
 * 📌 桌面小组件: Speedtest 极简官方复刻版
-* 版本：v2.1 (2026-10-30)
+* 版本：v2.2 (2026-10-30)
+*
+* 🔧 v2.2 变更 (大号高度修正):
+* v2.1 大号内容总高超出组件高度, 底部 Latency/Jitter/Packet Loss 只剩标签、数值被裁掉。
+* 本版压缩大号: 去掉「您的网络速度」标题行 (CF 官方版式本就没有)、内边距 18->14、
+* 下载图 50->42 / 上传图 42->34、下载数字 46->42 / 上传数字 32->28、底部数值 22->20,
+* 间距整体收紧; 各区块改为左对齐 (v2.1 在真机上是居中, 与 CF 版式不符)。
 *
 * 🔧 v2.1 变更 (大号仿 Cloudflare 官方版式):
 * 1. 大号改成 speed.cloudflare.com 的纵向版式: Download 大数字 + 曲线图、Upload 数字 + 曲线图,
@@ -14,14 +20,14 @@
 * 📊 全面适配: 小号 / 中号 / 大号组件 (各有独立布局) | 浅色 / 深色模式
 *
 * 🔧 v2.0 修复内容 (相对 v1.9):
-* 1. 丢包率不再写死 '-': 改为应用层探测 —— 向 Cloudflare generate_204 发 8 次请求,
+* 1. 丢包率不再写死 '-': 改为应用层探测 ---- 向 Cloudflare generate_204 发 8 次请求,
 * 超时/非 204 记为丢失, 丢包率 = 丢失数 / 总数。iOS 上测不了 ICMP ping 丢包,
 * 这是 HTTP 层等效值, 含义是"请求失败率", 已足够反映网络质量。
 * 2. 延迟/抖动不再把失败请求的时间也算进去 (旧版失败一次就把 3000ms 超时计入平均,
 * 延迟会被严重放大); 抖动改为相邻成功样本差值的平均 (业界通用定义)。
 * 3. 下载测速必须把响应体真正读完 (arrayBuffer) 再按实际字节数算速度;
 * 旧版拿到响应就停表, 测到的往往只是响应头到达时间, 数值失真。
-* 同时去掉 dlTime > 0.1 的判断 —— 旧版网速快到 3MB 在 0.1s 内下完反而显示 0。
+* 同时去掉 dlTime > 0.1 的判断 ---- 旧版网速快到 3MB 在 0.1s 内下完反而显示 0。
 * 4. 小号 (systemSmall) 使用专用紧凑布局: 旧版小号直接套中号的双列大字布局,
 * 宽度不够导致标题截断、Mbps 换行、两列互相挤压。
 * 5. 大号布局左右两列顶部对齐 (旧版左列被垂直居中, 上传速度会飘到中间偏下)。
@@ -322,8 +328,8 @@ if (isLarge) {
 // Download 大数字 + 橙色曲线, Upload + 紫色曲线, 底部 Latency/Jitter/Packet Loss 三列。
 // 图中灰色虚线 = 90 百分位 (头条数字), 曲线上的点 = 每次阶梯采样的实测速度。
 const CHART_W = 328;
-const dlChart = sparkline(data.dlS, CONFIG.color.dlLine, CHART_W, 50);
-const ulChart = sparkline(data.ulS, CONFIG.color.ulLine, CHART_W, 42);
+const dlChart = sparkline(data.dlS, CONFIG.color.dlLine, CHART_W, 42);
+const ulChart = sparkline(data.ulS, CONFIG.color.ulLine, CHART_W, 34);
 
 const cfLabel = (title) => ({
 type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
@@ -345,33 +351,32 @@ if (chart) {
 kids.push({ type: 'text', text: '90th percentile', font: { size: 8, weight: 'medium'}, textColor: C.sub, maxLines: 1});
 kids.push(chart);
 }
-return { type: 'stack', direction: 'column', gap: 3, children: kids};
+return { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: kids};
 };
 const cfMini = (title, value, unit) => ({
-type: 'stack', direction: 'column', gap: 2, flex: 1,
+type: 'stack', direction: 'column', alignItems: 'start', gap: 2, flex: 1,
 children: [
 cfLabel(title),
 {
 type: 'stack', direction: 'row', alignItems: 'end', gap: 3,
 children: [
-{ type: 'text', text: String(value), font: { size: 22, weight: 'heavy'}, textColor: C.text, maxLines: 1, minScale: 0.5},
+{ type: 'text', text: String(value), font: { size: 20, weight: 'heavy'}, textColor: C.text, maxLines: 1, minScale: 0.5},
 { type: 'text', text: unit, font: { size: 11, weight: 'bold'}, textColor: C.text, maxLines: 1}
 ]
 }
 ]
 });
 
+padding = 14;
 content = [
 makeHeader(false),
 { type: 'spacer', length: 10},
-{ type: 'text', text: '您的网络速度', font: { size: CONFIG.size.sectionTitle, weight: 'bold'}, textColor: C.text},
-{ type: 'spacer', length: 12},
-cfSection('Download', data.dl, 'Mbps', 46, dlChart),
-{ type: 'spacer', length: 14},
+cfSection('Download', data.dl, 'Mbps', 42, dlChart),
+{ type: 'spacer', length: 10},
 { type: 'stack', height: 1, backgroundColor: C.divider},
+{ type: 'spacer', length: 10},
+cfSection('Upload', data.ul, 'Mbps', 28, ulChart),
 { type: 'spacer', length: 12},
-cfSection('Upload', data.ul, 'Mbps', 32, ulChart),
-{ type: 'spacer', length: 16},
 {
 type: 'stack', direction: 'row', alignItems: 'start', gap: 8,
 children: [
