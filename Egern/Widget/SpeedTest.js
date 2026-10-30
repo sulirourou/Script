@@ -1,6 +1,13 @@
 /**
 * 📌 桌面小组件: Speedtest 极简官方复刻版
-* 版本：v2.2 (2026-10-30)
+* 版本：v2.3 (2026-10-30)
+*
+* 🔧 v2.3 变更 (负载延迟 + 大号版式再调整):
+* 1. 新增负载延迟/抖动 (CF 的 ↓/↑ 两行): 在一笔按实测速度定制的背景下载/上传进行期间
+*    并发发探测取中位数。带自检: 样本必须在背景传输未结束时发起, 且耗时不超过
+*    空载延迟*4+200ms 才采信; 若 Egern 引擎把请求串行化导致测不到, 自动不出数, 不凑假数。
+* 2. 大号版式: Latency/Jitter/Packet Loss 从底部整行移到 Download 右侧空白区 (纵向三组,
+*    ↓/↑ 小字跟在各自指标下方), 底部行取消, 上传曲线下方不再拥挤。
 *
 * 🔧 v2.2 变更 (大号高度修正):
 * v2.1 大号内容总高超出组件高度, 底部 Latency/Jitter/Packet Loss 只剩标签、数值被裁掉。
@@ -95,10 +102,10 @@ const family = ctx.widgetFamily || 'systemMedium';
 const isLarge = family === 'systemLarge' || family === 'systemExtraLarge';
 const isMedium = family === 'systemMedium';
 const isSmall =!isLarge &&!isMedium; // systemSmall 及锁屏尺寸都走紧凑布局
-const CACHE_KEY = 'speedtest_cache_v4';
+const CACHE_KEY = 'speedtest_cache_v5';
 
 // pl: 数字 = 丢包率百分比; '-' = 一次都没测成 (无缓存且探测全失败到无法统计时仍会给 100, 见下方)
-let data = { dl: 0, ul: 0, ping: 0, jitter: 0, pl: '-', ts: 0, dlS: [], ulS: []};
+let data = { dl: 0, ul: 0, ping: 0, jitter: 0, pl: '-', ts: 0, dlS: [], ulS: [], dlPing: null, dlJitter: null, ulPing: null, ulJitter: null};
 
 try {
 const cached = ctx.storage.getJSON(CACHE_KEY);
@@ -192,6 +199,79 @@ measuredAny = true;
 }
 } catch (e) {}
 
+// ---------- 负载延迟/抖动: 背景传输期间并发探测 (CF 的 ↓/↑) ----------
+// 先不 await 地发起一笔背景传输, 在它进行期间发 generate_204 探测。
+// 自检: 样本必须在背景传输未结束时发起, 且耗时 <= 空载延迟*4+200ms 才采信
+// (串行引擎下探测被排队到背景传输之后, 耗时爆表, 自动丢弃); 有效样本 >= 2 才出数。
+const medianNum = (nums) => {
+if (!nums.length) return null;
+const s = [...nums].sort((a, b) => a - b);
+const m = Math.floor(s.length / 2);
+return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+};
+const summarizeLoaded = (times) => {
+if (!times || times.length < 2) return null;
+let jitter = 0;
+let dsum = 0;
+for (let i = 1; i < times.length; i++) dsum += Math.abs(times[i] - times[i - 1]);
+jitter = parseFloat((dsum / (times.length - 1)).toFixed(1));
+return { ping: medianNum(times), jitter};
+};
+const measureLoaded = async (startBg, idlePing) => {
+let bgDone = false;
+let bgResult = null;
+const bgPromise = (async () => {
+try { bgResult = await startBg(); } catch (e) {}
+bgDone = true;
+})();
+const maxDur = Math.min(2500, Math.max(800, (idlePing || 250) * 4 + 200));
+const times = [];
+for (let i = 0; i < 4; i++) {
+if (bgDone) break;
+const wasLoading = !bgDone;
+const t0 = Date.now();
+let ok = false;
+try {
+const resp = await ctx.http.get('https://cp.cloudflare.com/generate_204', { timeout: 2000});
+ok = !!resp && resp.status === 204;
+} catch (e) { ok = false; }
+const dt = Date.now() - t0;
+if (ok && wasLoading && dt <= maxDur) times.push(dt);
+}
+await bgPromise;
+return { times, bgResult };
+};
+
+// ---------- 下载负载延迟 (↓): 背景下载顺带作为一个额外测速样本 ----------
+try {
+if (dlSamples.length > 0 && Date.now() - measureStart < 18000) {
+const estMbps = data.dl > 0 ? data.dl : 50;
+const bgBytes = Math.round(Math.min(20000000, Math.max(2000000, estMbps * 1e6 / 8 * 2)));
+const { times, bgResult } = await measureLoaded(async () => {
+const t0 = Date.now();
+const resp = await ctx.http.get(`https://speed.cloudflare.com/__down?bytes=${bgBytes}&r=${t0}`, {
+headers: { 'Cache-Control': 'no-cache'},
+timeout: 15000
+});
+if (resp && resp.status === 200) {
+const buf = await resp.arrayBuffer();
+const sec = (Date.now() - t0) / 1000;
+if (buf && buf.byteLength > 0 && sec > 0.2) {
+return { bytes: buf.byteLength, mbps: (buf.byteLength * 8) / sec / 1e6, seconds: sec };
+}
+}
+return null;
+}, data.ping);
+if (bgResult) {
+dlSamples.push(bgResult);
+data.dl = parseFloat(p90(headlinePool(dlSamples)).toFixed(1));
+data.dlS = dlSamples.map(s => parseFloat(s.mbps.toFixed(2)));
+}
+const L = summarizeLoaded(times);
+if (L) { data.dlPing = L.ping; data.dlJitter = L.jitter; }
+}
+} catch (e) {}
+
 // ---------- 3) 上传测速: 阶梯多样本采样 (仿 Cloudflare) ----------
 const UL_PLAN = [100000, 100000, 300000, 300000, 1000000, 1000000, 3000000];
 const ulSamples = []; // {bytes, mbps, seconds}
@@ -224,6 +304,25 @@ data.ul = parseFloat(p90(headlinePool(ulSamples)).toFixed(2));
 data.ulS = ulSamples.map(s => parseFloat(s.mbps.toFixed(2)));
 measuredAny = true;
 }
+}
+} catch (e) {}
+
+// ---------- 上传负载延迟 (↑) ----------
+try {
+if (ulSamples.length > 0 && typeof ctx.http.post === 'function' && Date.now() - measureStart < 24000) {
+const estMbps = data.ul > 0 ? data.ul : 20;
+const bgBytes = Math.round(Math.min(8000000, Math.max(500000, estMbps * 1e6 / 8 * 2)));
+const { times } = await measureLoaded(async () => {
+const payload = '0'.repeat(bgBytes);
+await ctx.http.post('https://speed.cloudflare.com/__up', {
+headers: { 'Cache-Control': 'no-cache', 'Content-Type': 'text/plain'},
+body: payload,
+timeout: 12000
+});
+return null;
+}, data.ping);
+const L = summarizeLoaded(times);
+if (L) { data.ulPing = L.ping; data.ulJitter = L.jitter; }
 }
 } catch (e) {}
 
@@ -324,12 +423,13 @@ let content;
 let padding = 18;
 
 if (isLarge) {
-// ---------- 大号: 仿 speed.cloudflare.com 版式 ----------
-// Download 大数字 + 橙色曲线, Upload + 紫色曲线, 底部 Latency/Jitter/Packet Loss 三列。
-// 图中灰色虚线 = 90 百分位 (头条数字), 曲线上的点 = 每次阶梯采样的实测速度。
-const CHART_W = 328;
-const dlChart = sparkline(data.dlS, CONFIG.color.dlLine, CHART_W, 42);
-const ulChart = sparkline(data.ulS, CONFIG.color.ulLine, CHART_W, 34);
+// ---------- 大号: 仿 speed.cloudflare.com 版式 (v2.3) ----------
+// Download: 左侧标签+数字, 右侧三组指标 (Latency/Jitter/Packet Loss, 各带 ↓/↑ 负载小字),
+// 下方全宽橙色曲线; Upload + 紫色曲线; 底部不再放指标行。
+const CHART_W = 336;
+const dlChart = sparkline(data.dlS, CONFIG.color.dlLine, CHART_W, 46);
+const ulChart = sparkline(data.ulS, CONFIG.color.ulLine, CHART_W, 36);
+padding = 14;
 
 const cfLabel = (title) => ({
 type: 'stack', direction: 'row', alignItems: 'center', gap: 4,
@@ -345,46 +445,68 @@ children: [
 { type: 'text', text: unit, font: { size: 13, weight: 'bold'}, textColor: C.text, maxLines: 1}
 ]
 });
-const cfSection = (title, value, unit, numSize, chart) => {
-const kids = [cfLabel(title), cfBig(value, unit, numSize)];
-if (chart) {
-kids.push({ type: 'text', text: '90th percentile', font: { size: 8, weight: 'medium'}, textColor: C.sub, maxLines: 1});
-kids.push(chart);
-}
-return { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: kids};
-};
-const cfMini = (title, value, unit) => ({
-type: 'stack', direction: 'column', alignItems: 'start', gap: 2, flex: 1,
-children: [
-cfLabel(title),
-{
-type: 'stack', direction: 'row', alignItems: 'end', gap: 3,
-children: [
-{ type: 'text', text: String(value), font: { size: 20, weight: 'heavy'}, textColor: C.text, maxLines: 1, minScale: 0.5},
-{ type: 'text', text: unit, font: { size: 11, weight: 'bold'}, textColor: C.text, maxLines: 1}
-]
-}
-]
-});
+const p90Caption = { type: 'text', text: '90th percentile', font: { size: 8, weight: 'medium'}, textColor: C.sub, maxLines: 1};
 
-padding = 14;
+// 负载小字行: ↓ = 下载负载 (橙箭头), ↑ = 上传负载 (紫箭头); 测到哪个显示哪个, 都没有则整行不渲染
+const loadedLine = (dlVal, ulVal) => {
+const kids = [];
+if (dlVal !== null && dlVal !== undefined) {
+kids.push({ type: 'text', text: '↓', font: { size: 9, weight: 'bold'}, textColor: CONFIG.color.dlLine, maxLines: 1});
+kids.push({ type: 'text', text: `${dlVal} ms`, font: { size: 9, weight: 'medium'}, textColor: C.sub, maxLines: 1});
+}
+if (ulVal !== null && ulVal !== undefined) {
+kids.push({ type: 'text', text: '↑', font: { size: 9, weight: 'bold'}, textColor: CONFIG.color.ulLine, maxLines: 1});
+kids.push({ type: 'text', text: `${ulVal} ms`, font: { size: 9, weight: 'medium'}, textColor: C.sub, maxLines: 1});
+}
+if (!kids.length) return null;
+return { type: 'stack', direction: 'row', alignItems: 'center', gap: 3, children: kids};
+};
+// 右侧指标组: 标签+数值同行, 负载小字跟在下方
+const sideStat = (title, value, unit, sub) => {
+const kids = [
+{
+type: 'stack', direction: 'row', alignItems: 'end', gap: 4,
+children: [
+{ type: 'text', text: title, font: { size: 11, weight: 'bold'}, textColor: C.text, maxLines: 1},
+{ type: 'text', text: String(value), font: { size: 16, weight: 'heavy'}, textColor: C.text, maxLines: 1, minScale: 0.6},
+{ type: 'text', text: unit, font: { size: 9, weight: 'bold'}, textColor: C.text, maxLines: 1}
+]
+}
+];
+if (sub) kids.push(sub);
+return { type: 'stack', direction: 'column', alignItems: 'start', gap: 1, children: kids};
+};
+const metricsCol = {
+type: 'stack', direction: 'column', alignItems: 'start', gap: 7,
+children: [
+sideStat('Latency', data.ping, 'ms', loadedLine(data.dlPing, data.ulPing)),
+sideStat('Jitter', data.jitter, 'ms', loadedLine(data.dlJitter, data.ulJitter)),
+sideStat('Packet Loss', plValue, plUnit, null)
+]
+};
+
+const dlHead = {
+type: 'stack', direction: 'row', alignItems: 'start', gap: 10,
+children: [
+{
+type: 'stack', direction: 'column', alignItems: 'start', gap: 3, flex: 1,
+children: dlChart ? [cfLabel('Download'), cfBig(data.dl, 'Mbps', 42), p90Caption] : [cfLabel('Download'), cfBig(data.dl, 'Mbps', 42)]
+},
+metricsCol
+]
+};
+const ulKids = [cfLabel('Upload'), cfBig(data.ul, 'Mbps', 28)];
+if (ulChart) { ulKids.push(p90Caption); ulKids.push(ulChart); }
+
 content = [
 makeHeader(false),
 { type: 'spacer', length: 10},
-cfSection('Download', data.dl, 'Mbps', 42, dlChart),
+dlHead,
+...(dlChart ? [{ type: 'spacer', length: 4}, dlChart] : []),
 { type: 'spacer', length: 10},
 { type: 'stack', height: 1, backgroundColor: C.divider},
 { type: 'spacer', length: 10},
-cfSection('Upload', data.ul, 'Mbps', 28, ulChart),
-{ type: 'spacer', length: 12},
-{
-type: 'stack', direction: 'row', alignItems: 'start', gap: 8,
-children: [
-cfMini('Latency', data.ping, 'ms'),
-cfMini('Jitter', data.jitter, 'ms'),
-cfMini('Packet Loss', plValue, plUnit)
-]
-}
+{ type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: ulKids}
 ];
 } else if (isMedium) {
 content = [
