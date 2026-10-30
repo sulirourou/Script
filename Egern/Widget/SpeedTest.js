@@ -1,9 +1,14 @@
 /**
 * 📌 桌面小组件: Speedtest 极简官方复刻版
-* 版本：v2.8 (2026-10-31)
+* 版本：v2.9 (2026-10-31)
 * 环境变量 (可选):
 * 名称：POLICY
 * 值：自定义策略组节点名称，例如 美国节点；不填则全部测速请求按 Egern 默认规则路由
+*
+* 🔧 v2.9 变更: 修复大号 Download 区块不左对齐: v2.7 把下载头部改成
+* 行布局后, 左列在 Egern 渲染器里被居中 (真机截图中 Download 明显右移,
+* 与 Upload/曲线左边缘对不齐)。改法: 行明确 justifyContent start,
+* 左列弃用 flex 改固定宽 180 (= 内宽 336 - 信息列 148 - 间距 8), 无余量可居中。
 *
 * 🔧 v2.8 变更: 大号底部指标组整体下移: 其上方间距 10 -> 18 (与上传曲线
 * 拉开距离); 同时页眉后与分隔线后间距各收 2, 总高只净增约 4。测速不变。
@@ -549,9 +554,9 @@ if (ii.asn) infoKids.push({ type: 'text', text: ii.asn, font: { size: 9, weight:
 const srvLine = [ii.server, ii.proto].filter(Boolean).join(' · ');
 if (srvLine) infoKids.push({ type: 'text', text: srvLine, font: { size: 9, weight: 'medium' }, textColor: C.sub, maxLines: 1 });
 dlHeadNode = {
-type: 'stack', direction: 'row', alignItems: 'start', gap: 8,
+type: 'stack', direction: 'row', alignItems: 'start', justifyContent: 'start', gap: 8,
 children: [
-{ type: 'stack', direction: 'column', alignItems: 'start', gap: 3, flex: 1, children: dlLeftKids },
+{ type: 'stack', direction: 'column', alignItems: 'start', gap: 3, width: 180, children: dlLeftKids },
 { type: 'stack', direction: 'column', alignItems: 'start', gap: 2, width: 148, children: infoKids }
 ]
 };
