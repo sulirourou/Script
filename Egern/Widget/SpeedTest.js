@@ -1,6 +1,12 @@
 /**
 * 📌 桌面小组件: Speedtest 极简官方复刻版
-* 版本：v2.4 (2026-10-30)
+* 版本：v2.5 (2026-10-30)
+*
+* 🔧 v2.5 变更 (大号版式: 官网同款分组):
+* ↓/↑ 负载值从右上空白区移回底部, 按官网原样挂在各自指标下方成组:
+* Latency 大字 (空载) 下面 ↓ (下载负载) / ↑ (上传负载) 两行, Jitter 同理;
+* Packet Loss 无负载行。右上不再放负载区。为腾高度: 两图 42->38 / 34->30、
+* 下载数字 42->40、上传数字 28->26、底部大字 20->18、间距小幅收紧。测速口径不变。
 *
 * 🔧 v2.4 变更 (大号版式纠正, 测速口径不变):
 * v2.3 误解了需求, 把 Latency/Jitter/Packet Loss 整组搬去了右上方。本版纠正:
@@ -429,12 +435,12 @@ let content;
 let padding = 18;
 
 if (isLarge) {
-// ---------- 大号: 仿 speed.cloudflare.com 版式 (v2.4) ----------
-// Download 左侧数字, 右侧空白区只放 ↓/↑ 负载值 (Latency/Jitter 各一行小字);
-// 下方全宽曲线; Upload + 曲线; 底部整行 Latency/Jitter/Packet Loss (CF 原位)。
+// ---------- 大号: 仿 speed.cloudflare.com 版式 (v2.5) ----------
+// Download/Upload 大数字 + 全宽曲线; 底部三列指标按官网成组:
+// 标题 -> 空载大字 -> ↓ 下载负载 -> ↑ 上传负载 (Packet Loss 无负载行)。
 const CHART_W = 336;
-const dlChart = sparkline(data.dlS, CONFIG.color.dlLine, CHART_W, 42);
-const ulChart = sparkline(data.ulS, CONFIG.color.ulLine, CHART_W, 34);
+const dlChart = sparkline(data.dlS, CONFIG.color.dlLine, CHART_W, 38);
+const ulChart = sparkline(data.ulS, CONFIG.color.ulLine, CHART_W, 30);
 padding = 14;
 
 const cfLabel = (title) => ({
@@ -453,86 +459,51 @@ children: [
 });
 const p90Caption = { type: 'text', text: '90th percentile', font: { size: 8, weight: 'medium'}, textColor: C.sub, maxLines: 1};
 
-// 负载小字段: ↓ = 下载负载 (橙箭头), ↑ = 上传负载 (紫箭头); 测到哪个显示哪个
-const loadedSegs = (dlVal, ulVal) => {
-const kids = [];
-if (dlVal !== null && dlVal !== undefined) {
-kids.push({ type: 'text', text: '↓', font: { size: 10, weight: 'bold'}, textColor: CONFIG.color.dlLine, maxLines: 1});
-kids.push({ type: 'text', text: `${dlVal} ms`, font: { size: 10, weight: 'medium'}, textColor: C.sub, maxLines: 1});
-}
-if (ulVal !== null && ulVal !== undefined) {
-kids.push({ type: 'text', text: '↑', font: { size: 10, weight: 'bold'}, textColor: CONFIG.color.ulLine, maxLines: 1});
-kids.push({ type: 'text', text: `${ulVal} ms`, font: { size: 10, weight: 'medium'}, textColor: C.sub, maxLines: 1});
-}
-return kids;
-};
-// 右上负载区的一行: 指标名 + ↓/↑ 值; 该指标没测到负载值时整行不渲染
-const loadedRow = (name, dlVal, ulVal) => {
-const segs = loadedSegs(dlVal, ulVal);
-if (!segs.length) return null;
-return {
+// 负载行 (官网样式): 彩色箭头 + 黑色数值, ↓ 一行 ↑ 一行
+const loadedRow = (arrow, val, color) => ({
 type: 'stack', direction: 'row', alignItems: 'center', gap: 3,
 children: [
-{ type: 'text', text: name, font: { size: 10, weight: 'bold'}, textColor: C.text, maxLines: 1},
-...segs
+{ type: 'text', text: arrow, font: { size: 10, weight: 'bold'}, textColor: color, maxLines: 1},
+{ type: 'text', text: `${val} ms`, font: { size: 10, weight: 'medium'}, textColor: C.text, maxLines: 1}
 ]
-};
-};
-const loadedKids = [
-loadedRow('Latency', data.dlPing, data.ulPing),
-loadedRow('Jitter', data.dlJitter, data.ulJitter)
-].filter(Boolean);
-const loadedCol = loadedKids.length ? {
-type: 'stack', direction: 'column', alignItems: 'start', gap: 5,
-children: [
-{ type: 'text', text: '负载 ↓↑', font: { size: 9, weight: 'medium'}, textColor: C.sub, maxLines: 1},
-...loadedKids
-]
-} : null;
-
-const dlHeadKids = [
-{
-type: 'stack', direction: 'column', alignItems: 'start', gap: 3, flex: 1,
-children: dlChart ? [cfLabel('Download'), cfBig(data.dl, 'Mbps', 42), p90Caption] : [cfLabel('Download'), cfBig(data.dl, 'Mbps', 42)]
-}
-];
-if (loadedCol) dlHeadKids.push(loadedCol);
-const dlHead = { type: 'stack', direction: 'row', alignItems: 'start', gap: 10, children: dlHeadKids };
-
-const ulKids = [cfLabel('Upload'), cfBig(data.ul, 'Mbps', 28)];
-if (ulChart) { ulKids.push(p90Caption); ulKids.push(ulChart); }
-
-// 底部指标组 (空载值, CF 原位)
-const cfMini = (title, value, unit) => ({
-type: 'stack', direction: 'column', alignItems: 'start', gap: 2, flex: 1,
-children: [
+});
+// 底部指标组: 标题 -> 空载大字 -> ↓/↑ 负载行 (测到才挂)
+const cfMini = (title, value, unit, dlLoaded, ulLoaded) => {
+const kids = [
 cfLabel(title),
 {
 type: 'stack', direction: 'row', alignItems: 'end', gap: 3,
 children: [
-{ type: 'text', text: String(value), font: { size: 20, weight: 'heavy'}, textColor: C.text, maxLines: 1, minScale: 0.5},
+{ type: 'text', text: String(value), font: { size: 18, weight: 'heavy'}, textColor: C.text, maxLines: 1, minScale: 0.5},
 { type: 'text', text: unit, font: { size: 11, weight: 'bold'}, textColor: C.text, maxLines: 1}
 ]
 }
-]
-});
+];
+if (dlLoaded !== null && dlLoaded !== undefined) kids.push(loadedRow('↓', dlLoaded, CONFIG.color.dlLine));
+if (ulLoaded !== null && ulLoaded !== undefined) kids.push(loadedRow('↑', ulLoaded, CONFIG.color.ulLine));
+return { type: 'stack', direction: 'column', alignItems: 'start', gap: 2, flex: 1, children: kids};
+};
+
+const dlKids = [cfLabel('Download'), cfBig(data.dl, 'Mbps', 40)];
+if (dlChart) { dlKids.push(p90Caption); dlKids.push(dlChart); }
+const ulKids = [cfLabel('Upload'), cfBig(data.ul, 'Mbps', 26)];
+if (ulChart) { ulKids.push(p90Caption); ulKids.push(ulChart); }
 
 content = [
 makeHeader(false),
-{ type: 'spacer', length: 10},
-dlHead,
-...(dlChart ? [{ type: 'spacer', length: 4}, dlChart] : []),
-{ type: 'spacer', length: 10},
+{ type: 'spacer', length: 8},
+{ type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: dlKids},
+{ type: 'spacer', length: 8},
 { type: 'stack', height: 1, backgroundColor: C.divider},
-{ type: 'spacer', length: 10},
+{ type: 'spacer', length: 8},
 { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: ulKids},
-{ type: 'spacer', length: 12},
+{ type: 'spacer', length: 10},
 {
 type: 'stack', direction: 'row', alignItems: 'start', gap: 8,
 children: [
-cfMini('Latency', data.ping, 'ms'),
-cfMini('Jitter', data.jitter, 'ms'),
-cfMini('Packet Loss', plValue, plUnit)
+cfMini('Latency', data.ping, 'ms', data.dlPing, data.ulPing),
+cfMini('Jitter', data.jitter, 'ms', data.dlJitter, data.ulJitter),
+cfMini('Packet Loss', plValue, plUnit, null, null)
 ]
 }
 ];
