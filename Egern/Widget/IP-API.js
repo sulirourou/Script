@@ -1,9 +1,14 @@
 /**
  * 🌏 Egern IP-API 小组件
- * 版本：v1.3 (2026-10-30)
+ * 版本：v1.4 (2026-10-30)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
+ *
+ * 🔧 v1.4 变更: 风险公式补漏检: ip-api 对部分云 IP 不打 hosting 标记
+ * (实测 34.3.105.110 谷歌云 proxy/hosting 均为 false 却显示 0 分原生住宅),
+ * 新增 org/as 关键词判定: 含 cloud/hosting/datacenter/data center/vps/idc
+ * 时同样按机房 +40 分并显示商业机房。原有 proxy +50 / hosting +40 不变。
  *
  * 🔧 v1.3 变更: 按新规范把环境变量用法移到版本号正下方 (名称/值格式); 无功能变化。
  *
@@ -109,10 +114,14 @@ export default async function(ctx) {
       proxyData.isp = `${ispName} ${asInfo}`.trim() || "未知";
     }
     proxyData.flag = flagEmoji(main.countryCode);
-    proxyData.isDC = !!(main.hosting || main.proxy);
+    // 关键词补漏: org/as 含云/机房关键词时也判机房 (ip-api 对谷歌云等漏标 hosting)
+    const orgAsText = `${main.org || ""} ${main.as || ""}`.toLowerCase();
+    const dcByKeyword = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b/.test(orgAsText);
+    const isHostLike = !!(main.hosting || dcByKeyword);
+    proxyData.isDC = !!(isHostLike || main.proxy);
     let score = 0;
     if (main.proxy) score += 50;
-    if (main.hosting) score += 40;
+    if (isHostLike) score += 40;
     proxyData.risk = Math.min(100, score);
     proxyData.success = true;
     return true;
