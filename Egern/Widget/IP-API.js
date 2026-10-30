@@ -1,6 +1,17 @@
 /**
  * 🌏 Egern IP-API 小组件
- * 版本：v1.1 (2026-10-30)
+ * 版本：v1.2 (2026-10-30)
+ *
+ * 🔧 v1.2 变更 (针对 v1.1 在共享节点出口上仍持续获取失败):
+ * - 失败原因可见: 彻底失败时详情行显示具体原因 (HTTP 状态码/接口 message/
+ *   网络错误), 不再只有一句「获取失败」无从排查。
+ * - 识别接口限流: ip-api 免费额度按出口 IP 计算 (45 次/分钟), 共享节点出口
+ *   常年被同出口其他用户耗尽 -> HTTP 429; 收到 429 时按响应头 X-Ttl 等待
+ *   (上限 4 秒) 后自动重试, 不再傻等下一轮刷新。
+ * - POLICY 兜底: 若指定了策略组但经它查询全失败, 自动改用默认路由再试一次
+ *   (策略组名填错/该组异常时不至于整块报废)。
+ * - 减少接口消耗: 本地网络的 ip-api 详情按 IP 缓存, 本地 IP 没变时零请求
+ *   (原版每次刷新要为本地块额外烧 2 次额度, 与节点查询抢同一份配额)。
  *
  * 🔧 v1.1 变更:
  * - 修复代理信息经常获取失败 (查询接口地址不变): 原版中英双请求用 Promise.all,
@@ -104,30 +115,82 @@ export default async function(ctx) {
     return true;
   }
 
-  async function fetchProxy() {
-    const opts = { timeout: TIMEOUT_PROXY, headers: { 'User-Agent': UA } };
-    if (POLICY) opts.policy = POLICY;
-    const getJson = async (url) => {
+  // 单次查询: 返回 { j } 成功 / { err, status, ttl } 失败, 不抛异常
+  async function tryProxyQuery(url, usePolicy, timeoutMs) {
+    const opts = { timeout: timeoutMs || TIMEOUT_PROXY, headers: { 'User-Agent': UA } };
+    if (usePolicy && POLICY) opts.policy = POLICY;
+    try {
       const r = await ctx.http.get(url, opts);
-      return await r.json();
-    };
+      const status = r.status || 0;
+      if (status === 429) {
+        let ttl = 0;
+        try { ttl = parseFloat((r.headers && r.headers.get) ? (r.headers.get('x-ttl') || 0) : 0) || 0; } catch (e) {}
+        return { err: "HTTP 429 接口限流", status: 429, ttl };
+      }
+      let j = null;
+      try { j = await r.json(); } catch (e) { return { err: "接口响应解析失败" }; }
+      if (status !== 200) return { err: `HTTP ${status}` };
+      if (j && j.status === "success") return { j };
+      return { err: (j && j.message) ? `接口: ${j.message}` : "接口返回异常" };
+    } catch (e) {
+      return { err: (e && e.message) ? String(e.message).slice(0, 40) : "网络错误" };
+    }
+  }
+
+  async function fetchProxy() {
+    const urlEn = `${API_BASE}${FIELDS}`;
+    const urlCn = `${API_BASE}${FIELDS}&lang=zh-CN`;
+    let lastErr = "";
+    let rlErr = "";
+    const note = (r) => { if (r.err) { lastErr = r.err; if (r.status === 429) rlErr = r.err; } };
+
+    // 第 1 轮: 中英并行 (任一成功即可)
+    const [rEn, rCn] = await Promise.all([tryProxyQuery(urlEn, true), tryProxyQuery(urlCn, true)]);
+    note(rEn); note(rCn);
+    if (fillProxy(rEn.j || null, rCn.j || null)) { saveProxyCache(); return; }
+
+    // 第 2 轮: 隔一会单独重试中文 (被限流时按 X-Ttl 等, 上限 4 秒)
+    const ttlWait = Math.max(rEn.ttl || 0, rCn.ttl || 0);
+    await sleep(rlErr ? Math.min(Math.max(ttlWait, 1), 4) * 1000 : 800);
+    const rCn2 = await tryProxyQuery(urlCn, true);
+    note(rCn2);
+    if (rCn2.j && fillProxy(null, rCn2.j)) { saveProxyCache(); return; }
+
+    // 第 3 轮: 指定了策略组仍全失败 -> 去掉策略组用默认路由再试一次
+    if (POLICY) {
+      const rCn3 = await tryProxyQuery(urlCn, false);
+      note(rCn3);
+      if (rCn3.j && fillProxy(null, rCn3.j)) { saveProxyCache(); return; }
+    }
+
+    // 全失败: 缓存顶上; 无缓存显示失败 + 原因
+    if (!loadProxyCache()) {
+      proxyData.ip = "获取失败";
+      const reason = rlErr || lastErr;
+      if (reason) proxyData.detail = `⚠ ${reason}`;
+    }
+  }
+
+  function saveLocalCache() {
     try {
-      const [rEn, rCn] = await Promise.allSettled([
-        getJson(`${API_BASE}${FIELDS}`),
-        getJson(`${API_BASE}${FIELDS}&lang=zh-CN`)
-      ]);
-      const jEn = rEn.status === "fulfilled" ? rEn.value : null;
-      const jCn = rCn.status === "fulfilled" ? rCn.value : null;
-      if (fillProxy(jEn, jCn)) { saveProxyCache(); return; }
+      ctx.storage.setString("ipapi_local_v1", JSON.stringify({
+        ip: localData.ip,
+        d: { title: localData.title, detail: localData.detail, isp: localData.isp, flag: localData.flag }
+      }));
     } catch (e) {}
-    // 双请求都没拿到: 等 800ms 单独重试中文接口一次
+  }
+
+  function loadLocalCache(ip) {
     try {
-      await sleep(800);
-      const jCn = await getJson(`${API_BASE}${FIELDS}&lang=zh-CN`);
-      if (fillProxy(null, jCn)) { saveProxyCache(); return; }
-    } catch (e) {}
-    // 仍失败: 用上次成功缓存顶上, 没有缓存才显示获取失败
-    if (!loadProxyCache()) proxyData.ip = "获取失败";
+      const raw = ctx.storage.getString("ipapi_local_v1");
+      if (!raw) return false;
+      const c = JSON.parse(raw);
+      if (!c || c.ip !== ip || !c.d) return false;
+      localData.title = c.d.title; localData.detail = c.d.detail;
+      localData.isp = c.d.isp; localData.flag = c.d.flag;
+      localData.success = true;
+      return true;
+    } catch (e) { return false; }
   }
 
   async function fetchLocal() {
@@ -137,6 +200,8 @@ export default async function(ctx) {
       if (jIp.ret === "ok" && jIp.data && jIp.data.ip) {
         localData.ip = jIp.data.ip;
         let loc = jIp.data.location || [];
+        // 本地 IP 没变: 详情直接用缓存, 不再烧 ip-api 额度
+        if (loadLocalCache(localData.ip)) return;
         const [rCn, rEn] = await Promise.allSettled([
           ctx.http.get(`${API_BASE}${localData.ip}${FIELDS}&lang=zh-CN`, { timeout: TIMEOUT }).then(r => r.json()),
           ctx.http.get(`${API_BASE}${localData.ip}${FIELDS}`, { timeout: TIMEOUT }).then(r => r.json())
@@ -157,6 +222,7 @@ export default async function(ctx) {
           else if (/mobile|移动|cmcc/i.test(ispRaw)) carrier = "Mobile";
           localData.isp = `China ${carrier}`;
           localData.success = true;
+          saveLocalCache();
           return;
         }
         localData.title = getCnTitle(loc[0]||"本地", loc[1]||"", loc[2]||"");
