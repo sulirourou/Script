@@ -1,6 +1,12 @@
 /**
 * 📌 桌面小组件: Speedtest 极简官方复刻版
-* 版本：v2.3 (2026-10-30)
+* 版本：v2.4 (2026-10-30)
+*
+* 🔧 v2.4 变更 (大号版式纠正, 测速口径不变):
+* v2.3 误解了需求, 把 Latency/Jitter/Packet Loss 整组搬去了右上方。本版纠正:
+* 三组指标恢复底部整行 (CF 原位); 只有 ↓/↑ 负载值放 Download 右侧空白区
+* (Latency / Jitter 各一行小字)。v2.3 的负载延迟已在真机实测出数 (↓208 ↑207 等),
+* 证明 Egern 引擎支持并发请求, 本版保留其全部测速逻辑。
 *
 * 🔧 v2.3 变更 (负载延迟 + 大号版式再调整):
 * 1. 新增负载延迟/抖动 (CF 的 ↓/↑ 两行): 在一笔按实测速度定制的背景下载/上传进行期间
@@ -423,12 +429,12 @@ let content;
 let padding = 18;
 
 if (isLarge) {
-// ---------- 大号: 仿 speed.cloudflare.com 版式 (v2.3) ----------
-// Download: 左侧标签+数字, 右侧三组指标 (Latency/Jitter/Packet Loss, 各带 ↓/↑ 负载小字),
-// 下方全宽橙色曲线; Upload + 紫色曲线; 底部不再放指标行。
+// ---------- 大号: 仿 speed.cloudflare.com 版式 (v2.4) ----------
+// Download 左侧数字, 右侧空白区只放 ↓/↑ 负载值 (Latency/Jitter 各一行小字);
+// 下方全宽曲线; Upload + 曲线; 底部整行 Latency/Jitter/Packet Loss (CF 原位)。
 const CHART_W = 336;
-const dlChart = sparkline(data.dlS, CONFIG.color.dlLine, CHART_W, 46);
-const ulChart = sparkline(data.ulS, CONFIG.color.ulLine, CHART_W, 36);
+const dlChart = sparkline(data.dlS, CONFIG.color.dlLine, CHART_W, 42);
+const ulChart = sparkline(data.ulS, CONFIG.color.ulLine, CHART_W, 34);
 padding = 14;
 
 const cfLabel = (title) => ({
@@ -447,56 +453,69 @@ children: [
 });
 const p90Caption = { type: 'text', text: '90th percentile', font: { size: 8, weight: 'medium'}, textColor: C.sub, maxLines: 1};
 
-// 负载小字行: ↓ = 下载负载 (橙箭头), ↑ = 上传负载 (紫箭头); 测到哪个显示哪个, 都没有则整行不渲染
-const loadedLine = (dlVal, ulVal) => {
+// 负载小字段: ↓ = 下载负载 (橙箭头), ↑ = 上传负载 (紫箭头); 测到哪个显示哪个
+const loadedSegs = (dlVal, ulVal) => {
 const kids = [];
 if (dlVal !== null && dlVal !== undefined) {
-kids.push({ type: 'text', text: '↓', font: { size: 9, weight: 'bold'}, textColor: CONFIG.color.dlLine, maxLines: 1});
-kids.push({ type: 'text', text: `${dlVal} ms`, font: { size: 9, weight: 'medium'}, textColor: C.sub, maxLines: 1});
+kids.push({ type: 'text', text: '↓', font: { size: 10, weight: 'bold'}, textColor: CONFIG.color.dlLine, maxLines: 1});
+kids.push({ type: 'text', text: `${dlVal} ms`, font: { size: 10, weight: 'medium'}, textColor: C.sub, maxLines: 1});
 }
 if (ulVal !== null && ulVal !== undefined) {
-kids.push({ type: 'text', text: '↑', font: { size: 9, weight: 'bold'}, textColor: CONFIG.color.ulLine, maxLines: 1});
-kids.push({ type: 'text', text: `${ulVal} ms`, font: { size: 9, weight: 'medium'}, textColor: C.sub, maxLines: 1});
+kids.push({ type: 'text', text: '↑', font: { size: 10, weight: 'bold'}, textColor: CONFIG.color.ulLine, maxLines: 1});
+kids.push({ type: 'text', text: `${ulVal} ms`, font: { size: 10, weight: 'medium'}, textColor: C.sub, maxLines: 1});
 }
-if (!kids.length) return null;
-return { type: 'stack', direction: 'row', alignItems: 'center', gap: 3, children: kids};
+return kids;
 };
-// 右侧指标组: 标签+数值同行, 负载小字跟在下方
-const sideStat = (title, value, unit, sub) => {
-const kids = [
-{
-type: 'stack', direction: 'row', alignItems: 'end', gap: 4,
+// 右上负载区的一行: 指标名 + ↓/↑ 值; 该指标没测到负载值时整行不渲染
+const loadedRow = (name, dlVal, ulVal) => {
+const segs = loadedSegs(dlVal, ulVal);
+if (!segs.length) return null;
+return {
+type: 'stack', direction: 'row', alignItems: 'center', gap: 3,
 children: [
-{ type: 'text', text: title, font: { size: 11, weight: 'bold'}, textColor: C.text, maxLines: 1},
-{ type: 'text', text: String(value), font: { size: 16, weight: 'heavy'}, textColor: C.text, maxLines: 1, minScale: 0.6},
-{ type: 'text', text: unit, font: { size: 9, weight: 'bold'}, textColor: C.text, maxLines: 1}
-]
-}
-];
-if (sub) kids.push(sub);
-return { type: 'stack', direction: 'column', alignItems: 'start', gap: 1, children: kids};
-};
-const metricsCol = {
-type: 'stack', direction: 'column', alignItems: 'start', gap: 7,
-children: [
-sideStat('Latency', data.ping, 'ms', loadedLine(data.dlPing, data.ulPing)),
-sideStat('Jitter', data.jitter, 'ms', loadedLine(data.dlJitter, data.ulJitter)),
-sideStat('Packet Loss', plValue, plUnit, null)
+{ type: 'text', text: name, font: { size: 10, weight: 'bold'}, textColor: C.text, maxLines: 1},
+...segs
 ]
 };
+};
+const loadedKids = [
+loadedRow('Latency', data.dlPing, data.ulPing),
+loadedRow('Jitter', data.dlJitter, data.ulJitter)
+].filter(Boolean);
+const loadedCol = loadedKids.length ? {
+type: 'stack', direction: 'column', alignItems: 'start', gap: 5,
+children: [
+{ type: 'text', text: '负载 ↓↑', font: { size: 9, weight: 'medium'}, textColor: C.sub, maxLines: 1},
+...loadedKids
+]
+} : null;
 
-const dlHead = {
-type: 'stack', direction: 'row', alignItems: 'start', gap: 10,
-children: [
+const dlHeadKids = [
 {
 type: 'stack', direction: 'column', alignItems: 'start', gap: 3, flex: 1,
 children: dlChart ? [cfLabel('Download'), cfBig(data.dl, 'Mbps', 42), p90Caption] : [cfLabel('Download'), cfBig(data.dl, 'Mbps', 42)]
-},
-metricsCol
-]
-};
+}
+];
+if (loadedCol) dlHeadKids.push(loadedCol);
+const dlHead = { type: 'stack', direction: 'row', alignItems: 'start', gap: 10, children: dlHeadKids };
+
 const ulKids = [cfLabel('Upload'), cfBig(data.ul, 'Mbps', 28)];
 if (ulChart) { ulKids.push(p90Caption); ulKids.push(ulChart); }
+
+// 底部指标组 (空载值, CF 原位)
+const cfMini = (title, value, unit) => ({
+type: 'stack', direction: 'column', alignItems: 'start', gap: 2, flex: 1,
+children: [
+cfLabel(title),
+{
+type: 'stack', direction: 'row', alignItems: 'end', gap: 3,
+children: [
+{ type: 'text', text: String(value), font: { size: 20, weight: 'heavy'}, textColor: C.text, maxLines: 1, minScale: 0.5},
+{ type: 'text', text: unit, font: { size: 11, weight: 'bold'}, textColor: C.text, maxLines: 1}
+]
+}
+]
+});
 
 content = [
 makeHeader(false),
@@ -506,7 +525,16 @@ dlHead,
 { type: 'spacer', length: 10},
 { type: 'stack', height: 1, backgroundColor: C.divider},
 { type: 'spacer', length: 10},
-{ type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: ulKids}
+{ type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: ulKids},
+{ type: 'spacer', length: 12},
+{
+type: 'stack', direction: 'row', alignItems: 'start', gap: 8,
+children: [
+cfMini('Latency', data.ping, 'ms'),
+cfMini('Jitter', data.jitter, 'ms'),
+cfMini('Packet Loss', plValue, plUnit)
+]
+}
 ];
 } else if (isMedium) {
 content = [
