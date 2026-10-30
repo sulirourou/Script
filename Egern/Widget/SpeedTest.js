@@ -1,6 +1,18 @@
 /**
 * 📌 桌面小组件: Speedtest 极简官方复刻版
-* 版本：v2.5 (2026-10-30)
+* 版本：v2.7 (2026-10-30)
+* 环境变量 (可选):
+* 名称：POLICY
+* 值：自定义策略组节点名称，例如 美国节点；不填则全部测速请求按 Egern 默认规则路由
+*
+* 🔧 v2.7 变更: 大号右上空白区新增本次测速线路的 IP 信息 (官网同款四项):
+* 出口 IP、网络 (运营商+AS号)、服务器城市、IPv4/IPv6。数据来自 Cloudflare
+* 官方同源接口 speed.cloudflare.com/meta, 与测速请求走同一出口 (含 POLICY
+* 策略组), 显示的就是正在测的这条线路; 与测速并行发出不占额外时间, 取不到
+* 时整块不显示, 不影响测速结果。IP 信息随结果一起缓存。缓存 key 升 v6。
+*
+* 🔧 v2.6 变更: 新增环境变量 POLICY: 填写后全部测速请求 (延迟探测、下载、
+* 上传、负载背景传输) 强制走该策略组, 可测指定线路的速度; 不填时行为不变。
 *
 * 🔧 v2.5 变更 (大号版式: 官网同款分组):
 * ↓/↑ 负载值从右上空白区移回底部, 按官网原样挂在各自指标下方成组:
@@ -61,6 +73,15 @@
 */
 
 export default async function(ctx) {
+const POLICY = ((ctx.env && ctx.env.POLICY) || "").toString().trim();
+// 填了 POLICY: 全部测速请求强制走该策略组; 不填: 原样走 Egern 规则路由
+const http = (() => {
+  if (!POLICY) return ctx.http;
+  const withPolicy = (fn) => (url, opts = {}) => fn(url, { ...opts, policy: POLICY });
+  const h = { get: withPolicy(ctx.http.get.bind(ctx.http)) };
+  if (typeof ctx.http.post === 'function') h.post = withPolicy(ctx.http.post.bind(ctx.http));
+  return h;
+})();
 // ==========================================
 // 🛠️ 用户配置区 (可自由修改以下参数)
 // ==========================================
@@ -114,15 +135,41 @@ const family = ctx.widgetFamily || 'systemMedium';
 const isLarge = family === 'systemLarge' || family === 'systemExtraLarge';
 const isMedium = family === 'systemMedium';
 const isSmall =!isLarge &&!isMedium; // systemSmall 及锁屏尺寸都走紧凑布局
-const CACHE_KEY = 'speedtest_cache_v5';
+const CACHE_KEY = 'speedtest_cache_v6';
 
 // pl: 数字 = 丢包率百分比; '-' = 一次都没测成 (无缓存且探测全失败到无法统计时仍会给 100, 见下方)
-let data = { dl: 0, ul: 0, ping: 0, jitter: 0, pl: '-', ts: 0, dlS: [], ulS: [], dlPing: null, dlJitter: null, ulPing: null, ulJitter: null};
+let data = { dl: 0, ul: 0, ping: 0, jitter: 0, pl: '-', ts: 0, dlS: [], ulS: [], dlPing: null, dlJitter: null, ulPing: null, ulJitter: null, ipInfo: null};
 
 try {
 const cached = ctx.storage.getJSON(CACHE_KEY);
 if (cached && typeof cached.dl === 'number') data = cached;
 } catch (e) {}
+
+// ---------- 0) 本次测速线路 IP 信息: CF 官方 /meta, 与测速同一出口 ----------
+// 必须带浏览器 UA, 否则该接口返回空 {} (实测)。全程兜底: 失败返回 null。
+const fetchMeta = async () => {
+try {
+const resp = await http.get('https://speed.cloudflare.com/meta', {
+timeout: 4000,
+headers: {
+'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+'Accept': 'application/json',
+'Referer': 'https://speed.cloudflare.com/'
+}
+});
+if (resp && resp.status && resp.status !== 200) return null;
+const j = (resp && typeof resp.json === 'function') ? await resp.json() : JSON.parse(await resp.text());
+if (!j || !j.clientIp) return null;
+return {
+ip: String(j.clientIp),
+org: j.asOrganization || '',
+asn: (j.asn !== undefined && j.asn !== null && j.asn !== '') ? `AS${j.asn}` : '',
+server: (j.colo && j.colo.city) || '',
+proto: String(j.clientIp).includes(':') ? 'IPv6' : 'IPv4'
+};
+} catch (e) { return null; }
+};
+const metaPromise = fetchMeta();
 
 const measureStart = Date.now();
 let measuredAny = false;
@@ -153,7 +200,7 @@ sent++;
 const pt = Date.now();
 let ok = false;
 try {
-const resp = await ctx.http.get('https://cp.cloudflare.com/generate_204', { timeout: 2000});
+const resp = await http.get('https://cp.cloudflare.com/generate_204', { timeout: 2000});
 ok =!!resp && resp.status === 204;
 } catch (e) { ok = false;}
 if (ok) samples.push(Date.now() - pt);
@@ -187,7 +234,7 @@ if (Date.now() - measureStart > 22000) break;
 let sample = null;
 try {
 const t0 = Date.now();
-const resp = await ctx.http.get(`https://speed.cloudflare.com/__down?bytes=${planBytes}&r=${t0}`, {
+const resp = await http.get(`https://speed.cloudflare.com/__down?bytes=${planBytes}&r=${t0}`, {
 headers: { 'Cache-Control': 'no-cache'},
 timeout: 10000
 });
@@ -244,7 +291,7 @@ const wasLoading = !bgDone;
 const t0 = Date.now();
 let ok = false;
 try {
-const resp = await ctx.http.get('https://cp.cloudflare.com/generate_204', { timeout: 2000});
+const resp = await http.get('https://cp.cloudflare.com/generate_204', { timeout: 2000});
 ok = !!resp && resp.status === 204;
 } catch (e) { ok = false; }
 const dt = Date.now() - t0;
@@ -261,7 +308,7 @@ const estMbps = data.dl > 0 ? data.dl : 50;
 const bgBytes = Math.round(Math.min(20000000, Math.max(2000000, estMbps * 1e6 / 8 * 2)));
 const { times, bgResult } = await measureLoaded(async () => {
 const t0 = Date.now();
-const resp = await ctx.http.get(`https://speed.cloudflare.com/__down?bytes=${bgBytes}&r=${t0}`, {
+const resp = await http.get(`https://speed.cloudflare.com/__down?bytes=${bgBytes}&r=${t0}`, {
 headers: { 'Cache-Control': 'no-cache'},
 timeout: 15000
 });
@@ -288,7 +335,7 @@ if (L) { data.dlPing = L.ping; data.dlJitter = L.jitter; }
 const UL_PLAN = [100000, 100000, 300000, 300000, 1000000, 1000000, 3000000];
 const ulSamples = []; // {bytes, mbps, seconds}
 try {
-if (typeof ctx.http.post === 'function') {
+if (typeof http.post === 'function') {
 const ulPhaseStart = Date.now();
 for (const planBytes of UL_PLAN) {
 if (Date.now() - measureStart > 26000) break;
@@ -296,7 +343,7 @@ let sample = null;
 try {
 const payload = '0'.repeat(planBytes); // ASCII 每字符 1 字节
 const t0 = Date.now();
-const resp = await ctx.http.post('https://speed.cloudflare.com/__up', {
+const resp = await http.post('https://speed.cloudflare.com/__up', {
 headers: { 'Cache-Control': 'no-cache', 'Content-Type': 'text/plain'},
 body: payload,
 timeout: 8000
@@ -321,12 +368,12 @@ measuredAny = true;
 
 // ---------- 上传负载延迟 (↑) ----------
 try {
-if (ulSamples.length > 0 && typeof ctx.http.post === 'function' && Date.now() - measureStart < 24000) {
+if (ulSamples.length > 0 && typeof http.post === 'function' && Date.now() - measureStart < 24000) {
 const estMbps = data.ul > 0 ? data.ul : 20;
 const bgBytes = Math.round(Math.min(8000000, Math.max(500000, estMbps * 1e6 / 8 * 2)));
 const { times } = await measureLoaded(async () => {
 const payload = '0'.repeat(bgBytes);
-await ctx.http.post('https://speed.cloudflare.com/__up', {
+await http.post('https://speed.cloudflare.com/__up', {
 headers: { 'Cache-Control': 'no-cache', 'Content-Type': 'text/plain'},
 body: payload,
 timeout: 12000
@@ -339,6 +386,7 @@ if (L) { data.ulPing = L.ping; data.ulJitter = L.jitter; }
 } catch (e) {}
 
 if (measuredAny) {
+try { const mi = await metaPromise; if (mi) data.ipInfo = mi; } catch (e) {}
 data.ts = Date.now();
 try { ctx.storage.setJSON(CACHE_KEY, data);} catch (e) {}
 }
@@ -484,8 +532,31 @@ if (ulLoaded !== null && ulLoaded !== undefined) kids.push(loadedRow('↑', ulLo
 return { type: 'stack', direction: 'column', alignItems: 'start', gap: 2, flex: 1, children: kids};
 };
 
-const dlKids = [cfLabel('Download'), cfBig(data.dl, 'Mbps', 40)];
-if (dlChart) { dlKids.push(p90Caption); dlKids.push(dlChart); }
+const dlLeftKids = [cfLabel('Download'), cfBig(data.dl, 'Mbps', 40)];
+if (dlChart) dlLeftKids.push(p90Caption);
+// 右上: 本次测速线路 IP 信息 (取不到就不显示, 版式与之前一致)
+let dlHeadNode;
+if (data.ipInfo) {
+const ii = data.ipInfo;
+const infoKids = [
+{ type: 'text', text: ii.ip, font: { size: 12.5, weight: 'bold' }, textColor: C.text, maxLines: 1, minScale: 0.55 }
+];
+if (ii.org) infoKids.push({ type: 'text', text: ii.org, font: { size: 9.5, weight: 'medium' }, textColor: C.text, maxLines: 1, minScale: 0.65 });
+if (ii.asn) infoKids.push({ type: 'text', text: ii.asn, font: { size: 9, weight: 'medium' }, textColor: C.sub, maxLines: 1 });
+const srvLine = [ii.server, ii.proto].filter(Boolean).join(' · ');
+if (srvLine) infoKids.push({ type: 'text', text: srvLine, font: { size: 9, weight: 'medium' }, textColor: C.sub, maxLines: 1 });
+dlHeadNode = {
+type: 'stack', direction: 'row', alignItems: 'start', gap: 8,
+children: [
+{ type: 'stack', direction: 'column', alignItems: 'start', gap: 3, flex: 1, children: dlLeftKids },
+{ type: 'stack', direction: 'column', alignItems: 'start', gap: 2, width: 148, children: infoKids }
+]
+};
+} else {
+dlHeadNode = { type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: dlLeftKids };
+}
+const dlKids = [dlHeadNode];
+if (dlChart) dlKids.push(dlChart);
 const ulKids = [cfLabel('Upload'), cfBig(data.ul, 'Mbps', 26)];
 if (ulChart) { ulKids.push(p90Caption); ulKids.push(ulChart); }
 
