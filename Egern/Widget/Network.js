@@ -1,5 +1,17 @@
 /**
  * 桌面小组件: 🌏 IP 信息面板 - 终极美化版 (IPIP + cip.cc 双核定位)
+ * 版本：v1.1 (2026-10-31)
+ * 名称：POLICY / 值：自定义策略组名 (代理出口信息与代理延迟统一走此策略组，不填=默认路由)
+ * 名称：LMT / 值：流媒体检测策略组名 (NF/DP/TK；POLICY 已设置时以 POLICY 为准)
+ * 名称：AI / 值：AI 检测策略组名 (GPT/CL/GM；POLICY 已设置时以 POLICY 为准)
+ *
+ * 更新日志：
+ * - v1.1：① 修复小号显示：原版不分尺寸，小号硬塞双列 14 行面板导致文字全被截断；
+ *   新增小号专用布局，只显示代理出口信息（出口/落地/厂商/属性/纯净/延迟），
+ *   且小号只请求出口信息与代理延迟，不再跑本地定位与 6 项解锁检测；
+ *   ② 新增环境变量 POLICY / LMT / AI（优先级 POLICY ＞ LMT/AI ＞ 默认）；
+ *   ③ IPPure 同一接口原来每轮请求两次（出口信息与纯净度各一次），合并为一次，
+ *   避免浪费且防止两次结果落在不同出口上。
  */
 export default async function(ctx) {
   const C = {
@@ -41,6 +53,15 @@ export default async function(ctx) {
 
   const BASE_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36";
   const commonHeaders = { "User-Agent": BASE_UA, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8" };
+
+  const env = ctx.env || {};
+  const cleanEnv = (v) => (typeof v === "string" ? v.trim() : "");
+  const POLICY = cleanEnv(env.POLICY);
+  const LMT_POLICY = POLICY || cleanEnv(env.LMT);
+  const AI_POLICY = POLICY || cleanEnv(env.AI);
+  const IS_SMALL = (ctx.widgetFamily || "") === "systemSmall";
+  const httpGet = (url, opts, policy) =>
+    ctx.http.get(url, policy ? { ...(opts || {}), policy } : (opts || {}));
 
   const readBody = async (r) => {
     if (!r) return "";
@@ -106,12 +127,17 @@ export default async function(ctx) {
     return { ip: "获取失败", loc: "未知" };
   };
 
-  const fetchProxy = async () => {
+  const fetchIPPure = async () => {
     try {
-      const res = await ctx.http.get('https://my.ippure.com/v1/info', { timeout: 4000 });
+      const res = await httpGet('https://my.ippure.com/v1/info', { timeout: 4000 }, POLICY);
       const rawText = await readBody(res);
-      if (!rawText) throw new Error("empty body");
-      const data = JSON.parse(rawText);
+      if (!rawText) return null;
+      return { data: JSON.parse(rawText), rawText };
+    } catch (e) { return null; }
+  };
+
+  const buildProxy = (data, rawText) => {
+    try {
       const flag = getFlag(data.countryCode || data.country_code);
       
       let rawIsp = data.isp || data.ISP || data.org || data.organization || data.network || data.as || data.company;
@@ -135,15 +161,6 @@ export default async function(ctx) {
     } catch (e) { return { ip: "获取失败", loc: "未知", isp: "未知", cc: "XX" }; }
   };
 
-  const fetchPurity = async () => {
-    try {
-      const res = await ctx.http.get('https://my.ippure.com/v1/info', { timeout: 4000 });
-      const rawText = await readBody(res);
-      if (!rawText) return {};
-      return JSON.parse(rawText);
-    } catch (e) { return {}; }
-  };
-
   const fetchLocalDelay = async () => {
     const start = Date.now();
     try { await ctx.http.get('http://www.baidu.com', { timeout: 2000 }); return `${Date.now() - start} ms`; } catch (e) { return "超时"; }
@@ -151,13 +168,13 @@ export default async function(ctx) {
 
   const fetchProxyDelay = async () => {
     const start = Date.now();
-    try { await ctx.http.get('http://cp.cloudflare.com/generate_204', { timeout: 2000 }); return `${Date.now() - start} ms`; } catch (e) { return "超时"; }
+    try { await httpGet('http://cp.cloudflare.com/generate_204', { timeout: 2000 }, POLICY); return `${Date.now() - start} ms`; } catch (e) { return "超时"; }
   };
 
   async function checkNetflix() {
     try {
       const checkStatus = async (id) => {
-        const r = await ctx.http.get(`https://www.netflix.com/title/${id}`, { timeout: 4000, headers: commonHeaders, followRedirect: false }).catch(() => null);
+        const r = await httpGet(`https://www.netflix.com/title/${id}`, { timeout: 4000, headers: commonHeaders, followRedirect: false }, LMT_POLICY).catch(() => null);
         return r ? r.status : 0;
       };
       const sFull = await checkStatus(70143836); 
@@ -170,7 +187,7 @@ export default async function(ctx) {
 
   async function checkDisney() {
     try {
-      const res = await ctx.http.get("https://www.disneyplus.com", { timeout: 4000, headers: commonHeaders, followRedirect: false }).catch(() => null);
+      const res = await httpGet("https://www.disneyplus.com", { timeout: 4000, headers: commonHeaders, followRedirect: false }, LMT_POLICY).catch(() => null);
       if (!res || res.status === 403) return "❌";
       const loc = res.headers?.location || res.headers?.Location || "";
       if (loc.includes("unavailable")) return "❌";
@@ -180,7 +197,7 @@ export default async function(ctx) {
 
   async function checkTikTok() {
     try {
-      const r = await ctx.http.get("https://www.tiktok.com/explore", { timeout: 4000, headers: commonHeaders, followRedirect: false }).catch(() => null);
+      const r = await httpGet("https://www.tiktok.com/explore", { timeout: 4000, headers: commonHeaders, followRedirect: false }, LMT_POLICY).catch(() => null);
       if (!r || r.status === 403 || r.status === 401) return "❌";
       const body = await readBody(r);
       if (body.includes("Access Denied") || body.includes("Please wait...")) return "❌";
@@ -191,7 +208,7 @@ export default async function(ctx) {
 
   async function checkChatGPT() {
     try {
-      const traceRes = await ctx.http.get("https://chatgpt.com/cdn-cgi/trace", { timeout: 3000 }).catch(() => null);
+      const traceRes = await httpGet("https://chatgpt.com/cdn-cgi/trace", { timeout: 3000 }, AI_POLICY).catch(() => null);
       const tb = await readBody(traceRes);
       const m = tb?.match(/loc=([A-Z]{2})/);
       return m?.[1] ? m[1].toUpperCase() : "OK";
@@ -200,13 +217,13 @@ export default async function(ctx) {
 
   async function checkClaude() {
     try {
-      const res = await ctx.http.get("https://claude.ai/login", { 
+      const res = await httpGet("https://claude.ai/login", { 
         timeout: 5000, 
         headers: {
           "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
         }
-      }).catch(() => null);
+      }, AI_POLICY).catch(() => null);
       if (!res) return "❌";
       const status = res.status;
       const body = await readBody(res);
@@ -220,7 +237,7 @@ export default async function(ctx) {
 
   async function checkGemini() {
     try {
-      const res = await ctx.http.get("https://gemini.google.com/app", { timeout: 4000, headers: commonHeaders, followRedirect: false }).catch(() => null);
+      const res = await httpGet("https://gemini.google.com/app", { timeout: 4000, headers: commonHeaders, followRedirect: false }, AI_POLICY).catch(() => null);
       if (!res) return "❌";
       const loc = res.headers?.location || res.headers?.Location || "";
       if (loc.includes("faq")) return "❌";
@@ -228,11 +245,23 @@ export default async function(ctx) {
     } catch { return "❌"; }
   }
 
-  const [localData, proxyData, purityData, localDelay, proxyDelay, rNF, rDP, rTK, rGPT, rCL, rGM] = await Promise.all([
-    fetchLocal(), fetchProxy(), fetchPurity(), fetchLocalDelay(), fetchProxyDelay(),
-    checkNetflix(), checkDisney(), checkTikTok(), 
-    checkChatGPT(), checkClaude(), checkGemini()
-  ]);
+  const ippure = await fetchIPPure();
+  const proxyData = ippure ? buildProxy(ippure.data, ippure.rawText) : { ip: "获取失败", loc: "未知", isp: "未知", cc: "XX" };
+  const purityData = ippure ? ippure.data : {};
+
+  let localData = { ip: "获取失败", loc: "未知" };
+  let localDelay = "超时", proxyDelay = "超时";
+  let rNF = "❌", rDP = "❌", rTK = "❌", rGPT = "❌", rCL = "❌", rGM = "❌";
+  if (IS_SMALL) {
+    // 小号只显示代理出口信息: 只测代理延迟, 本地定位与 6 项解锁检测全部跳过
+    proxyDelay = await fetchProxyDelay();
+  } else {
+    [localData, localDelay, proxyDelay, rNF, rDP, rTK, rGPT, rCL, rGM] = await Promise.all([
+      fetchLocal(), fetchLocalDelay(), fetchProxyDelay(),
+      checkNetflix(), checkDisney(), checkTikTok(),
+      checkChatGPT(), checkClaude(), checkGemini()
+    ]);
+  }
 
   const isRes = purityData.isResidential;
   let nativeText = "未知属性", nativeIc = "questionmark.building.fill", nativeCol = C.dim;
@@ -270,6 +299,31 @@ export default async function(ctx) {
       { type: 'text', text: val, font: { size: 10, weight: 'medium' }, textColor: valCol, maxLines: 1, minScale: 0.4 }
     ]
   });
+
+  if (IS_SMALL) {
+    return {
+      type: 'widget',
+      padding: 12,
+      backgroundColor: C.bg,
+      children: [
+        { type: 'stack', direction: 'row', alignItems: 'center', gap: 6, children: [
+            { type: 'image', src: 'sf-symbol:waveform.path.ecg', color: C.text, width: 14, height: 14 },
+            { type: 'text', text: '🌏 代理出口', font: { size: 13, weight: 'bold' }, textColor: C.text },
+            { type: 'spacer' },
+            { type: 'text', text: timeStr, font: { size: 10, weight: 'medium' }, textColor: TIME_COL }
+        ]},
+        { type: 'spacer', length: 10 },
+        { type: 'stack', direction: 'column', gap: 7, children: [
+            Row("paperplane.fill", C.mem, "出口", proxyData.ip, C.text),
+            Row("mappin.and.ellipse", C.mem, "落地", proxyData.loc, C.text),
+            Row("server.rack", C.mem, "厂商", proxyData.isp, C.text),
+            Row(nativeIc, nativeCol, "属性", nativeText, C.text),
+            Row(riskIc, riskCol, "纯净", riskTxt, riskCol),
+            Row("timer", C.mem, "延迟", proxyDelay, C.text)
+        ]}
+      ]
+    };
+  }
 
   return {
     type: 'widget', 
