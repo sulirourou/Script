@@ -1,6 +1,6 @@
 /**
  * Egern「网络诊断雷达」
- * 版本：v2.3 (2026-10-30)
+ * 版本：v2.4 (2026-10-31)
  *
  * 环境变量：
  * - POLICY：最高优先级。指定后，出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY
@@ -22,6 +22,11 @@
  * - 服务小国旗来自该服务实际使用策略的出口地区，不再复用顶部当前代理出口
  *
  * 更新日志：
+ * - v2.4：本地网络卡三处调整：① 大号左侧图标框 42 -> 36，与当前代理国旗框等大；
+ *   ② 未连 Wi-Fi 时（有运营商信息或蜂窝接口 pdp_ip）本地网络图标改用蜂窝图标
+ *   antenna.radiowaves.left.and.right，标题图标与大图标同步（大号 + 中号）；
+ *   ③ 大号在网关上方新增「公网IP」一行：数据取既有的直连出口查询 localExit.ip
+ *   （不走代理，Wi-Fi / 蜂窝均适用，无需新增请求），YS=1 打码时同步打码。
  * - v2.3：版本号移到文件头顶部 (标题行正下方)，打开脚本第一眼就能看到；功能无变化。
  * - v2.2：恢复底部信息行 (ISP/厂商、属性类型、纯净评分、风险等级、更新时间)，仪表盘高度相应调高。
  *   (v2.0 曾以"与代理卡内容重复"为由删除该行，经确认要保留，v2.2 恢复。)
@@ -51,7 +56,7 @@ export default async function (ctx) {
 
   // 尺寸分档：Egern 通过 ctx.widgetFamily 告知当前小组件尺寸。
   // 旧版只试图从不存在的 ctx.screen / device.screen 猜屏幕尺寸，永远回退 440x956，
-  // 且不分尺寸地输出同一张大号仪表盘 —— 这是中/小号显示被裁剪的根源。
+  // 且不分尺寸地输出同一张大号仪表盘 ---- 这是中/小号显示被裁剪的根源。
   // family 取不到时按大号处理，保持旧行为。
   const FAMILY = clean(ctx.widgetFamily || "");
   const IS_LARGE =
@@ -180,6 +185,18 @@ export default async function (ctx) {
 
   const hasIPv4 = Boolean(clean(localIP)) && localIP !== "未获取";
   const hasIPv6 = Boolean(clean(pick(ipv6.address, device.ipv6Address)));
+
+  const cellular = device.cellular || {};
+  const ipv4Interface = clean(ipv4.interface);
+  const onWiFi =
+    Boolean(clean(wifi.ssid)) || ipv4Interface.indexOf("en") === 0;
+  const isCellular =
+    !onWiFi &&
+    (Boolean(clean(cellular.carrier)) ||
+      ipv4Interface.indexOf("pdp_ip") === 0);
+  const localNetIcon = isCellular
+    ? "antenna.radiowaves.left.and.right"
+    : "wifi";
   const baseDNS = detectDNSProvider(dnsServers);
   const now = new Date();
 
@@ -1546,7 +1563,7 @@ export default async function (ctx) {
     return card(
       [
         sectionTitle(
-          "wifi",
+          localNetIcon,
           "本地网络",
           image("globe.asia.australia.fill", C.blue, 12, 12),
           C.blue
@@ -1554,7 +1571,7 @@ export default async function (ctx) {
 
         row(
           [
-            iconBox("wifi", C.blue, C.blueSoft, 42),
+            iconBox(localNetIcon, C.blue, C.blueSoft, 36),
 
             col(
               [
@@ -1597,6 +1614,29 @@ export default async function (ctx) {
             )
           ],
           { gap: 6 }
+        ),
+
+        row(
+          [
+            image("globe", C.blue, 7, 7),
+
+            text("公网IP", 5, "medium", C.muted, {
+              maxLines: 1,
+              minScale: 0.72
+            }),
+
+            text(
+              localExit.ip ? displayIP(localExit.ip) : "未获取",
+              6.5,
+              "semibold",
+              C.text,
+              {
+                maxLines: 1,
+                minScale: 0.6
+              }
+            )
+          ],
+          { gap: 3, alignItems: "center" }
         ),
 
         row(
@@ -2208,7 +2248,7 @@ export default async function (ctx) {
     return card(
       [
         sectionTitle(
-          "wifi",
+          localNetIcon,
           "本地网络",
           pill("已连接", C.green, C.greenSoft, {
             padding: [1, 4]
@@ -2218,7 +2258,7 @@ export default async function (ctx) {
 
         row(
           [
-            iconBox("wifi", C.blue, C.blueSoft, 30),
+            iconBox(localNetIcon, C.blue, C.blueSoft, 30),
 
             col(
               [
@@ -3262,7 +3302,7 @@ function isMeaningful(value) {
   if (!v) return false;
   if (v === "--") return false;
   if (v === "-") return false;
-  if (v === "—") return false;
+  if (v === "--") return false;
   if (lower === "null") return false;
   if (lower === "undefined") return false;
   if (lower === "unknown") return false;
@@ -3370,7 +3410,7 @@ function carrierByMCCMNC(value) {
 function maskIP(value) {
   const raw = clean(value);
 
-  if (!raw || raw === "未获取" || raw === "—" || raw === "-") {
+  if (!raw || raw === "未获取" || raw === "--" || raw === "-") {
     return raw;
   }
 
@@ -5018,7 +5058,7 @@ function normalizeDNS(value) {
 
 function gatewayLabel(value) {
   const gateway = clean(value);
-  if (!gateway || gateway === "未获取") return "—";
+  if (!gateway || gateway === "未获取") return "--";
   return gateway;
 }
 
