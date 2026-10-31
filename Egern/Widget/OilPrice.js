@@ -1,14 +1,6 @@
 /**
  * ⛽ 全国油价监控小组件 (三级护航版 + 全面深浅模式UI自定义遥控器)
- * 版本：v1.2 (2026-10-30)
- * 更新日志：
- * - v1.2：小号改专用布局，只显示 4 种油品及价格 (2x2 网格)，不再把完整布局塞进小号导致文字被截断；
- *         修复调价日期自相矛盾：原「本轮调价」取的是省份页提示区里下次调价的日期 (张冠李戴)，
- *         「下轮调价」又因总站抓取失效落到内置日历、比"本轮"还早一天。现改为以下次调价日期为准
- *         (省份页提示区原文优先，其次总站/汽车之家，最后才是内置日历)，且日期必须不早于今天才采用，
- *         涨跌标注为「预计」；价格提取改为锚定价格表 <dt>/<dd> 结构，不再靠全文首个小数碰运气；
- *         城市环境变量带「省/市」等后缀时也能识别。
- * - v1.1：原版 (三级护航抓取 + 深浅模式 UI 自定义配置)。
+ * 版本：v1.3 (2026-10-31)
  * * ==========================================
  * 📚 环境变量配置说明 (在组件的"环境变量"处添加)
  * ==========================================
@@ -28,7 +20,7 @@
 // 1️⃣ 小组件背景颜色 { light: 白天颜色, dark: 黑夜颜色 }
 const WIDGET_BG_COLOR = { light: "#FFFFFF", dark: "#121212" };
 
-// 2️⃣ 顶部标题设置 (“中国油价·XX” 和 水滴图标)
+// 2️⃣ 顶部标题设置 ("中国油价·XX" 和 水滴图标)
 const TITLE_FONT_SIZE = 14;
 const TITLE_COLOR = { light: "#000000", dark: "#FFFFFF" };
 
@@ -322,6 +314,24 @@ export default async function(ctx) {
     };
   }
 
+  // 大号: 4 种油品按 2x2 四宫格排列, 行列 flex 等比例填充; 中号保持一行四列
+  const isLarge = ctx && ctx.widgetFamily === "systemLarge";
+  const oilSection = isLarge ? {
+    type: "stack", direction: "column", flex: 1,
+    children: [
+      { type: "stack", direction: "row", alignItems: "center", flex: 1, children: [buildOilCol("92#", oilData.p92), buildOilCol("95#", oilData.p95)] },
+      { type: "stack", direction: "row", alignItems: "center", flex: 1, children: [buildOilCol("98#", oilData.p98), buildOilCol("0#", oilData.p0)] }
+    ]
+  } : {
+    type: "stack", direction: "row", alignItems: "center", justifyContent: "space-around",
+    children: [
+      buildOilCol("92#", oilData.p92),
+      buildOilCol("95#", oilData.p95),
+      buildOilCol("98#", oilData.p98),
+      buildOilCol("0#",  oilData.p0)
+    ]
+  };
+
   return {
     type: "widget",
     url: "egern://",
@@ -338,15 +348,7 @@ export default async function(ctx) {
               { type: "text", text: `中国油价 • ${locData.prov}`, font: { size: TITLE_FONT_SIZE, weight: "bold" }, textColor: TITLE_COLOR }
             ]
           },
-          {
-            type: "stack", direction: "row", alignItems: "center", justifyContent: "space-around",
-            children: [
-              buildOilCol("92#", oilData.p92),
-              buildOilCol("95#", oilData.p95),
-              buildOilCol("98#", oilData.p98),
-              buildOilCol("0#",  oilData.p0)
-            ]
-          },
+          oilSection,
           {
             type: "stack", direction: "column", alignItems: "center", gap: 2,
             children: [
