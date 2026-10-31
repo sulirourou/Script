@@ -1,6 +1,6 @@
 /**
  * Egern「网络诊断雷达」
- * 版本：v2.5 (2026-10-31)
+ * 版本：v2.6 (2026-10-31)
  *
  * 环境变量：
  * - POLICY：最高优先级。指定后，出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY
@@ -22,6 +22,9 @@
  * - 服务小国旗来自该服务实际使用策略的出口地区，不再复用顶部当前代理出口
  *
  * 更新日志：
+ * - v2.6：「公网IP」标签改名「公网」；网关小图标修正：原『router.fill』不是有效
+ *   的 SF Symbol 名（真名 wifi.router.fill），此前一直渲染成空白，大号整行与
+ *   中号网关格两处一并改掉。
  * - v2.5：大号本地网络卡：网关改为与公网IP一致的整行排列（小图标 router.fill +
  *   标签 + 值），不再占底部指标格；底部只剩直连延迟 / IPV4/IPV6 / DNS 三项，
  *   flex 等分自动左移补位。卡片行与仪表盘总高相应 +12（106 -> 118，354 -> 366）。
@@ -1623,7 +1626,7 @@ export default async function (ctx) {
           [
             image("globe", C.blue, 7, 7),
 
-            text("公网IP", 5, "medium", C.muted, {
+            text("公网", 5, "medium", C.muted, {
               maxLines: 1,
               minScale: 0.72
             }),
@@ -1644,7 +1647,7 @@ export default async function (ctx) {
 
         row(
           [
-            image("router.fill", C.blue, 7, 7),
+            image("wifi.router.fill", C.blue, 7, 7),
 
             text("网关", 5, "medium", C.muted, {
               maxLines: 1,
@@ -2311,7 +2314,7 @@ export default async function (ctx) {
         row(
           [
             metricBox(
-              "router.fill",
+              "wifi.router.fill",
               "网关",
               gatewayLabel(displayIP(gateway)),
               C.blue,
