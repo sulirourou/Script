@@ -1,6 +1,6 @@
 /**
  * Egern「网络诊断雷达」
- * 版本：v2.6 (2026-10-31)
+ * 版本：v2.7 (2026-10-31)
  *
  * 环境变量：
  * - POLICY：最高优先级。指定后，出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY
@@ -21,31 +21,6 @@
  * - 匹配不到时该服务不传 policy，走 Widget 默认请求方式
  * - 服务小国旗来自该服务实际使用策略的出口地区，不再复用顶部当前代理出口
  *
- * 更新日志：
- * - v2.6：「公网IP」标签改名「公网」；网关小图标修正：原『router.fill』不是有效
- *   的 SF Symbol 名（真名 wifi.router.fill），此前一直渲染成空白，大号整行与
- *   中号网关格两处一并改掉。
- * - v2.5：大号本地网络卡：网关改为与公网IP一致的整行排列（小图标 router.fill +
- *   标签 + 值），不再占底部指标格；底部只剩直连延迟 / IPV4/IPV6 / DNS 三项，
- *   flex 等分自动左移补位。卡片行与仪表盘总高相应 +12（106 -> 118，354 -> 366）。
- * - v2.4：本地网络卡三处调整：① 大号左侧图标框 42 -> 36，与当前代理国旗框等大；
- *   ② 未连 Wi-Fi 时（有运营商信息或蜂窝接口 pdp_ip）本地网络图标改用蜂窝图标
- *   antenna.radiowaves.left.and.right，标题图标与大图标同步（大号 + 中号）；
- *   ③ 大号在网关上方新增「公网IP」一行：数据取既有的直连出口查询 localExit.ip
- *   （不走代理，Wi-Fi / 蜂窝均适用，无需新增请求），YS=1 打码时同步打码。
- * - v2.3：版本号移到文件头顶部 (标题行正下方)，打开脚本第一眼就能看到；功能无变化。
- * - v2.2：恢复底部信息行 (ISP/厂商、属性类型、纯净评分、风险等级、更新时间)，仪表盘高度相应调高。
- *   (v2.0 曾以"与代理卡内容重复"为由删除该行，经确认要保留，v2.2 恢复。)
- * - v2.1：去掉「出口IP」文字标签，代理 IP 单独成行并放大字号 (大号 9.5 / 中号 9 / 小号 10)。
- * - v2.0：按 ctx.widgetFamily 分尺寸布局：大号 = 完整仪表盘；中号 = 本地网络 + 当前代理双卡；
- *   小号 = 仅当前代理单卡。旧版完全不读 widgetFamily，中/小号只是把大号内容裁剪显示。
- * - v2.0：当前代理卡新增代理 IP 行 (数据本来就有 exit.ip，旧版从未渲染)；
- *   空间来自：去掉与 ISP 行重复的第二个标签、纯净仪表由 68x52 缩到 60x45，
- *   风险等级改为仪表下方小字。
- * - v2.0：中/小号不再做流媒体/AI 检测 (反正不显示)，省时省流量。
- * - v2.0：候选策略探测加上限 (单服务 30 / 全局 80) 与 15 秒总截止，
- *   避免配置里没有候选策略组时探测拖死小组件。
- * - v2.0：EDNS 探测由重复发两次改回一次；classifyExitKind 不再把仅有 proxy/vpn 标记的出口算作住宅 IP。
  */
 
 export default async function (ctx) {
@@ -410,6 +385,59 @@ export default async function (ctx) {
         ms: Math.max(1, Date.now() - startedAt)
       };
     }
+  }
+
+  // Gemini 专用检测: gemini.google.com 对脚本裸请求 (截断 UA、无 Accept-Language)
+  // 经常直接断连或回 503, 浏览器却能正常打开, 是检测口径问题而非节点不通。
+  // 改用完整浏览器 UA, 根地址与 /app 两个入口轮换重试, 总时长封顶 15 秒;
+  // 判定标准不变: 任一次拿到 <500 的响应即算通。
+  async function getGeminiStatus(servicePolicy) {
+    const startedAt = Date.now();
+    const deadline = startedAt + 15000;
+    const targets = [
+      "https://gemini.google.com/",
+      "https://gemini.google.com/app",
+      "https://gemini.google.com/"
+    ];
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Cache-Control": "no-cache"
+    };
+
+    for (let i = 0; i < targets.length; i += 1) {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        break;
+      }
+      try {
+        const options = {
+          timeout: Math.min(8000, remaining),
+          redirect: "follow",
+          credentials: "omit",
+          headers: headers
+        };
+        const targetPolicy = clean(servicePolicy);
+        if (targetPolicy) {
+          options.policy = targetPolicy;
+        }
+        const response = await ctx.http.get(targets[i], options);
+        if (response.status >= 200 && response.status < 500) {
+          return {
+            ok: true,
+            status: response.status,
+            ms: Math.max(1, Date.now() - startedAt)
+          };
+        }
+      } catch (_) {}
+    }
+
+    return {
+      ok: false,
+      status: 0,
+      ms: Math.max(1, Date.now() - startedAt)
+    };
   }
 
   async function getPolicyExit(policy) {
@@ -1098,10 +1126,12 @@ export default async function (ctx) {
       result,
       serviceExit
     ] = await Promise.all([
-      getServiceStatus(
-        url + separator + "_=" + Date.now(),
-        servicePolicy
-      ),
+      id === "gemini"
+        ? getGeminiStatus(servicePolicy)
+        : getServiceStatus(
+            url + separator + "_=" + Date.now(),
+            servicePolicy
+          ),
       serviceExitPromise
     ]);
 
