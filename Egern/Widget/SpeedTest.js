@@ -1,9 +1,28 @@
 /**
 * 📌 桌面小组件: Speedtest 极简官方复刻版
-* 版本：v2.10 (2026-10-31)
+* 版本：v2.13 (2026-10-31)
 * 环境变量 (可选):
 * 名称：POLICY
 * 值：自定义策略组节点名称，例如 美国节点；不填则全部测速请求按 Egern 默认规则路由
+*
+* 🔧 v2.13 变更: 修好负载采样校验的两个毛病: (1) 传输块的时间片改为开始时
+* 就登记 (结束时回填), 正在飞的那一块不再「隐形」 -- v2.12 里探测若在首块
+* 完成前结束会被误杀, 上传侧因此只剩 1 个样本出不了数; (2) 新增引擎并发性
+* 探测 (两发 204 齐发看总耗时): 串行引擎下队列等待也会造成时间重叠, 单靠
+* 重叠判断分不出真假负载, 串行时直接不出负载值, 恢复「不伪造」规则。
+*
+* 🔧 v2.12 变更: 给分块背景传输补上时间重叠校验: 背景每块的起止时间都会被
+* 记录, 探测只有在自身飞行时段与某个传输块真实重叠时才算负载样本。若引擎是
+* 串行的 (块与探测只能交替跑, 永不重叠), 负载值自动不出 -- 恢复 v2.3 起
+* 「不伪造负载延迟」的规则 (v2.11 分块后该规则一度失效)。内存峰值同 v2.11。
+*
+* 🔧 v2.11 变更: 内存瘦身 (用户反馈更新小组件时 Egern 的 VPN 会断开 -- 元凶是
+* 内存峰值: 脚本与隧道同进程, iOS 对扩展进程内存上限很低, 超限即被系统杀掉)。
+* 旧版负载阶段背景传输按速度算整包大小: 下载单请求最高 20MB 整包读入内存,
+* 上传最高 8MB 大字符串 (UTF-16 实际占 16MB); 线路越快包越大, 271Mbps 时正好
+* 顶满。改法: 背景传输分块连续跑约 2.2 秒 -- 下载 1MB/块、上传 500KB/块, 每块
+* 用完即释放, 管道全程繁忙但峰值只有一块; 下载阶梯单样本上限 10MB -> 5MB
+* (多加一档 5MB 保样本数)。测速口径、负载采样规则、界面不变。
 *
 * 🔧 v2.10 变更: 再次修复大号 Download 不左对齐 (v2.9 的 justifyContent 与固定
 * 宽无效: 查官方文档证实 Egern stack 根本没有 justifyContent 属性, 写了被忽略)。
@@ -238,7 +257,7 @@ data.jitter = 0;
 // ---------- 2) 下载测速: 阶梯多样本采样 (仿 Cloudflare) ----------
 // 从 0.1MB 逐级加大, 每个样本都把响应体真正读完再按实际字节数算速;
 // 下载阶段约 9 秒封顶, 单样本超过 3 秒说明该尺寸已够测准, 停。
-const DL_PLAN = [100000, 100000, 500000, 500000, 1000000, 1000000, 3000000, 5000000, 10000000];
+const DL_PLAN = [100000, 100000, 500000, 500000, 1000000, 1000000, 3000000, 5000000, 5000000];
 const dlSamples = []; // {bytes, mbps, seconds}
 try {
 const dlPhaseStart = Date.now();
@@ -289,15 +308,40 @@ for (let i = 1; i < times.length; i++) dsum += Math.abs(times[i] - times[i - 1])
 jitter = parseFloat((dsum / (times.length - 1)).toFixed(1));
 return { ping: medianNum(times), jitter};
 };
+let engineParallel = null; // 引擎并发性: null 未测, 整个运行期只测一次
+const probeParallel = async () => {
+const one = async () => {
+const t = Date.now();
+try {
+const r = await http.get('https://cp.cloudflare.com/generate_204', { timeout: 2000});
+if (r && r.status === 204) return Date.now() - t;
+} catch (e) {}
+return null;
+};
+const single = await one();
+if (single == null) return true; // 探测本身失败时不拦截, 按并发处理
+const t0 = Date.now();
+const rs = await Promise.all([one(), one()]);
+if (rs[0] == null || rs[1] == null) return true;
+return (Date.now() - t0) < single * 1.6; // 齐发总耗时接近单发 = 并发; 接近两倍 = 串行
+};
 const measureLoaded = async (startBg, idlePing) => {
+if (engineParallel === null) engineParallel = await probeParallel();
 let bgDone = false;
 let bgResult = null;
+const spans = []; // 背景传输块时间片 [开始, 结束]; 开始即登记, 结束回填 (在飞的块不隐形)
+const beginSpan = () => {
+const s = [Date.now(), Infinity];
+spans.push(s);
+return () => { s[1] = Date.now(); };
+};
 const bgPromise = (async () => {
-try { bgResult = await startBg(); } catch (e) {}
+try { bgResult = await startBg(beginSpan); } catch (e) {}
 bgDone = true;
 })();
 const maxDur = Math.min(2500, Math.max(800, (idlePing || 250) * 4 + 200));
 const times = [];
+if (engineParallel) {
 for (let i = 0; i < 4; i++) {
 if (bgDone) break;
 const wasLoading = !bgDone;
@@ -308,7 +352,9 @@ const resp = await http.get('https://cp.cloudflare.com/generate_204', { timeout:
 ok = !!resp && resp.status === 204;
 } catch (e) { ok = false; }
 const dt = Date.now() - t0;
-if (ok && wasLoading && dt <= maxDur) times.push(dt);
+const overlapped = spans.some(([a, b]) => t0 < b && a < t0 + dt);
+if (ok && wasLoading && dt <= maxDur && overlapped) times.push(dt);
+}
 }
 await bgPromise;
 return { times, bgResult };
@@ -317,20 +363,27 @@ return { times, bgResult };
 // ---------- 下载负载延迟 (↓): 背景下载顺带作为一个额外测速样本 ----------
 try {
 if (dlSamples.length > 0 && Date.now() - measureStart < 18000) {
-const estMbps = data.dl > 0 ? data.dl : 50;
-const bgBytes = Math.round(Math.min(20000000, Math.max(2000000, estMbps * 1e6 / 8 * 2)));
-const { times, bgResult } = await measureLoaded(async () => {
+const { times, bgResult } = await measureLoaded(async (beginSpan) => {
+// v2.11: 1MB 一块连续拉约 2.2 秒, 每块读完即释放 (旧版单请求最高 20MB 整包驻留)
 const t0 = Date.now();
-const resp = await http.get(`https://speed.cloudflare.com/__down?bytes=${bgBytes}&r=${t0}`, {
+let total = 0;
+while (Date.now() - t0 < 2200 && total < 40000000) {
+const endSpan = beginSpan();
+try {
+const resp = await http.get(`https://speed.cloudflare.com/__down?bytes=1000000&r=${Date.now()}`, {
 headers: { 'Cache-Control': 'no-cache'},
-timeout: 15000
+timeout: 6000
 });
-if (resp && resp.status === 200) {
+if (!resp || resp.status !== 200) { endSpan(); break; }
 const buf = await resp.arrayBuffer();
-const sec = (Date.now() - t0) / 1000;
-if (buf && buf.byteLength > 0 && sec > 0.2) {
-return { bytes: buf.byteLength, mbps: (buf.byteLength * 8) / sec / 1e6, seconds: sec };
+endSpan();
+if (!buf || !buf.byteLength) break;
+total += buf.byteLength;
+} catch (e) { endSpan(); break; }
 }
+const sec = (Date.now() - t0) / 1000;
+if (total > 0 && sec > 0.2) {
+return { bytes: total, mbps: (total * 8) / sec / 1e6, seconds: sec };
 }
 return null;
 }, data.ping);
@@ -382,15 +435,24 @@ measuredAny = true;
 // ---------- 上传负载延迟 (↑) ----------
 try {
 if (ulSamples.length > 0 && typeof http.post === 'function' && Date.now() - measureStart < 24000) {
-const estMbps = data.ul > 0 ? data.ul : 20;
-const bgBytes = Math.round(Math.min(8000000, Math.max(500000, estMbps * 1e6 / 8 * 2)));
-const { times } = await measureLoaded(async () => {
-const payload = '0'.repeat(bgBytes);
-await http.post('https://speed.cloudflare.com/__up', {
+const { times } = await measureLoaded(async (beginSpan) => {
+// v2.11: 500KB 一块连续发约 2.2 秒, 避免旧版最高 8MB 大字符串整包驻留
+const t0 = Date.now();
+const chunk = '0'.repeat(500000);
+let total = 0;
+while (Date.now() - t0 < 2200 && total < 16000000) {
+const endSpan = beginSpan();
+try {
+const resp = await http.post('https://speed.cloudflare.com/__up', {
 headers: { 'Cache-Control': 'no-cache', 'Content-Type': 'text/plain'},
-body: payload,
-timeout: 12000
+body: chunk,
+timeout: 6000
 });
+endSpan();
+if (!resp || resp.status !== 200) break;
+total += 500000;
+} catch (e) { endSpan(); break; }
+}
 return null;
 }, data.ping);
 const L = summarizeLoaded(times);
