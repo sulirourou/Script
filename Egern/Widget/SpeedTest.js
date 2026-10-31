@@ -1,9 +1,14 @@
 /**
 * 📌 桌面小组件: Speedtest 极简官方复刻版
-* 版本：v2.9 (2026-10-31)
+* 版本：v2.10 (2026-10-31)
 * 环境变量 (可选):
 * 名称：POLICY
 * 值：自定义策略组节点名称，例如 美国节点；不填则全部测速请求按 Egern 默认规则路由
+*
+* 🔧 v2.10 变更: 再次修复大号 Download 不左对齐 (v2.9 的 justifyContent 与固定
+* 宽无效: 查官方文档证实 Egern stack 根本没有 justifyContent 属性, 写了被忽略)。
+* 改用与页眉同款且真机验证过的弹性 spacer 布局: [下载列, spacer, 信息列] --
+* spacer 吃掉全部余量, 下载列贴左、信息列贴右。测速与数据不变。
 *
 * 🔧 v2.9 变更: 修复大号 Download 区块不左对齐: v2.7 把下载头部改成
 * 行布局后, 左列在 Egern 渲染器里被居中 (真机截图中 Download 明显右移,
@@ -554,9 +559,10 @@ if (ii.asn) infoKids.push({ type: 'text', text: ii.asn, font: { size: 9, weight:
 const srvLine = [ii.server, ii.proto].filter(Boolean).join(' · ');
 if (srvLine) infoKids.push({ type: 'text', text: srvLine, font: { size: 9, weight: 'medium' }, textColor: C.sub, maxLines: 1 });
 dlHeadNode = {
-type: 'stack', direction: 'row', alignItems: 'start', justifyContent: 'start', gap: 8,
+type: 'stack', direction: 'row', alignItems: 'start', gap: 8,
 children: [
-{ type: 'stack', direction: 'column', alignItems: 'start', gap: 3, width: 180, children: dlLeftKids },
+{ type: 'stack', direction: 'column', alignItems: 'start', gap: 3, children: dlLeftKids },
+{ type: 'spacer'},
 { type: 'stack', direction: 'column', alignItems: 'start', gap: 2, width: 148, children: infoKids }
 ]
 };
