@@ -1,6 +1,6 @@
 /**
  * Egern「网络诊断雷达」
- * 版本：v2.4 (2026-10-31)
+ * 版本：v2.5 (2026-10-31)
  *
  * 环境变量：
  * - POLICY：最高优先级。指定后，出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY
@@ -22,6 +22,9 @@
  * - 服务小国旗来自该服务实际使用策略的出口地区，不再复用顶部当前代理出口
  *
  * 更新日志：
+ * - v2.5：大号本地网络卡：网关改为与公网IP一致的整行排列（小图标 router.fill +
+ *   标签 + 值），不再占底部指标格；底部只剩直连延迟 / IPV4/IPV6 / DNS 三项，
+ *   flex 等分自动左移补位。卡片行与仪表盘总高相应 +12（106 -> 118，354 -> 366）。
  * - v2.4：本地网络卡三处调整：① 大号左侧图标框 42 -> 36，与当前代理国旗框等大；
  *   ② 未连 Wi-Fi 时（有运营商信息或蜂窝接口 pdp_ip）本地网络图标改用蜂窝图标
  *   antenna.radiowaves.left.and.right，标题图标与大图标同步（大号 + 中号）；
@@ -1641,17 +1644,29 @@ export default async function (ctx) {
 
         row(
           [
-            metricBox(
-              "router.fill",
-              "网关",
-              gatewayLabel(displayIP(gateway)),
-              C.blue,
-              {
-                valueSize: 5.4,
-                valueMinScale: 0.28
-              }
-            ),
+            image("router.fill", C.blue, 7, 7),
 
+            text("网关", 5, "medium", C.muted, {
+              maxLines: 1,
+              minScale: 0.72
+            }),
+
+            text(
+              gatewayLabel(displayIP(gateway)),
+              6.5,
+              "semibold",
+              C.text,
+              {
+                maxLines: 1,
+                minScale: 0.6
+              }
+            )
+          ],
+          { gap: 3, alignItems: "center" }
+        ),
+
+        row(
+          [
             metricBox(
               "clock",
               "直连延迟",
@@ -1686,7 +1701,7 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 106
+        height: 118
       }
     );
   }
@@ -1866,7 +1881,7 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 106,
+        height: 118,
         padding: [5, 6],
         gap: 3
       }
@@ -2621,7 +2636,7 @@ export default async function (ctx) {
           proxyCard()
         ],
         {
-          height: 106,
+          height: 118,
           gap: 6,
           alignItems: "start"
         }
@@ -2642,7 +2657,7 @@ export default async function (ctx) {
       footer()
     ],
     {
-      height: 354,
+      height: 366,
       padding: [8, 8],
       gap: 6
     }
