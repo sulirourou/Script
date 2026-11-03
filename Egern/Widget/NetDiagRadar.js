@@ -1,6 +1,6 @@
 /**
  * Egern「网络诊断雷达」
- * 版本：v2.7 (2026-10-31)
+ * 版本：v2.8 (2026-11-03)
  *
  * 环境变量：
  * - POLICY：最高优先级。指定后，出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY
@@ -2292,213 +2292,6 @@ export default async function (ctx) {
     );
   }
 
-  function localCardCompact() {
-    return card(
-      [
-        sectionTitle(
-          localNetIcon,
-          "本地网络",
-          pill("已连接", C.green, C.greenSoft, {
-            padding: [1, 4]
-          }),
-          C.blue
-        ),
-
-        row(
-          [
-            iconBox(localNetIcon, C.blue, C.blueSoft, 30),
-
-            col(
-              [
-                text(networkName, 9.5, "semibold", C.text, {
-                  maxLines: 1,
-                  minScale: 0.6
-                }),
-
-                text(displayIP(localIP), 7.5, "medium", C.subtext, {
-                  maxLines: 1,
-                  minScale: 0.6
-                }),
-
-                row(
-                  [
-                    text(flag(localExit.countryCode) || "🇨🇳", 7, "regular", C.text),
-
-                    text(localArea, 6.5, "medium", C.muted, {
-                      maxLines: 1,
-                      minScale: 0.6
-                    })
-                  ],
-                  { gap: 2 }
-                )
-              ],
-              {
-                flex: 1,
-                gap: 1
-              }
-            )
-          ],
-          { gap: 5 }
-        ),
-
-        row(
-          [
-            metricBox(
-              "wifi.router.fill",
-              "网关",
-              gatewayLabel(displayIP(gateway)),
-              C.blue,
-              {
-                valueSize: 5.4,
-                valueMinScale: 0.28
-              }
-            ),
-
-            metricBox(
-              "clock",
-              "直连延迟",
-              localLatency.ok ? localLatency.ms + "ms" : "失败",
-              localLatencyColor
-            ),
-
-            metricBox(
-              "network",
-              "IPV4/IPV6",
-              (hasIPv4 ? "✓" : "×") + "/" + (hasIPv6 ? "✓" : "×"),
-              hasIPv4 && hasIPv6
-                ? C.green
-                : hasIPv4
-                  ? C.amber
-                  : C.red
-            ),
-
-            metricBox(
-              "cloud.fill",
-              "DNS",
-              dnsLabel,
-              C.purple,
-              {
-                valueSize: 5.4,
-                valueMinScale: 0.28
-              }
-            )
-          ],
-          { gap: 2 }
-        )
-      ],
-      {
-        flex: 1,
-        height: 110
-      }
-    );
-  }
-
-  function proxyCardCompact() {
-    const city =
-      clean(exit.city) ||
-      clean(exit.country) ||
-      "未知地区";
-
-    return card(
-      [
-        sectionTitle(
-          "point.3.connected.trianglepath.dotted",
-          "当前代理",
-          pill(
-            proxyLatency.ok ? "连接正常" : "检测失败",
-            proxyLatency.ok ? C.green : C.red,
-            proxyLatency.ok ? C.greenSoft : C.redSoft
-          ),
-          C.purple
-        ),
-
-        row(
-          [
-            flagBox(),
-
-            col(
-              [
-                row(
-                  [
-                    text(flag(exit.countryCode) || "🌐", 7, "regular", C.text),
-
-                    text(city, 8.5, "semibold", C.text, {
-                      flex: 1,
-                      maxLines: 1,
-                      minScale: 0.55
-                    })
-                  ],
-                  { gap: 2 }
-                ),
-
-                text(shortISP(exit.isp), 7, "medium", C.subtext, {
-                  maxLines: 1,
-                  minScale: 0.6
-                }),
-
-                text(displayIP(exit.ip) || "未识别", 9, "semibold", C.text, {
-                  maxLines: 1,
-                  minScale: 0.5
-                })
-              ],
-              {
-                flex: 1,
-                gap: 1
-              }
-            )
-          ],
-          {
-            gap: 4,
-            alignItems: "center"
-          }
-        ),
-
-        row(
-          [
-            metricBox(
-              "clock",
-              "延迟",
-              proxyLatency.ok ? proxyLatency.ms + "ms" : "失败",
-              proxyLatencyColor
-            ),
-
-            metricBox(
-              "circle.hexagongrid.fill",
-              "NAT",
-              nat.label,
-              natColor
-            ),
-
-            metricBox(
-              "checkmark.shield.fill",
-              "纯净",
-              purity.score + "分",
-              purityColor
-            ),
-
-            metricBox(
-              "slider.horizontal.3",
-              "协议",
-              NODE_PROTOCOL,
-              C.purple,
-              {
-                valueSize: 5.4,
-                valueMinScale: 0.34
-              }
-            )
-          ],
-          { gap: 2 }
-        )
-      ],
-      {
-        flex: 1,
-        height: 110,
-        padding: [5, 6],
-        gap: 3
-      }
-    );
-  }
-
   function mediumDashboard() {
     return col(
       [
@@ -2506,18 +2299,18 @@ export default async function (ctx) {
 
         row(
           [
-            localCardCompact(),
-            proxyCardCompact()
+            localCard(),
+            proxyCard()
           ],
           {
-            height: 110,
+            height: 118,
             gap: 6,
             alignItems: "start"
           }
         )
       ],
       {
-        height: 154,
+        height: 162,
         padding: [8, 8],
         gap: 6
       }
