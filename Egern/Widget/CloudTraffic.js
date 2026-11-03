@@ -1,6 +1,6 @@
 /**
  * 🌐 云服务器流量监控 (SSH 直连 · vnStat 数据)
- * 版本：v1.3 (2026-11-03)
+ * 版本：v1.4 (2026-11-03)
  * 名称：host / 值：服务器地址 (必填，如 170.9.22.31)
  * 名称：port / 值：SSH 端口 (不填默认 22)
  * 名称：username / 值：SSH 用户名 (必填，如 ubuntu)
@@ -59,19 +59,24 @@ export default async function (ctx) {
 
   // ---------- palette ----------
   const C = {
-    root: "#0B1026",
-    text: "#FFFFFF",
-    sub: "rgba(235,240,255,0.74)",
-    muted: "rgba(235,240,255,0.46)",
-    cardBg: "rgba(255,255,255,0.055)",
-    cardBorder: "rgba(255,255,255,0.10)",
-    down: "#22D3EE",
-    up: "#F472B6",
-    amber: "#FBBF24",
-    green: "#34D399",
-    red: "#FB7185",
-    violet: "#A78BFA"
+    root: { light: "#F2F4FB", dark: "#0B1026" },
+    text: { light: "#141B33", dark: "#FFFFFF" },
+    sub: { light: "rgba(38,48,84,0.72)", dark: "rgba(235,240,255,0.74)" },
+    muted: { light: "rgba(38,48,84,0.48)", dark: "rgba(235,240,255,0.46)" },
+    cardBg: { light: "#FFFFFF", dark: "rgba(255,255,255,0.055)" },
+    cardBorder: { light: "rgba(30,41,82,0.10)", dark: "rgba(255,255,255,0.10)" },
+    divider: { light: "rgba(30,41,82,0.10)", dark: "rgba(255,255,255,0.10)" },
+    down: { light: "#0284C7", dark: "#22D3EE" },
+    up: { light: "#DB2777", dark: "#F472B6" },
+    amber: { light: "#B45309", dark: "#FBBF24" },
+    green: { light: "#059669", dark: "#34D399" },
+    red: { light: "#E11D48", dark: "#FB7185" },
+    violet: { light: "#7C3AED", dark: "#A78BFA" },
+    onText: "#FFFFFF",
+    onSub: "rgba(235,240,255,0.78)"
   };
+  const DOWN_HEX = "#22D3EE";
+  const UP_HEX = "#F472B6";
   const GRAD_MONTH = ["#6D28D9", "#2563EB"];
   const GRAD_TOTAL = ["#0E7490", "#134E4A"];
   const GRAD_HEAD = ["#7C3AED", "#DB2777"];
@@ -216,20 +221,32 @@ export default async function (ctx) {
     const pct = hasQuota ? (monthTotal / quotaBytes) * 100 : 0;
     const downShare = monthTotal > 0 ? (d.monthRx / monthTotal) * 100 : 50;
     const cx = 50, cy = 50, r = 40;
+    const pt = (deg) => {
+      const a = ((deg - 90) * Math.PI) / 180;
+      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    };
+    const arcPath = (from, to, color, cap) => {
+      const s = pt(from), e = pt(to);
+      const large = to - from > 180 ? 1 : 0;
+      return `<path d="M ${s[0].toFixed(2)} ${s[1].toFixed(2)} A ${r} ${r} 0 ${large} 1 ${e[0].toFixed(2)} ${e[1].toFixed(2)}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="${cap || "butt"}"/>`;
+    };
+    const fullCircle = (color, width, opacity) =>
+      `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${width || 9}"${opacity ? ` stroke-opacity="${opacity}"` : ""}/>`;
     let arcs, centerTop, centerBottom;
     if (hasQuota) {
       const shown = Math.min(100, pct);
-      arcs =
-        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="9"/>` +
-        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#rg)" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="${shown.toFixed(1)} 100" transform="rotate(-90 ${cx} ${cy})"/>`;
+      arcs = fullCircle("#FFFFFF", 9, 0.14) +
+        (shown >= 99.95 ? fullCircle("url(#rg)", 9) : shown > 0.05 ? arcPath(0, shown * 3.6, "url(#rg)", "round") : "");
       centerTop = pct >= 10 ? pct.toFixed(0) + "%" : pct.toFixed(1) + "%";
       centerBottom = "本月已用";
     } else {
       const upShare = 100 - downShare;
-      arcs =
-        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="9"/>` +
-        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${C.down}" stroke-width="9" pathLength="100" stroke-dasharray="${downShare.toFixed(1)} 100" transform="rotate(-90 ${cx} ${cy})"/>` +
-        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${C.up}" stroke-width="9" pathLength="100" stroke-dasharray="${upShare.toFixed(1)} 100" stroke-dashoffset="${(-downShare).toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      const gapDeg = downShare >= 2 && upShare >= 2 ? 1.2 : 0;
+      arcs = fullCircle("#FFFFFF", 9, 0.10);
+      if (downShare >= 99.95) arcs += fullCircle(DOWN_HEX, 9);
+      else if (downShare > 0.05) arcs += arcPath(gapDeg / 2, downShare * 3.6 - gapDeg / 2, DOWN_HEX);
+      if (upShare >= 99.95) arcs += fullCircle(UP_HEX, 9);
+      else if (upShare > 0.05) arcs += arcPath(downShare * 3.6 + gapDeg / 2, 360 - gapDeg / 2, UP_HEX);
       centerTop = fmtBytes(monthTotal);
       centerBottom = "本月 · 蓝下粉上";
     }
@@ -252,7 +269,7 @@ export default async function (ctx) {
     const barW = Math.min(26, slot * 0.52);
     let parts = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
       `<defs><linearGradient id="bg1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#2563EB"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs>`,
-      `<line x1="0" y1="${base}" x2="${W}" y2="${base}" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>`];
+      `<line x1="0" y1="${base}" x2="${W}" y2="${base}" stroke="rgba(130,142,180,0.35)" stroke-width="1"/>`];
     days.forEach((e, i) => {
       const total = e.rx + e.tx;
       const h = Math.max(2, (total / max) * maxBarH);
@@ -260,9 +277,9 @@ export default async function (ctx) {
       const isToday = i === days.length - 1;
       parts.push(`<rect x="${x.toFixed(1)}" y="${(base - h).toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="4" fill="${isToday ? "#F472B6" : "url(#bg1)"}" opacity="${isToday ? "1" : "0.88"}"/>`);
       if (isToday || total === max) {
-        parts.push(`<text x="${(x + barW / 2).toFixed(1)}" y="${(base - h - 4).toFixed(1)}" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="8" font-weight="700" fill="#FFFFFF">${fmtBytes(total)}</text>`);
+        parts.push(`<text x="${(x + barW / 2).toFixed(1)}" y="${(base - h - 4).toFixed(1)}" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="8" font-weight="700" fill="${isToday ? "#DB2777" : "#2563EB"}">${fmtBytes(total)}</text>`);
       }
-      parts.push(`<text x="${(x + barW / 2).toFixed(1)}" y="${base + 13}" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="8" font-weight="600" fill="rgba(235,240,255,0.5)">${e.label}日</text>`);
+      parts.push(`<text x="${(x + barW / 2).toFixed(1)}" y="${base + 13}" text-anchor="middle" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="8" font-weight="600" fill="#8E97B5">${e.label}日</text>`);
     });
     parts.push("</svg>");
     return parts.join("");
@@ -318,12 +335,12 @@ export default async function (ctx) {
         row([
           svgImage(ringSVG(d, 96), 96, 96),
           col([
-            text(d.monthKnown ? "本月流量" : "本月流量（开机以来）", 9, "semibold", C.sub, {}),
-            text(fmtBytes(d.monthRx + d.monthTx), 24, "bold", C.text, { minScale: 0.55 }),
-            flowSplit(d.monthRx, d.monthTx, 10.5)
+            text(d.monthKnown ? "本月流量" : "本月流量（开机以来）", 9, "semibold", C.onSub, {}),
+            text(fmtBytes(d.monthRx + d.monthTx), 24, "bold", C.onText, { minScale: 0.55 }),
+            flowSplit(d.monthRx, d.monthTx, 10.5, true)
           ], { flex: 1, gap: 3 })
         ], { gap: 10 }),
-        text(monthNote(d), 7.5, "medium", C.sub, { minScale: 0.65 })
+        text(monthNote(d), 7.5, "medium", C.onSub, { minScale: 0.65 })
       ], GRAD_MONTH, {}),
       panel([
         row([
@@ -349,10 +366,13 @@ export default async function (ctx) {
     return children;
   }
 
-  function flowSplit(rx, tx, size) {
+  function flowSplit(rx, tx, size, onGrad) {
+    const valColor = onGrad ? C.onText : C.text;
+    const downColor = onGrad ? DOWN_HEX : C.down;
+    const upColor = onGrad ? UP_HEX : C.up;
     return col([
-      row([text("↓ 下载", size - 1.5, "semibold", C.down, {}), spacer(), text(fmtBytes(rx), size, "bold", C.text, { minScale: 0.55 })], { gap: 4 }),
-      row([text("↑ 上传", size - 1.5, "semibold", C.up, {}), spacer(), text(fmtBytes(tx), size, "bold", C.text, { minScale: 0.55 })], { gap: 4 })
+      row([text("↓ 下载", size - 1.5, "semibold", downColor, {}), spacer(), text(fmtBytes(rx), size, "bold", valColor, { minScale: 0.55 })], { gap: 4 }),
+      row([text("↑ 上传", size - 1.5, "semibold", upColor, {}), spacer(), text(fmtBytes(tx), size, "bold", valColor, { minScale: 0.55 })], { gap: 4 })
     ], { gap: 2 });
   }
 
@@ -360,7 +380,7 @@ export default async function (ctx) {
     return [
       header(d),
       row([
-        svgImage(ringSVG(d, 84), 84, 84),
+        { type: "stack", direction: "row", alignItems: "center", padding: [6, 6], backgroundGradient: grad(GRAD_MONTH), borderRadius: 16, children: [svgImage(ringSVG(d, 84), 84, 84)] },
         col([
           text(d.monthKnown ? "本月流量" : "本月（开机以来）", 8, "semibold", C.muted, {}),
           text(fmtBytes(d.monthRx + d.monthTx), 19, "bold", C.text, { minScale: 0.55 }),
@@ -368,7 +388,7 @@ export default async function (ctx) {
         ], { flex: 1, gap: 2 }),
         col([
           flowSplit(d.monthRx, d.monthTx, 9.5),
-          { type: "stack", direction: "row", children: [], height: 1, backgroundColor: "rgba(255,255,255,0.10)" },
+          { type: "stack", direction: "row", children: [], height: 1, backgroundColor: C.divider },
           col([
             text("总流量 " + fmtBytes(d.totalRx + d.totalTx), 10, "bold", C.amber, { minScale: 0.55 }),
             row([
@@ -384,7 +404,7 @@ export default async function (ctx) {
   function smallLayout(d) {
     return [
       header(d, { small: true }),
-      row([spacer(), svgImage(ringSVG(d, 88), 88, 88), spacer()], {}),
+      row([spacer(), { type: "stack", direction: "row", alignItems: "center", padding: [6, 6], backgroundGradient: grad(GRAD_MONTH), borderRadius: 16, children: [svgImage(ringSVG(d, 88), 88, 88)] }, spacer()], {}),
       row([
         col([text("↓ 下载", 7, "semibold", C.down, {}), text(fmtBytes(d.monthRx), 10, "bold", C.text, { minScale: 0.5 })], { flex: 1, gap: 0, alignItems: "center" }),
         col([text("↑ 上传", 7, "semibold", C.up, {}), text(fmtBytes(d.monthTx), 10, "bold", C.text, { minScale: 0.5 })], { flex: 1, gap: 0, alignItems: "center" })
