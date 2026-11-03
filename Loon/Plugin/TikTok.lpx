@@ -1,0 +1,48 @@
+#!name = TikTok与抖音分流
+#!desc = TikTok(代理)与抖音(直连)
+#!icon = https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/TikTok.png
+#!date = 2026-11-03
+
+[Rule]
+# ==============================
+# TikTok优先匹配（放最上方，优先级更高）
+# ==============================
+USER-AGENT,TikTok*,Oracle Cloud ARM
+DOMAIN-SUFFIX,tiktok.com,Oracle Cloud ARM
+DOMAIN-SUFFIX,tiktokv.com,Oracle Cloud ARM
+DOMAIN-SUFFIX,tiktokcdn.com,Oracle Cloud ARM
+DOMAIN-SUFFIX,tiktokcdn-us.com,Oracle Cloud ARM
+DOMAIN-SUFFIX,byteoversea.com,Oracle Cloud ARM
+DOMAIN-SUFFIX,byteoversea.net,Oracle Cloud ARM
+DOMAIN-SUFFIX,ibytedtos.com,Oracle Cloud ARM
+DOMAIN-SUFFIX,muscdn.com,Oracle Cloud ARM
+DOMAIN-SUFFIX,musical.ly,Oracle Cloud ARM
+DOMAIN-SUFFIX,musemuse.cn,Oracle Cloud ARM
+DOMAIN-SUFFIX,tiktok-eu.net,Oracle Cloud ARM
+DOMAIN-SUFFIX,tiktok-row.net,Oracle Cloud ARM
+DOMAIN-SUFFIX,tiktok-us.net,Oracle Cloud ARM
+DOMAIN-SUFFIX,tiktok.net,Oracle Cloud ARM
+DOMAIN-SUFFIX,ttwstatic.com,Oracle Cloud ARM
+DOMAIN-KEYWORD,tiktok,Oracle Cloud ARM
+
+# ==============================
+# 抖音：强制直连
+# ==============================
+USER-AGENT,aweme*,DIRECT
+DOMAIN-SUFFIX,douyin.com,DIRECT
+DOMAIN-SUFFIX,iesdouyin.com,DIRECT
+DOMAIN-SUFFIX,douyincdn.com,DIRECT
+DOMAIN-SUFFIX,douyinpic.com,DIRECT
+DOMAIN-SUFFIX,douyinstatic.com,DIRECT
+DOMAIN-SUFFIX,douyinvod.com,DIRECT
+
+# 字节国内CDN
+DOMAIN-SUFFIX,amemv.com,DIRECT
+DOMAIN-SUFFIX,snssdk.com,DIRECT
+DOMAIN-SUFFIX,isnssdk.com,DIRECT
+DOMAIN-SUFFIX,byteimg.com,DIRECT
+DOMAIN-SUFFIX,ibyteimg.com,DIRECT
+DOMAIN-SUFFIX,pstatp.com,DIRECT
+DOMAIN-SUFFIX,volccdn.com,DIRECT
+DOMAIN-SUFFIX,ecombdimg.com,DIRECT
+DOMAIN-KEYWORD,douyin,DIRECT

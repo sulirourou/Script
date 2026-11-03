@@ -1,0 +1,20 @@
+# 抖音
+# 在主配置 [Remote Rule] 引用时指定策略：policy=DIRECT
+USER-AGENT,aweme*
+DOMAIN-SUFFIX,douyin.com
+DOMAIN-SUFFIX,iesdouyin.com
+DOMAIN-SUFFIX,douyincdn.com
+DOMAIN-SUFFIX,douyinpic.com
+DOMAIN-SUFFIX,douyinstatic.com
+DOMAIN-SUFFIX,douyinvod.com
+
+# 字节国内CDN
+DOMAIN-SUFFIX,amemv.com
+DOMAIN-SUFFIX,snssdk.com
+DOMAIN-SUFFIX,isnssdk.com
+DOMAIN-SUFFIX,byteimg.com
+DOMAIN-SUFFIX,ibyteimg.com
+DOMAIN-SUFFIX,pstatp.com
+DOMAIN-SUFFIX,volccdn.com
+DOMAIN-SUFFIX,ecombdimg.com
+DOMAIN-KEYWORD,douyin

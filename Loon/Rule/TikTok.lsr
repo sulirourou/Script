@@ -1,0 +1,19 @@
+# TikTok
+# 在主配置 [Remote Rule] 引用时指定策略：policy=Oracle Cloud ARM
+USER-AGENT,TikTok*
+DOMAIN-SUFFIX,tiktok.com
+DOMAIN-SUFFIX,tiktokv.com
+DOMAIN-SUFFIX,tiktokcdn.com
+DOMAIN-SUFFIX,tiktokcdn-us.com
+DOMAIN-SUFFIX,byteoversea.com
+DOMAIN-SUFFIX,byteoversea.net
+DOMAIN-SUFFIX,ibytedtos.com
+DOMAIN-SUFFIX,muscdn.com
+DOMAIN-SUFFIX,musical.ly
+DOMAIN-SUFFIX,musemuse.cn
+DOMAIN-SUFFIX,tiktok-eu.net
+DOMAIN-SUFFIX,tiktok-row.net
+DOMAIN-SUFFIX,tiktok-us.net
+DOMAIN-SUFFIX,tiktok.net
+DOMAIN-SUFFIX,ttwstatic.com
+DOMAIN-KEYWORD,tiktok
