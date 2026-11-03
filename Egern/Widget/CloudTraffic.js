@@ -1,10 +1,10 @@
 /**
  * 🌐 云服务器流量监控 (SSH 直连 · vnStat 数据)
- * 版本：v1.0 (2026-11-03)
+ * 版本：v1.3 (2026-11-03)
  * 名称：host / 值：服务器地址 (必填，如 170.9.22.31)
  * 名称：port / 值：SSH 端口 (不填默认 22)
  * 名称：username / 值：SSH 用户名 (必填，如 ubuntu)
- * 名称：privateKey / 值：SSH 私钥全文 (与 password 二选一，推荐私钥)
+ * 名称：privateKey / 值：SSH 私钥全文 (直接粘贴即可，脚本会自动重排私钥的换行与空格，OpenSSH / PEM 格式都行)
  * 名称：password / 值：SSH 密码 (与 privateKey 二选一)
  * 名称：passphrase / 值：私钥密码 (私钥没设密码则不填)
  * 名称：name / 值：显示名称 (不填自动用服务器主机名，如 Oracle Cloud)
@@ -15,17 +15,44 @@
 export default async function (ctx) {
   const env = ctx.env || {};
   const clean = (v) => (v === undefined || v === null ? "" : String(v).trim());
-  const cfg = {
-    host: clean(env.host),
-    port: Number(clean(env.port)) || 22,
-    username: clean(env.username),
-    privateKey: clean(env.privateKey).replace(/\\n/g, "\n"),
-    password: clean(env.password),
-    passphrase: clean(env.passphrase) || undefined,
-    name: clean(env.name),
-    quotaGB: Number(clean(env.quota)) || 0,
-    iface: clean(env.iface)
+  const pick = (...names) => {
+    for (const n of names) {
+      const v = clean(env[n]);
+      if (v) return v;
+    }
+    return "";
   };
+  const cfg = {
+    host: pick("host"),
+    port: Number(pick("port")) || 22,
+    username: pick("username", "user"),
+    privateKey: "", // 下方 normalizeKey 统一处理
+    password: pick("password", "sshPassword"),
+    passphrase: pick("passphrase") || undefined,
+    name: pick("name"),
+    quotaGB: Number(pick("quota")) || 0,
+    iface: pick("iface")
+  };
+  // 私钥规范化: 粘贴进环境变量的私钥常常换行错乱或混入空格, libssh2 解析器会
+  // 报 "Unable to extract public key ... Unsupported"。把正文的全部空白剔除后
+  // 按每 64 字符一行重排成标准 PEM 形态再交给 ctx.ssh (与 Server-monitor 同法)。
+  function normalizeKey(key) {
+    if (!key || typeof key !== "string") return "";
+    const raw = key.trim();
+    const headerMatch = raw.match(/-----BEGIN [A-Z ]+-----/);
+    const footerMatch = raw.match(/-----END [A-Z ]+-----/);
+    if (headerMatch && footerMatch) {
+      const header = headerMatch[0];
+      const footer = footerMatch[0];
+      let body = raw.substring(raw.indexOf(header) + header.length, raw.indexOf(footer));
+      body = body.replace(/\s+/g, "");
+      const lines = body.match(/.{1,64}/g) || [];
+      return header + "\n" + lines.join("\n") + "\n" + footer;
+    }
+    return raw.replace(/\\n/g, "\n");
+  }
+  cfg.privateKey = normalizeKey(pick("privateKey", "key", "sshKey"));
+
   const FAMILY = clean(ctx.widgetFamily) || "systemLarge";
   const IS_SMALL = FAMILY === "systemSmall";
   const IS_MEDIUM = FAMILY === "systemMedium";
@@ -382,8 +409,12 @@ export default async function (ctx) {
   }
 
   // ---------- main ----------
-  if (!cfg.host || !cfg.username || (!cfg.privateKey && !cfg.password)) {
-    return messageWidget("尚未配置服务器", "请在小组件环境变量里填写 host、username 和 privateKey（参考脚本头说明）");
+  const missing = [];
+  if (!cfg.host) missing.push("host");
+  if (!cfg.username) missing.push("username");
+  if (!cfg.privateKey && !cfg.password) missing.push("privateKey");
+  if (missing.length) {
+    return messageWidget("尚未配置服务器", "缺少环境变量：" + missing.join("、") + "（名称和值都要填对，参考脚本头说明）");
   }
 
   let data = null;
@@ -401,7 +432,11 @@ export default async function (ctx) {
       data = cached.data;
       data.cachedAt = cached.at;
     } else {
-      return messageWidget("连接失败", fetchError.slice(0, 80) || "请检查 host / 私钥 / 网络");
+      let msg = fetchError.slice(0, 80) || "请检查 host / 私钥 / 网络";
+      if (/extract public key|unsupported/i.test(fetchError)) {
+        msg = "私钥解析失败：脚本已自动重排过一次，请确认粘贴的是完整私钥（从 BEGIN 到 END 一行都不少）";
+      }
+      return messageWidget("连接失败", msg);
     }
   }
 
