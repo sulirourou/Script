@@ -1,6 +1,6 @@
 /**
  * 🌏 Egern IPPure 小组件
- * 版本：v1.3 (2026-11-04)
+ * 版本：v1.4 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -142,7 +142,31 @@ export default async function(ctx) {
     } catch (e) { return false; }
   }
 
-  // 3. 数据获取 (接口地址不变)
+  // 3. 按 IP 查本地化地名: ip-api 支持指定任意 IP + lang 返回对应语言地名
+  // (与 IP-API 组件同源)。代理标题要中文名 (zh-CN), 本地详情要全英文名 (en)。
+  // 这是按 IP 查数据库, 不经过代理出口, 不影响 IPPure 主数据; 结果按 IP
+  // 缓存 24h。查不到返回 null, 由后面的翻译/内置表兜底。
+  async function lookupGeo(ip, lang) {
+    if (!ip) return null;
+    const key = "ippure_geo_v1:" + lang + ":" + ip;
+    try {
+      const raw = ctx.storage.getString(key);
+      if (raw) {
+        const c = JSON.parse(raw);
+        if (c && c.d && (Date.now() - (c.t || 0)) < 24 * 3600 * 1000) return c.d;
+      }
+    } catch (e) {}
+    try {
+      const r = await ctx.http.get(`http://ip-api.com/json/${ip}?lang=${lang}&fields=status,country,regionName,city`, { timeout: 4000, headers: { 'User-Agent': UA } });
+      const g = await r.json();
+      if (!g || g.status !== "success" || !g.country) return null;
+      const d = { country: g.country || "", region: g.regionName || "", city: g.city || "" };
+      try { ctx.storage.setString(key, JSON.stringify({ t: Date.now(), d })); } catch (e) {}
+      return d;
+    } catch (e) { return null; }
+  }
+
+  // 4. 数据获取 (接口地址不变)
   async function fetchProxyOnce() {
     const opts = { timeout: TIMEOUT_PROXY, headers: { 'User-Agent': UA } };
     if (POLICY) opts.policy = POLICY;
@@ -155,13 +179,22 @@ export default async function(ctx) {
     let region = j.region || j.regionName || "";
     let city = j.city || "";
 
-    // 第一行 = 国家 + 地区 (均为中文): 翻译结果优先, 翻译拿不到中文时查内置地名表;
-    // 地区字段缺失时才用城市兜底, 城市不再单独进第一行
-    const [countryTr, regionTr, cityTr] = await msTranslateBatch([country, region, city], "zh-Hans");
-    const countryCn = localizedCountry(country, j.countryCode, countryTr);
-    let regionCn = localizedRegion(j.countryCode, region, j.regionCode, regionTr);
-    if (!regionCn) regionCn = localizedRegion(j.countryCode, city, "", cityTr);
-    proxyData.title = [countryCn, regionCn].filter(Boolean).join(" ") || "未知节点";
+    // 第一行 = 国家 + 地区 (均为中文): 首选按 IP 查到的中文地名 (全球覆盖,
+    // 不受词表限制); 查不到才退回翻译结果与内置地名表
+    let title = "";
+    const geoCn = await lookupGeo(j.ip, "zh-CN");
+    if (geoCn && isPureCn(geoCn.country)) {
+      const reg = isPureCn(geoCn.region) ? geoCn.region : (isPureCn(geoCn.city) ? geoCn.city : "");
+      title = [geoCn.country, reg].filter(Boolean).join(" ");
+    }
+    if (!title) {
+      const [countryTr, regionTr, cityTr] = await msTranslateBatch([country, region, city], "zh-Hans");
+      const countryCn = localizedCountry(country, j.countryCode, countryTr);
+      let regionCn = localizedRegion(j.countryCode, region, j.regionCode, regionTr);
+      if (!regionCn) regionCn = localizedRegion(j.countryCode, city, "", cityTr);
+      title = [countryCn, regionCn].filter(Boolean).join(" ");
+    }
+    proxyData.title = title || "未知节点";
     proxyData.detail = getEnDetail(country, region, city);
 
     const asOrg = j.asOrganization || "";
@@ -206,13 +239,17 @@ export default async function(ctx) {
         }
         localData.isp = `China ${localCarrierEn}`;
 
-        // 中文组 (国家+城市) 与英文组 (省+城市) 各一次批量翻译, 并行
-        const [zh, en] = await Promise.all([
-          msTranslateBatch([country, city], "zh-Hans"),
-          msTranslateBatch([prov, city], "en")
-        ]);
+        // 标题 (中文) 沿用原翻译路径; 详情行要全英文: 首选按本地 IP 查到的
+        // 英文地名 (全拼, 不混中文), 查不到才退回原来的翻译路径
+        const zh = await msTranslateBatch([country, city], "zh-Hans");
         localData.title = getCnTitle(zh[0], "", zh[1]) || "本地网络";
-        localData.detail = getEnDetail("China", en[0], en[1]);
+        const geoEn = await lookupGeo(localData.ip, "en");
+        if (geoEn) {
+          localData.detail = getEnDetail(geoEn.country, geoEn.region, geoEn.city);
+        } else {
+          const en = await msTranslateBatch([prov, city], "en");
+          localData.detail = getEnDetail("China", en[0], en[1]);
+        }
 
         localData.flag = "🇨🇳";
         localData.success = true;
