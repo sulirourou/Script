@@ -1,10 +1,10 @@
 /**
- * 🌏 Egern IP-API 小组件
+ * 🌏 IP-API
  * 版本：v1.8 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
- * */
+ */
 
 const API_BASE = "http://ip-api.com/json/";
 const FIELDS = "?fields=status,message,country,countryCode,regionName,city,isp,org,as,mobile,proxy,hosting,query";
