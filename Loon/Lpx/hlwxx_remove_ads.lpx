@@ -1,0 +1,35 @@
+#!name = 黑料不打烊净化
+#!desc = 去除乱七八糟的广告
+#!author = 怎么肥事
+#!homepage = https://raw.githubusercontent.com/ZenmoFeiShi/Qx/refs/heads/main/hlwxx_remove_ads.snippet
+#!icon = https://hlwxx.com/static/pc/icons/hllogo.png?v=1
+#!source = 6212520caaa80ddf89f06c7a969ff0d104d49506ea697fb8e832babdc0a66c04
+#!system = iOS,iPadOS,tvOS,macOS
+#!date = 2026-11-05
+#!tag = 去广告
+#!type = normal
+
+[Rewrite]
+# 请求头：把 Accept-Encoding 改为 identity（原 QX request-header，原 .sgmodel 里是 Script-Hub replace-header 脚本，更新版已改为原生重写）
+request if ${url} ~= /^https?:\/\/(?:www\.)?(?:heiliao|hlwxx|hlcx\d*)\.com\/(?!static\/|favicon|api\/|index\/statistics|uploads\/)/ then request.header.set("Accept-Encoding", "identity")
+request if ${url} ~= /^https?:\/\/(?:www\.)?97baoliao\.com\/(?!usr\/|storage\/|api\/|favicon\.ico)/ then request.header.set("Accept-Encoding", "identity")
+# 拒绝：原 QX url reject / reject-dict，reject 用 200 空体，reject-dict 用 200 {}
+request if ${url} ~= /^https?:\/\/(?:www\.)?97baoliao\.com\/storage\/static\/popup-feed\.json(?:\?.*)?$/ then reject_dict(200)
+request if ${url} ~= /^https?:\/\/(?:www\.)?97baoliao\.com\/usr\/plugins\/AiSuite\/assets\/js\/adfloat\.js(?:\?.*)?$/ then reject(200)
+request if ${url} ~= /^https?:\/\/(?:www\.)?97baoliao\.com\/usr\/themes\/Mirages\/js\/7\.10\.0\/bottom_ad_poll\.js(?:\?.*)?$/ then reject(200)
+request if ${url} ~= /^https?:\/\/stats\.kwvprfcr\.xyz/ then reject(200)
+request if ${url} ~= /^https?:\/\/mc\.yandex\.ru/ then reject(200)
+request if ${url} ~= /^https?:\/\/api1\.cghhqca\.cc\/api\/eventTracking/ then reject_dict(200)
+request if ${url} ~= /^https?:\/\/api\.shuifeng\.cc\/api\/eventTracking/ then reject_dict(200)
+request if ${url} ~= /^https?:\/\/ads\.zyudkkup\.com\/api\/eventTracking/ then reject_dict(200)
+request if ${url} ~= /^https?:\/\/static\.cloudflareinsights\.com\/beacon/ then reject(200)
+request if ${url} ~= /^https?:\/\/(?:www\.)?googletagmanager\.com\/(?:gtag\/js|gtm\.js)(?:\?.*)?$/ then reject(200)
+request if ${url} ~= /^https?:\/\/google-analytics\.com\// then reject(200)
+
+[Script]
+# 响应脚本：原 QX script-response-body，同一响应只命中一条，两条域名不重叠
+response if ${url} ~= /^https?:\/\/(?:www\.)?(?:heiliao|hlwxx|hlcx\d*)\.com\/(?!static\/|favicon|api\/|index\/statistics|uploads\/)/ then script("https://raw.githubusercontent.com/ZenmoFeiShi/Qx/refs/heads/main/hlwxx_remove_ads.js") with tag="hlwxx_remove_ads", timeout=60, requires_body=true
+response if ${url} ~= /^https?:\/\/(?:www\.)?97baoliao\.com\/(?!usr\/|storage\/|api\/|favicon\.ico)/ then script("https://raw.githubusercontent.com/ZenmoFeiShi/Qx/refs/heads/main/hlwxx_remove_ads.js") with tag="hlwxx_remove_ads", timeout=60, requires_body=true
+
+[Mitm]
+hostname = *heiliao*, *hlwxx*, *hlcx*, *97baoliao*, stats.kwvprfcr.xyz, mc.yandex.ru, api1.cghhqca.cc, api.shuifeng.cc, ads.zyudkkup.com, static.cloudflareinsights.com, *.googletagmanager.com, *.google-analytics.com
