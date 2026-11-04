@@ -1,14 +1,15 @@
 /**
  * 📶 Egern 本地测速小组件 (LocalSpeed)
- * 版本：v1.2 (2026-11-04)
+ * 版本：v1.3 (2026-11-04)
  * 环境变量：无 (全部请求优先 policy: DIRECT 直连; 若直连被当前构建拒绝, 自动回退规则路由并在界面注明)
  *
  * 只测本地网络本身: 当前 WiFi / 蜂窝链路直连互联网的实际速度, 不测代理节点。
- * 测速点: 测速网 speedtest.cn 官方节点 (与 m.speedtest.cn 网页版同一套):
- * 官方接口按你的出口 IP 返回就近节点表 (AES 加密, 密钥取自其网页端代码, 脚本内含纯 JS 解密);
- * 官方接口取不到时回退到公开节点表 (GitHub 每日更新的同批节点, 按 /hello 实测延迟选点);
- * 再失败用上次缓存的节点。取点来源与失败阶段会写在组件页脚, 便于定位。
- * 下载优先响应流分段计数, 否则定量分段采样; 头条取 90 百分位, 口径与 SpeedTest 一致。
+ * 测速点: 测速网 speedtest.cn 节点 (与 m.speedtest.cn 网页版同一批节点), 取点顺序:
+ * 1) 官方接口按你的出口 IP 返回就近节点表 (AES 加密, 密钥取自其网页端代码, 脚本内含纯 JS 解密);
+ * 2) 脚本内置节点快照 (2026-11-04 公开节点表, 57 个, 按 /hello 实测延迟并行选点);
+ * 3) 远程更新同一份公开节点表 (jsDelivr / GitHub); 4) 上次缓存。
+ * 取点来源与失败阶段写在组件上。下载优先响应流分段计数, 否则定量分段采样;
+ * 头条取 90 百分位, 口径与 SpeedTest 一致。
  */
 export default async function(ctx) {
   const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -42,6 +43,7 @@ export default async function(ctx) {
     dl: "#F6821F",
     ul: "#A03FF0",
     accent: "#0A84FF",
+    warn: "#FF9F0A",
     track: "rgba(128,128,128,0.35)",
   };
   const GRAD_HEAD = ["#0A84FF", "#5E5CE6"];
@@ -64,6 +66,11 @@ export default async function(ctx) {
   const carrier = clean((dev.cellular && dev.cellular.carrier) || "");
   const netName = onWifi ? "WiFi" : "蜂窝网络";
   const netDetail = onWifi ? ssid : [radio, carrier].filter(Boolean).join(" · ");
+  const showGateway = onWifi && gateway && gateway !== localIP;
+
+  // ---------- 内置节点快照 (测速网公开节点表 2026-11-04, [host, scheme, 省, 市, 运营商]) ----------
+  const SNAPSHOT = [["5gnanjing.speedtest.jsinfo.net:8080","http","江苏","南京","电信"],["5gzhenjiang.speedtest.jsinfo.net:8080","http","江苏","南京","电信"],["4gsuzhou1.speedtest.jsinfo.net:8080","http","江苏","南京","电信"],["5gzhenjiang.speedtest.jsinfo.net.prod.hosts.ooklaserver.net:8080","https","江苏","南京","电信"],["speedtest.dukekunshan.edu.cn:8080","https","江苏","苏州","教育网"],["4gsuzhou1.speedtest.jsinfo.net.prod.hosts.ooklaserver.net:8080","https","江苏","苏州","电信"],["node-124-160-78-98.speedtest.cn:51090","https","浙江","杭州","联通"],["speedtest.wasu.cn:8080","http","浙江","杭州","华数"],["speedtest.wasu.cn.prod.hosts.ooklaserver.net:8080","https","浙江","杭州","华数"],["cesu-hz.zjtelecom.com.cn:8080","http","浙江","杭州","电信"],["cesu-hz.zjtelecom.com.cn.prod.hosts.ooklaserver.net:8080","https","浙江","杭州","电信"],["cesu-nb.zjtelecom.com.cn:8080","http","浙江","宁波","电信"],["cesu-nb.zjtelecom.com.cn.prod.hosts.ooklaserver.net:8080","https","浙江","宁波","电信"],["node-59-175-206-86.speedtest.cn:51090","https","湖北","武汉","电信"],["vipspeedtest8.wuhan.net.cn:8080","https","湖北","武汉","电信"],["node-36-250-1-90.speedtest.cn:51090","https","福建","福州","联通"],["node-219-150-218-123.speedtest.cn:51090","https","河南","新乡","电信"],["node-124-93-198-18.speedtest.cn:51090","https","辽宁","大连","联通"],["node-218-26-162-114.speedtest.cn:51090","https","山西省","太原市","联通"],["speedtest1.sc.189.cn.prod.hosts.ooklaserver.net:8080","http","四川","成都","电信"],["speedtest1.sc.189.cn:8080","http","四川","成都","电信"],["cuscspeed.169ol.com.prod.hosts.ooklaserver.net:8080","https","四川","成都","联通"],["node-125-76-88-10.speedtest.cn:51090","https","甘肃","兰州","电信"],["node-58-49-35-34.speedtest.cn:51090","https","湖北","武汉","电信"],["node-111-42-93-106.speedtest.cn:51090","https","黑龙江","绥化","广电"],["node-111-42-93-105.speedtest.cn:51090","https","黑龙江","绥化","广电"],["mycuspeed.169ol.com:8080","http","四川","绵阳","联通"],["hntelecom5g.cn:8080","http","湖南","长沙","电信"],["speedtest1.cqccn.com.prod.hosts.ooklaserver.net:8080","https","重庆","重庆","重庆广电"],["speedtest1.cqccn.com:8080","http","重庆","重庆","重庆广电"],["speedtest1.online.sh.cn:8080","https","上海","上海","电信"],["node-221-10-136-162.speedtest.cn:51090","https","四川","南充","联通"],["5g.shunicomtest.com:8088","http","上海","上海","联通"],["speedtest3.online.tj.cn:8080","http","天津","天津","联通"],["5g.shunicomtest.com.prod.hosts.ooklaserver.net:8088","https","上海","上海","联通"],["beijing.unicomtest.com.prod.hosts.ooklaserver.net:8080","http","北京","北京","联通"],["beijing.unicomtest.com:8080","https","北京","北京","联通"],["speedtest.139play.com:8080","http","浙江","杭州","移动"],["speedtest.139play.com.prod.hosts.ooklaserver.net:8080","https","浙江","杭州","移动"],["cuscspeed.169ol.com:8080","http","四川","成都","联通"],["speedtest.jsqiuying.com:8080","https","江苏","南京","移动"],["36.250.1.90:8080","http","福建","福州","联通"],["node-218-25-6-190.speedtest.cn:51090","https","辽宁","沈阳","联通"],["node-117-91-186-195.speedtest.cn:51090","https","江苏","扬州","电信"],["csfw.fj.chinamobile.com:8080","http","福建","福州","移动"],["5g.shunicomtest.com.prod.hosts.ooklaserver.net:8080","https","浙江","杭州","移动"],["5g.shunicomtest.com:8080","http","上海","上海","联通"],["speedtest.jsqiuying.com.prod.hosts.ooklaserver.net:8080","http","江苏","南京","移动"],["csfw.fj.chinamobile.com.prod.hosts.ooklaserver.net:8080","https","福建","福州","移动"],["node-112-45-112-83.speedtest.cn:51090","https","四川","成都","移动"],["mycuspeed.169ol.com.prod.hosts.ooklaserver.net:8080","http","四川","绵阳","联通"],["speedtest1.sc.chinamobile.com:8080","https","四川","成都","移动"],["mobile.shunicomtest.com:8080","http","上海","上海","联通"],["server-24447.prod.hosts.ooklaserver.net:8080","https","上海","上海","联通"],["mobile.shunicomtest.com.prod.hosts.ooklaserver.net:8080","https","上海","上海","联通"],["node-183-213-92-194.speedtest.cn:51090","https","江苏","南京","移动"],["node-183-213-92-198.speedtest.cn:51090","https","江苏","南京","移动"]];
+  const snapNode = (a) => ({ host: a[0], province: a[2], city: a[3], operator: a[4], pingUrl: `${a[1]}://${a[0]}/hello`, downloadUrl: `${a[1]}://${a[0]}/download`, uploadUrl: `${a[1]}://${a[0]}/upload`, snap: true });
 
   // ---------- 纯 JS AES-128-CBC 解密 (官方节点表加密, 网页端同法解密) ----------
   const b64decode = (s) => {
@@ -144,7 +151,7 @@ export default async function(ctx) {
     return JSON.parse(str);
   };
 
-  // ---------- 取点: 官方接口 → 节点缓存 → 公开节点表 (CSV) ----------
+  // ---------- 取点各来源 ----------
   let nodeDiag = "";
   const fetchOfficial = async () => {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -181,10 +188,6 @@ export default async function(ctx) {
     return out;
   };
   const fetchCSVNodes = async () => {
-    try {
-      const c = ctx.storage.getJSON(CSV_KEY);
-      if (c && Array.isArray(c.nodes) && c.nodes.length && Date.now() - c.ts < 7 * 24 * 3600 * 1000) return c.nodes;
-    } catch (e) {}
     const bases = ["https://cdn.jsdelivr.net/gh/spiritLHLS/speedtest.cn-CN-ID@main", "https://raw.githubusercontent.com/spiritLHLS/speedtest.cn-CN-ID/main"];
     for (const base of bases) {
       try {
@@ -196,38 +199,24 @@ export default async function(ctx) {
           } catch (e) {}
           return [];
         }));
-        const nodes = results.flat();
+        const seen = new Set();
+        const nodes = results.flat().filter(n => { if (seen.has(n.host)) return false; seen.add(n.host); return true; });
         if (nodes.length) {
           try { ctx.storage.setJSON(CSV_KEY, { ts: Date.now(), nodes }); } catch (e) {}
           return nodes;
         }
       } catch (e) {}
     }
+    return null;
+  };
+  const readCache = (key, ttlMs) => {
     try {
-      const c = ctx.storage.getJSON(CSV_KEY);
-      if (c && Array.isArray(c.nodes) && c.nodes.length) return c.nodes;
+      const c = ctx.storage.getJSON(key);
+      if (c && Array.isArray(c.nodes) && c.nodes.length && (ttlMs === 0 || Date.now() - c.ts < ttlMs)) return c.nodes;
     } catch (e) {}
     return null;
   };
-  const fetchNodes = async () => {
-    const official = await fetchOfficial();
-    if (official) {
-      try { ctx.storage.setJSON(NODES_KEY, { ts: Date.now(), nodes: official }); } catch (e) {}
-      return { nodes: official, src: "官方接口" };
-    }
-    try {
-      const c = ctx.storage.getJSON(NODES_KEY);
-      if (c && Array.isArray(c.nodes) && c.nodes.length && Date.now() - c.ts < 24 * 3600 * 1000) return { nodes: c.nodes, src: "节点缓存" };
-    } catch (e) {}
-    const csv = await fetchCSVNodes();
-    if (csv) return { nodes: csv, src: "备用节点表" };
-    try {
-      const c = ctx.storage.getJSON(NODES_KEY);
-      if (c && Array.isArray(c.nodes) && c.nodes.length) return { nodes: c.nodes, src: "节点缓存" };
-    } catch (e) {}
-    return { nodes: null, src: "" };
-  };
-  const rankNodes = (nodes) => {
+  const rankOfficial = (nodes) => {
     const list = (nodes || []).filter(n => n && n.downloadUrl && n.uploadUrl && n.pingUrl);
     const dist = (n) => { const d = parseFloat(n.distance); return isNaN(d) ? 1e9 : d; };
     list.sort((a, b) => dist(a) - dist(b));
@@ -239,7 +228,7 @@ export default async function(ctx) {
     }
     return list;
   };
-  const orderForTournament = (nodes) => {
+  const orderPool = (nodes) => {
     const list = (nodes || []).filter(n => n && n.downloadUrl && n.uploadUrl && n.pingUrl);
     if (!onWifi && carrier) {
       const same = list.filter(n => n.operator && carrier.includes(n.operator));
@@ -275,17 +264,13 @@ export default async function(ctx) {
     return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
   };
 
-  const { nodes: rawNodes, src: nodeSrc } = await fetchNodes();
-  const isCSV = nodeSrc === "备用节点表";
-  const candidates = rawNodes ? (isCSV ? orderForTournament(rawNodes) : rankNodes(rawNodes)) : [];
-  let node = null;
-
-  // ---------- 1) 延迟与选点 ----------
+  // ---------- 1) 选点 + 延迟 ----------
+  let node = null, nodeSrc = "";
   const pingFull = async (nd) => {
     const samples = [];
     let sent = 0;
     for (let i = 0; i < 6; i++) {
-      if (i >= 3 && Date.now() - measureStart > 12000) break;
+      if (i >= 3 && Date.now() - measureStart > 14000) break;
       sent++;
       const pt = Date.now();
       let ok = false;
@@ -309,29 +294,59 @@ export default async function(ctx) {
       measuredAny = true;
     }
   };
+  const helloOnce = async (nd) => {
+    const pt = Date.now();
+    try {
+      const resp = await http.get(nd.pingUrl, { timeout: 1500 });
+      if (resp && resp.status === 200) return Date.now() - pt;
+    } catch (e) {}
+    return -1;
+  };
+  const tournament = async (pool) => {
+    let best = null, bestRtt = Infinity;
+    for (let b = 0; b < 2 && b * 10 < pool.length; b++) {
+      const batch = pool.slice(b * 10, b * 10 + 10);
+      const rs = await Promise.all(batch.map(async (nd) => ({ nd, rtt: await helloOnce(nd) })));
+      for (const { nd, rtt } of rs) if (rtt >= 0 && rtt < bestRtt) { bestRtt = rtt; best = nd; }
+      if (best && bestRtt <= 80) break;
+    }
+    return best;
+  };
   try {
-    if (isCSV) {
-      // 备用表无可信距离: 依次探活前 8 个候选, 取首探延迟最低者
-      let best = null, bestRtt = Infinity;
-      for (const cand of candidates.slice(0, 8)) {
-        const pt = Date.now();
-        let ok = false;
-        try {
-          const resp = await http.get(cand.pingUrl, { timeout: 1200 });
-          ok = !!resp && resp.status === 200;
-        } catch (e) { ok = false; }
-        if (ok) {
-          const rtt = Date.now() - pt;
-          if (rtt < bestRtt) { bestRtt = rtt; best = cand; }
-        }
-      }
-      if (best) { node = best; applyPing(await pingFull(node)); }
-      else if (candidates.length) nodeDiag = (nodeDiag ? nodeDiag + "; " : "") + "备用节点无响应";
-    } else {
-      for (const cand of candidates.slice(0, 2)) {
+    const official = await fetchOfficial();
+    if (official) {
+      try { ctx.storage.setJSON(NODES_KEY, { ts: Date.now(), nodes: official }); } catch (e) {}
+      nodeSrc = "官方接口";
+      for (const cand of rankOfficial(official).slice(0, 2)) {
         const r = await pingFull(cand);
         if (r.samples.length > 0) { node = cand; applyPing(r); break; }
       }
+      if (!node) nodeDiag = (nodeDiag ? nodeDiag + "; " : "") + "官方节点无响应";
+    }
+    if (!node) {
+      const snap = SNAPSHOT.map(snapNode);
+      node = await tournament(orderPool(snap));
+      if (node) nodeSrc = "内置节点表";
+    }
+    if (!node) {
+      const csv = (await fetchCSVNodes()) || readCache(CSV_KEY, 0);
+      if (csv) {
+        node = await tournament(orderPool(csv));
+        if (node) nodeSrc = "备用节点表";
+      }
+    }
+    if (!node) {
+      const cachedNodes = readCache(NODES_KEY, 0);
+      if (cachedNodes) {
+        for (const cand of rankOfficial(cachedNodes).slice(0, 2)) {
+          const r = await pingFull(cand);
+          if (r.samples.length > 0) { node = cand; nodeSrc = "节点缓存"; applyPing(r); break; }
+        }
+      }
+    }
+    if (node && !measuredAny) {
+      // 快照/备用表选出的节点还没做完整延迟采样, 补做
+      applyPing(await pingFull(node));
     }
   } catch (e) {}
 
@@ -340,7 +355,7 @@ export default async function(ctx) {
     data.nodeProv = trimAdmin(node.province);
     data.nodeCity = trimAdmin(node.city);
     data.nodeOp = clean(node.operator);
-    data.dist = (!isCSV && node.distance !== undefined && node.distance !== null && node.distance !== "") ? String(Math.round(parseFloat(node.distance))) : "";
+    data.dist = (nodeSrc === "官方接口" && node.distance !== undefined && node.distance !== null && node.distance !== "") ? String(Math.round(parseFloat(node.distance))) : "";
     data.nodeSrc = nodeSrc;
 
     // ---------- 2) 下载: 优先响应流分段计数, 否则定量分段采样 ----------
@@ -392,7 +407,7 @@ export default async function(ctx) {
         const samples = [];
         const phaseStart = Date.now();
         for (const ck of PLAN) {
-          if (Date.now() - measureStart > 26000) break;
+          if (Date.now() - measureStart > 28000) break;
           let sample = null;
           try {
             const want = ck * 1048576;
@@ -427,7 +442,7 @@ export default async function(ctx) {
       const samples = [];
       const phaseStart = Date.now();
       for (const size of PLAN) {
-        if (Date.now() - measureStart > 34000) break;
+        if (Date.now() - measureStart > 36000) break;
         let sample = null;
         try {
           const body = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz-=".repeat(Math.ceil(size / 64)).slice(0, size);
@@ -455,10 +470,9 @@ export default async function(ctx) {
   {
     const parts = [];
     if (directState === "rejected") parts.push("直连被拒, 已回退规则路由");
-    if (!node) parts.push(nodeDiag ? `取点失败: ${nodeDiag}` : "取点失败");
+    if (!node) parts.push(nodeDiag ? `取点失败: ${nodeDiag}` : "取点失败: 全部节点无响应");
     else if (nodeSrc && nodeSrc !== "官方接口") parts.push(`取点: ${nodeSrc}${nodeDiag ? " (" + nodeDiag + ")" : ""}`);
-    if (parts.length) data.diag = parts.join(" · ");
-    else if (measuredAny) data.diag = "";
+    data.diag = parts.join(" · ");
   }
 
   if (measuredAny) {
@@ -469,7 +483,7 @@ export default async function(ctx) {
     try { ctx.storage.setJSON(CACHE_KEY, data); } catch (e) {}
   }
 
-  // ---------- 渲染 ----------
+  // ---------- 渲染 (三尺寸统一版式: 同字号层级/同卡片样式/同指标块) ----------
   const fmtT = (ts) => {
     if (!ts) return "--:--";
     const d = new Date(ts);
@@ -481,13 +495,20 @@ export default async function(ctx) {
   const col = (children, extra) => merge({ type: "stack", direction: "column", alignItems: "start", children: children || [] }, extra);
   const spacer = { type: "spacer" };
   const grad = (colors) => ({ type: "linear", colors, startPoint: { x: 0, y: 0 }, endPoint: { x: 1, y: 1 } });
-  const panel = (children, extra) => merge({ type: "stack", direction: "column", alignItems: "start", padding: [10, 12], gap: 5, backgroundColor: C.card, borderRadius: 16, children: children || [] }, extra);
+  const panel = (children, extra) => merge({ type: "stack", direction: "column", alignItems: "start", padding: [9, 12], gap: 5, backgroundColor: C.card, borderRadius: 16, children: children || [] }, extra);
   const svgDataURI = (svg) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg).replace(/'/g, "%27").replace(/"/g, "%22");
   const bar = (mbps, color, w) => {
     const pct = mbps > 0 ? Math.max(0.02, Math.min(1, Math.log10(mbps + 1) / 3)) : 0;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 10"><rect width="300" height="10" rx="5" fill="${C.track}"/><rect width="${(pct * 300).toFixed(0)}" height="10" rx="5" fill="${color}"/></svg>`;
     return { type: "image", src: svgDataURI(svg), width: w, height: 10, resizable: true };
   };
+  // 统一指标块: 上灰小标签, 下粗体值 + 小单位
+  const metric = (label, value, unit) => col([T(label, 10, C.sub), row([T(value, 15, C.text, "bold"), T(unit, 10, C.sub)], 2)], 1);
+  const metricsRow = row([
+    metric("延迟", data.ping ? data.ping : "--", "ms"), spacer,
+    metric("抖动", data.ping ? data.jitter : "--", "ms"), spacer,
+    metric("丢包", data.pl === "-" ? "--" : data.pl, "%"),
+  ]);
 
   const netLine = `${data.netName}${data.netDetail ? " · " + data.netDetail : ""}`;
   const nodeShort = (data.nodeCity || data.nodeProv) ? `${data.nodeProv} ${data.nodeCity}`.trim() : "未知";
@@ -496,64 +517,65 @@ export default async function(ctx) {
     : "测速点 未知";
   const timeStr = fromCache ? `缓存 ${fmtT(data.ts)}` : fmtT(data.ts || Date.now());
   const usedMB = ((data.dlBytes + data.ulBytes) / 1e6).toFixed(1);
-  const localLine = [localIP ? `本机 ${localIP}` : "", iface ? `接口 ${iface}` : "", gateway ? `网关 ${gateway}` : ""].filter(Boolean).join(" · ");
-  const metric = (label, value, unit) => col([T(label, 10, C.sub), row([T(value, 16, C.text, "bold"), T(unit, 10, C.sub)], 2)], 1);
+  const localBits = [localIP ? `本机 ${localIP}` : "", iface ? `接口 ${iface}` : "", showGateway ? `网关 ${gateway}` : ""].filter(Boolean).join(" · ");
+  const srcLine = `节点来源: ${data.nodeSrc || "--"} · 本次流量约 ${usedMB} MB · 全程直连不经代理`;
 
   let widget;
   if (isLarge) {
-    const children = [
-      row([T("📶 本地测速", 16, "#FFFFFF", "bold"), spacer, T(timeStr, 11, "rgba(255,255,255,0.75)")], { padding: [8, 12], backgroundGradient: grad(GRAD_HEAD), borderRadius: 14 }),
-      panel([
-        row([col([T(data.netName, 15, C.text, "bold"), T(data.netDetail || "--", 11, C.sub)], 2), spacer, col([T("本地 IP", 10, C.sub), T(localIP || "--", 13, C.text, "bold")], 2)]),
-        localLine ? T(localLine, 10, C.sub) : T("", 1, C.sub),
-      ]),
-      panel([
-        row([T("Download 下载", 12, C.dl, "bold"), spacer, T(nodeShort, 11, C.sub)]),
-        row([T(data.dl ? data.dl : "--", 52, C.text, "bold"), T("Mbps", 13, C.sub)], 4),
-        bar(data.dl, C.dl, 326),
-        T(`满格 1000 Mbps (对数刻度) · 本次下载 ${(data.dlBytes / 1e6).toFixed(1)} MB`, 10, C.sub),
-      ]),
-      panel([
-        row([T("Upload 上传", 12, C.ul, "bold"), spacer, metric("延迟", data.ping ? data.ping : "--", "ms"), spacer, metric("抖动", data.ping ? data.jitter : "--", "ms"), spacer, metric("丢包", data.pl === "-" ? "--" : data.pl, "%")]),
-        row([T(data.ul ? data.ul : "--", 30, C.text, "bold"), T("Mbps", 11, C.sub), spacer, T(`本次上传 ${(data.ulBytes / 1e6).toFixed(1)} MB`, 10, C.sub)], 4),
-        bar(data.ul, C.ul, 326),
-      ]),
-      panel([
-        T(nodeLine, 12, C.text),
-        T(`节点来源: ${data.nodeSrc || "--"} · 本次测速流量约 ${usedMB} MB · 全程直连不经代理节点`, 10, C.sub),
-      ]),
+    const dlChildren = [
+      row([T("Download 下载", 12, C.dl, "bold"), spacer, T(nodeShort, 11, C.sub)]),
+      row([T(data.dl ? data.dl : "--", 46, C.text, "bold"), T("Mbps", 13, C.sub)], 4),
+      bar(data.dl, C.dl, 326),
+      T(`本次下载 ${(data.dlBytes / 1e6).toFixed(1)} MB`, 10, C.sub),
     ];
-    if (data.diag) children.push(T(`⚠ ${data.diag}`, 10, "#FF9F0A"));
-    widget = { type: "widget", padding: 12, gap: 8, backgroundColor: C.rootBg, children };
+    if (!node && data.diag) dlChildren.push(T(`⚠ ${data.diag}`, 10, C.warn));
+    const nodeChildren = [T(nodeLine, 12, C.text), T(srcLine, 10, C.sub)];
+    if (node && data.diag) nodeChildren.push(T(`⚠ ${data.diag}`, 10, C.warn));
+    widget = {
+      type: "widget", padding: 12, gap: 6, backgroundColor: C.rootBg,
+      children: [
+        row([T("📶 本地测速", 16, "#FFFFFF", "bold"), spacer, T(timeStr, 11, "rgba(255,255,255,0.75)")], { padding: [8, 12], backgroundGradient: grad(GRAD_HEAD), borderRadius: 14 }),
+        panel([
+          row([col([T(data.netName, 15, C.text, "bold"), T(data.netDetail || "--", 11, C.sub)], 2), spacer, col([T("本地 IP", 10, C.sub), T(localIP || "--", 13, C.text, "bold")], 2)]),
+          T(localBits, 10, C.sub),
+        ]),
+        panel(dlChildren),
+        panel([
+          row([T("Upload 上传", 12, C.ul, "bold"), spacer, T(`本次上传 ${(data.ulBytes / 1e6).toFixed(1)} MB`, 10, C.sub)]),
+          row([T(data.ul ? data.ul : "--", 28, C.text, "bold"), T("Mbps", 11, C.sub)], 4),
+          bar(data.ul, C.ul, 326),
+          metricsRow,
+        ]),
+        panel(nodeChildren),
+      ],
+    };
   } else if (!isSmall) {
     const children = [
       row([T("📶 本地测速", 15, C.accent, "bold"), spacer, T(timeStr, 10, C.sub)]),
       T(netLine, 11, C.sub),
       row([
-        panel([
-          T("↓ 下载 Mbps", 11, C.dl, "bold"),
-          T(data.dl ? data.dl : "--", 32, C.text, "bold"),
-          bar(data.dl, C.dl, 132),
-        ], {}),
-        panel([
-          T("↑ 上传 Mbps", 11, C.ul, "bold"),
-          T(data.ul ? data.ul : "--", 22, C.text, "bold"),
-          T(`延迟 ${data.ping ? data.ping : "--"} ms · 抖动 ${data.ping ? data.jitter : "--"} ms`, 10, C.sub),
-        ], {}),
-      ], { gap: 8 }),
+        col([T("Download 下载", 11, C.dl, "bold"), T(data.dl ? data.dl : "--", 30, C.text, "bold"), bar(data.dl, C.dl, 150)], 3),
+        spacer,
+        col([T("Upload 上传", 11, C.ul, "bold"), T(data.ul ? data.ul : "--", 30, C.text, "bold"), bar(data.ul, C.ul, 150)], 3),
+      ]),
+      row([
+        T(`延迟 ${data.ping ? data.ping : "--"} ms`, 11, C.text), spacer,
+        T(`抖动 ${data.ping ? data.jitter : "--"} ms`, 11, C.text), spacer,
+        T(`丢包 ${data.pl === "-" ? "--" : data.pl} %`, 11, C.text),
+      ]),
       T(nodeLine, 11, C.sub),
-      T(`流量约 ${usedMB} MB · ${data.nodeSrc || "--"} · 直连测速`, 10, C.sub),
+      T(srcLine, 10, C.sub),
     ];
-    if (data.diag) children.push(T(`⚠ ${data.diag}`, 10, "#FF9F0A"));
+    if (data.diag) children.push(T(`⚠ ${data.diag}`, 10, C.warn));
     widget = { type: "widget", padding: 12, gap: 6, backgroundColor: C.rootBg, children };
   } else {
     const children = [
       row([T("📶 本地测速", 12, C.accent, "bold"), spacer, T(timeStr, 9, C.sub)]),
       T(netLine, 10, C.sub),
-      T("↓ Mbps", 10, C.dl, "bold"),
-      T(data.dl ? data.dl : "--", 32, C.text, "bold"),
+      T("Download 下载", 10, C.dl, "bold"),
+      T(data.dl ? data.dl : "--", 30, C.text, "bold"),
       bar(data.dl, C.dl, 128),
-      row([T(`↑ ${data.ul ? data.ul : "--"}`, 13, C.text, "bold"), T(`延迟 ${data.ping ? data.ping : "--"} ms`, 11, C.sub)], 4),
+      row([T(`↑ ${data.ul ? data.ul : "--"} Mbps`, 12, C.text, "bold"), spacer, T(`延迟 ${data.ping ? data.ping : "--"} ms`, 11, C.sub)]),
       T(nodeShort, 9, C.sub),
     ];
     widget = { type: "widget", padding: 12, gap: 4, backgroundColor: C.rootBg, children };
