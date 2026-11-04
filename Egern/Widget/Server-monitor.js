@@ -4,7 +4,17 @@
 
 // Server Monitor Widget for Egern
 //
-// Required env: host, username, password (or privateKey), port (default 22)
+// 环境变量：
+// 名称：host
+// 值：服务器地址（必填）
+// 名称：username
+// 值：SSH 用户名（必填）
+// 名称：password
+// 值：SSH 密码（与 privateKey 二选一）
+// 名称：privateKey
+// 值：SSH 私钥全文（与 password 二选一）
+// 名称：port
+// 值：SSH 端口（可选，默认 22）
 
 export default async function (ctx) {
   // ─── Helpers ────────────────────────────────
