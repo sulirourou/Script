@@ -1,6 +1,6 @@
 /**
  * 🌏 Egern IP-API 小组件
- * 版本：v1.7 (2026-11-04)
+ * 版本：v1.8 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -112,7 +112,8 @@ export default async function(ctx) {
     const main = en || cn;
     proxyData.ip = main.query;
     proxyData.title = buildProxyTitle(cn, en);
-    proxyData.detail = getEnDetail(main.country, main.regionName, main.city);
+    // 详情行只用英文结果拼: 英文缺失时宁可占位, 不拿中文结果顶替 (与本地块同一规则)
+    proxyData.detail = en ? getEnDetail(en.country, en.regionName, en.city) : "Unknown Location";
     let ispName = main.isp || "";
     let asInfo = main.as || "";
     if (ispName && asInfo.toLowerCase().includes(ispName.split(' ')[0].toLowerCase())) {
@@ -162,24 +163,34 @@ export default async function(ctx) {
     let lastErr = "";
     let rlErr = "";
     const note = (r) => { if (r.err) { lastErr = r.err; if (r.status === 429) rlErr = r.err; } };
+    // 填充前: 若只有中文结果 (详情行需要英文), 在同一路由补打一次英文请求;
+    // 仍失败就由 fillProxy 用英文占位, 不拿中文顶替详情行
+    const fillSmart = async (enJ, cnJ, usePolicy) => {
+      if (cnJ && !enJ) {
+        const rEn2 = await tryProxyQuery(urlEn, usePolicy);
+        note(rEn2);
+        if (rEn2.j) enJ = rEn2.j;
+      }
+      return fillProxy(enJ, cnJ);
+    };
 
     // 第 1 轮: 中英并行 (任一成功即可)
     const [rEn, rCn] = await Promise.all([tryProxyQuery(urlEn, true), tryProxyQuery(urlCn, true)]);
     note(rEn); note(rCn);
-    if (fillProxy(rEn.j || null, rCn.j || null)) { saveProxyCache(); return; }
+    if (await fillSmart(rEn.j || null, rCn.j || null, true)) { saveProxyCache(); return; }
 
     // 第 2 轮: 隔一会单独重试中文 (被限流时按 X-Ttl 等, 上限 4 秒)
     const ttlWait = Math.max(rEn.ttl || 0, rCn.ttl || 0);
     await sleep(rlErr ? Math.min(Math.max(ttlWait, 1), 4) * 1000 : 800);
     const rCn2 = await tryProxyQuery(urlCn, true);
     note(rCn2);
-    if (rCn2.j && fillProxy(null, rCn2.j)) { saveProxyCache(); return; }
+    if (rCn2.j && await fillSmart(null, rCn2.j, true)) { saveProxyCache(); return; }
 
     // 第 3 轮: 指定了策略组仍全失败 -> 去掉策略组用默认路由再试一次
     if (POLICY) {
       const rCn3 = await tryProxyQuery(urlCn, false);
       note(rCn3);
-      if (rCn3.j && fillProxy(null, rCn3.j)) { saveProxyCache(); return; }
+      if (rCn3.j && await fillSmart(null, rCn3.j, false)) { saveProxyCache(); return; }
     }
 
     // 全失败: 缓存顶上; 无缓存显示失败 + 原因
