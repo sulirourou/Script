@@ -1,6 +1,6 @@
 /**
  * 📶 Egern 本地测速小组件 (LocalSpeed)
- * 版本：v1.6 (2026-11-04)
+ * 版本：v1.7 (2026-11-04)
  * 环境变量：无 (全部请求优先 policy: DIRECT 直连; 若直连被当前构建拒绝, 自动回退规则路由并在界面注明)
  *
  * 只测本地网络本身: 当前 WiFi / 蜂窝链路直连互联网的实际速度, 不测代理节点。
@@ -14,6 +14,9 @@
  * 下载优先响应流分段计数, 否则定量分段采样; 头条取 90 百分位, 口径与 SpeedTest 一致。
  * 大号带下载/上传全程采样曲线 (与 SpeedTest 同款: 本轮样本现场生成 SVG, 随缓存保留,
  * 灰虚线为头条值) ---- 曲线是这一轮测速过程的记录图, 不是实时动画; 组件仍是测完一次性出图。
+ * 内存纪律 (SpeedTest jetsam 教训): 任何单个请求体不超过 5MiB; 流式下载分轮进行 --
+ * 每轮只申请 5MiB, 下完立刻接下一轮, 采样桶按全局时间连续填充; 全部在途请求体合计
+ * 峰值约 11MiB, 远离扩展进程内存上限, 不会把隧道进程拖爆。
  */
 export default async function(ctx) {
   const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -406,26 +409,33 @@ export default async function(ctx) {
       const buckets = new Map();
       let total = 0;
       const t0 = Date.now();
-      const streamUrl = proto === "ookla" ? `${origin}/speedtest/random4000x4000.jpg` : `${node.downloadUrl}?cors=true&r=${Date.now()}&ckSize=100&size=104857600`;
+      const streamUrl = proto === "ookla" ? `${origin}/speedtest/random2000x2000.jpg` : `${node.downloadUrl}?cors=true&r=${Date.now()}&ckSize=5&size=5242880`;
+      // 分轮流式: 每轮只申请 5MiB 小身子, 下完立刻接下一轮 (在途请求体峰值可控);
+      // 采样桶以全局 t0 计时, 跨轮连续, 窗口或 CAP 到点统一掐断。
       const oneStream = async () => {
+        let got = false;
         try {
-          const url = streamUrl;
-          const resp = await http.get(url, { timeout: WINDOW + 5000 });
-          if (!resp || resp.status !== 200 || !resp.body || typeof resp.body.getReader !== "function") return false;
-          const reader = resp.body.getReader();
           while (Date.now() - t0 < WINDOW && total < CAP) {
-            const remain = WINDOW - (Date.now() - t0);
-            const r = await Promise.race([reader.read(), sleep(Math.max(remain, 1)).then(() => "timeout")]);
-            if (r === "timeout" || !r || r.done) break;
-            if (r.value && r.value.byteLength) {
-              const idx = Math.floor((Date.now() - t0) / 250);
-              buckets.set(idx, (buckets.get(idx) || 0) + r.value.byteLength);
-              total += r.value.byteLength;
+            const resp = await http.get(streamUrl, { timeout: 4000 });
+            if (!resp || resp.status !== 200 || !resp.body || typeof resp.body.getReader !== "function") return got;
+            const reader = resp.body.getReader();
+            let roundOver = false;
+            while (!roundOver && Date.now() - t0 < WINDOW && total < CAP) {
+              const remain = WINDOW - (Date.now() - t0);
+              const r = await Promise.race([reader.read(), sleep(Math.max(remain, 1)).then(() => "timeout")]);
+              if (r === "timeout" || !r || r.done) { roundOver = true; break; }
+              if (r.value && r.value.byteLength) {
+                got = true;
+                const idx = Math.floor((Date.now() - t0) / 250);
+                buckets.set(idx, (buckets.get(idx) || 0) + r.value.byteLength);
+                total += r.value.byteLength;
+              }
             }
+            try { await reader.cancel(); } catch (e) {}
+            if (!got) return false;
           }
-          try { await reader.cancel(); } catch (e) {}
-          return total > 0;
-        } catch (e) { return false; }
+          return got;
+        } catch (e) { return got; }
       };
       const oks = await Promise.all(Array.from({ length: STREAMS }, oneStream));
       if (oks.some(Boolean) && total > 0) {
