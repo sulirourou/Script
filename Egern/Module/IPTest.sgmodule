@@ -1,0 +1,35 @@
+#!name=网络检测工具
+#!desc=所有检测工具统一分流。请在模块参数内设置你想要使用的策略组（默认走 CheckPolicy）。
+#!category=Rules
+#!arguments=Proxy:CheckPolicy
+#!arguments-desc=Proxy: 请输入你想使用的策略组名称 (例如: CheckPolicy, Proxy, 美国节点)
+
+[Rule]
+# --- IP检测 ---
+DOMAIN-KEYWORD,skk,{{{Proxy}}}
+DOMAIN-SUFFIX,ip.im,{{{Proxy}}}
+DOMAIN-SUFFIX,ip.plus,{{{Proxy}}}
+DOMAIN-SUFFIX,ipapi.is,{{{Proxy}}}
+#DOMAIN-SUFFIX,ipapi.co,{{{Proxy}}}
+DOMAIN-SUFFIX,ping0.cc,{{{Proxy}}}
+DOMAIN-SUFFIX,ipinfo.io,{{{Proxy}}}
+DOMAIN-SUFFIX,db-ip.com,{{{Proxy}}}
+DOMAIN-SUFFIX,whoer.net,{{{Proxy}}}
+DOMAIN-SUFFIX,ipwhois.io,{{{Proxy}}}
+#DOMAIN-SUFFIX,ip-api.com,{{{Proxy}}}
+#DOMAIN-SUFFIX,ippure.com,{{{Proxy}}}
+DOMAIN-SUFFIX,maxmind.com,{{{Proxy}}}
+DOMAIN-SUFFIX,ip2location.com,{{{Proxy}}}
+DOMAIN-SUFFIX,scamalytics.com,{{{Proxy}}}
+
+# --- 测网速 ---
+DOMAIN-SUFFIX,fast.com,{{{Proxy}}}
+DOMAIN-SUFFIX,speedtest.cn,{{{Proxy}}}
+DOMAIN-SUFFIX,speedtest.net,{{{Proxy}}}
+DOMAIN-SUFFIX,fiber.google.com,{{{Proxy}}}
+
+# --- IPv6 ---
+DOMAIN-SUFFIX,test-ipv6.com,{{{Proxy}}}
+
+# --- DNS检测 ---
+DOMAIN-SUFFIX,dnsleaktest.com,{{{Proxy}}}
