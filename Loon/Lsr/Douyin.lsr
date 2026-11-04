@@ -1,4 +1,4 @@
-# 抖音
+# 抖音(直连)
 # 在主配置 [Remote Rule] 引用时指定策略：policy=DIRECT
 USER-AGENT,aweme*
 DOMAIN-SUFFIX,douyin.com
