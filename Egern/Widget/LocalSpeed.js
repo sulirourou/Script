@@ -1,6 +1,6 @@
 /**
  * 📶 Egern 本地测速小组件 (LocalSpeed)
- * 版本：v1.9 (2026-11-04)
+ * 版本：v1.10 (2026-11-04)
  * 环境变量：无 (全部请求优先 policy: DIRECT 直连; 若直连被当前构建拒绝, 自动回退规则路由并在界面注明)
  *
  * 只测本地网络本身: 当前 WiFi / 蜂窝链路直连互联网的实际速度, 不测代理节点。
@@ -18,7 +18,8 @@
  * 每轮只申请 5MiB, 下完立刻接下一轮, 采样桶按全局时间连续填充; 全部在途请求体合计
  * 峰值约 11MiB, 远离扩展进程内存上限, 不会把隧道进程拖爆。
  * 全程纪律: 内部截止 30 秒 -- 任一阶段到点即停, 已测出的结果照常交卷;
- * 绝不让串行等待叠加到被脚本超时整轮杀掉 (被杀 = 界面永远停在上一轮的旧帧)。
+ * 每个网络请求在统一入口另有竞速守卫 (超过自身超时 + 1.2 秒未回即按失败处理),
+ * 任何单个请求挂死都拖不住整轮; 绝不让等待叠加到被脚本超时整轮杀掉 (被杀 = 界面永远停在旧帧)。
  */
 export default async function(ctx) {
   const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -27,23 +28,32 @@ export default async function(ctx) {
   // ---------- HTTP: 优先 DIRECT 直连; 只有官方接口探测有权判定 DIRECT 是否可用 ----------
   // (死节点的连接失败不等于 DIRECT 被拒: 锦标赛里一个坏节点的抛错曾把整轮请求毒化成规则路由)
   let directState = "unknown"; // unknown | ok | rejected
+  // 竞速守卫: 统一入口 -- 任一请求超过自身 timeout + 1.2 秒未回, 直接按失败抛错,
+  // 不再信任底层超时设置 (真机上出现过请求挂死拖垮整轮、界面冻在旧帧的情况)
+  const rawHttp = (method, url, opts) => {
+    const t = (opts && opts.timeout) || 8000;
+    return Promise.race([
+      ctx.http[method](url, opts),
+      sleep(t + 1200).then(() => { throw new Error("http race timeout"); }),
+    ]);
+  };
   const callHttp = async (method, url, opts) => {
     const probe = !!(opts && opts.__probe);
     const cleanOpts = { ...(opts || {}) };
     delete cleanOpts.__probe;
-    if (directState === "rejected") return ctx.http[method](url, cleanOpts);
+    if (directState === "rejected") return rawHttp(method, url, cleanOpts);
     if (directState === "unknown" && !probe) {
       // 非探测请求: 乐观带 DIRECT 发送, 其成败不改判 (只是该节点自己的失败)
-      return ctx.http[method](url, { ...cleanOpts, policy: "DIRECT" });
+      return rawHttp(method, url, { ...cleanOpts, policy: "DIRECT" });
     }
     try {
-      const r = await ctx.http[method](url, { ...cleanOpts, policy: "DIRECT" });
+      const r = await rawHttp(method, url, { ...cleanOpts, policy: "DIRECT" });
       if (directState === "unknown") directState = "ok";
       return r;
     } catch (e) {
       if (probe && directState === "unknown") {
         directState = "rejected";
-        return ctx.http[method](url, cleanOpts);
+        return rawHttp(method, url, cleanOpts);
       }
       throw e;
     }
@@ -286,6 +296,7 @@ export default async function(ctx) {
     let sent = 0;
     for (let i = 0; i < 6; i++) {
       if (i >= 3 && Date.now() - measureStart > 14000) break;
+      if (Date.now() > DEADLINE - 2000) break;
       sent++;
       const pt = Date.now();
       let ok = false;
