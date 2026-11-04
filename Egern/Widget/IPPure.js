@@ -1,6 +1,6 @@
 /**
  * 🌏 Egern IPPure 小组件
- * 版本：v1.6 (2026-11-04)
+ * 版本：v1.7 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -84,6 +84,11 @@ export default async function(ctx) {
     if (r && r_low !== c_low && !r_low.includes(c_low)) res.push(r);
     if (d && d_low !== c_low && d_low !== r_low && !d_low.includes(c_low)) res.push(d);
     return res.join(" ").trim() || "未知";
+  }
+
+  // 省/市名去掉末尾的省/市两个字 (广东省 -> 广东, 广州市 -> 广州)
+  function trimAdmin(s) {
+    return String(s || "").trim().replace(/(省|市)$/, "");
   }
 
   // 2. 在线翻译 (双接口, 均免 key): 谷歌 gtx 优先 (地名质量最好), 逐条失败
@@ -247,17 +252,32 @@ export default async function(ctx) {
         }
         localData.isp = `China ${localCarrierEn}`;
 
-        // 标题 (中文) 沿用原翻译路径; 详情行要全英文: 首选在线翻译,
-        // 译文仍带中文 (翻译失败回退了原文) 时才按本地 IP 查英文地名补缺
-        const zh = await translateBatch([country, city], "zh-Hans");
-        localData.title = getCnTitle(zh[0], "", zh[1]) || "本地网络";
+        // 标题 (中文) = 国家 + 省 + 市 (省市名不带省/市字); ipip 给不全
+        // (蜂窝下常缺城市) 时, 按本地 IP 查到的中文地名补缺
+        const zh = await translateBatch([country, prov, city], "zh-Hans");
+        let tProv = trimAdmin(zh[1]);
+        let tCity = trimAdmin(zh[2]);
+        if (tCity && tCity === tProv) tCity = "";
+        if (!tProv || !tCity) {
+          const geoCn = await lookupGeo(localData.ip, "zh-CN");
+          if (geoCn) {
+            if (!tProv) tProv = trimAdmin(geoCn.region);
+            if (!tCity) { const gc = trimAdmin(geoCn.city); if (gc && gc !== tProv) tCity = gc; }
+          }
+        }
+        localData.title = getCnTitle(zh[0], tProv, tCity) || "本地网络";
+
+        // 详情行 (全英文): 首选在线翻译; 译文带中文 (翻译失败) 或源数据
+        // 缺省/缺市时, 按本地 IP 查到的英文地名补全
         const en = await translateBatch([prov, city], "en");
         const enDetail = getEnDetail("China", en[0], en[1]);
-        if (enDetail && !/[\u4e00-\u9fff]/.test(enDetail)) {
+        const enOk = !!enDetail && !/[\u4e00-\u9fff]/.test(enDetail);
+        if (enOk && prov && city) {
           localData.detail = enDetail;
         } else {
           const geoEn = await lookupGeo(localData.ip, "en");
-          localData.detail = geoEn ? getEnDetail(geoEn.country, geoEn.region, geoEn.city) : enDetail;
+          const geoDetail = geoEn ? getEnDetail(geoEn.country, geoEn.region, geoEn.city) : "";
+          localData.detail = (geoDetail && (!enOk || geoDetail.split(" ").length > enDetail.split(" ").length)) ? geoDetail : enDetail;
         }
 
         localData.flag = "🇨🇳";

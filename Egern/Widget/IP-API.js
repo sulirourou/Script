@@ -1,12 +1,10 @@
 /**
  * 🌏 Egern IP-API 小组件
- * 版本：v1.4 (2026-10-30)
+ * 版本：v1.5 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
- *
- *
- */
+ * */
 
 const API_BASE = "http://ip-api.com/json/";
 const FIELDS = "?fields=status,message,country,countryCode,regionName,city,isp,org,as,mobile,proxy,hosting,query";
@@ -21,6 +19,11 @@ export default async function(ctx) {
   const POLICY = ((ctx.env && ctx.env.POLICY) || "").toString().trim();
 
   const countryMap = { "united states": "美国", "us": "美国", "singapore": "新加坡", "japan": "日本", "hong kong": "香港", "taiwan": "台湾", "united kingdom": "英国", "uk": "英国", "korea": "韩国", "south korea": "韩国" };
+
+  // 省/市名去掉末尾的省/市两个字 (广东省 -> 广东, 广州市 -> 广州)
+  function trimAdmin(s) {
+    return String(s || "").trim().replace(/(省|市)$/, "");
+  }
 
   function getCnTitle(c, r, d) {
     let res = [];
@@ -157,7 +160,7 @@ export default async function(ctx) {
 
   function saveLocalCache() {
     try {
-      ctx.storage.setString("ipapi_local_v1", JSON.stringify({
+      ctx.storage.setString("ipapi_local_v2", JSON.stringify({
         ip: localData.ip,
         d: { title: localData.title, detail: localData.detail, isp: localData.isp, flag: localData.flag }
       }));
@@ -166,7 +169,7 @@ export default async function(ctx) {
 
   function loadLocalCache(ip) {
     try {
-      const raw = ctx.storage.getString("ipapi_local_v1");
+      const raw = ctx.storage.getString("ipapi_local_v2");
       if (!raw) return false;
       const c = JSON.parse(raw);
       if (!c || c.ip !== ip || !c.d) return false;
@@ -197,7 +200,7 @@ export default async function(ctx) {
         if (cn || en) {
           const nameSrc = cn || en;
           const main = en || cn;
-          localData.title = getCnTitle(nameSrc.country, nameSrc.regionName, nameSrc.city) || "本地";
+          localData.title = getCnTitle(nameSrc.country, trimAdmin(nameSrc.regionName), trimAdmin(nameSrc.city)) || "本地";
           localData.detail = getEnDetail(main.country, main.regionName, main.city);
           localData.flag = flagEmoji(main.countryCode);
           let carrier = "Unicom";
@@ -209,7 +212,7 @@ export default async function(ctx) {
           saveLocalCache();
           return;
         }
-        localData.title = getCnTitle(loc[0]||"本地", loc[1]||"", loc[2]||"");
+        localData.title = getCnTitle(loc[0]||"本地", trimAdmin(loc[1]||""), trimAdmin(loc[2]||""));
         localData.detail = "China Location";
         localData.isp = loc[4] || "未知";
         localData.flag = "🇨🇳";
