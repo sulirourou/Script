@@ -1,27 +1,9 @@
 /**
  * 🌏 Egern IPPure 小组件
- * 版本：v1.2 (2026-10-30)
+ * 版本：v1.3 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
- *
- * 🔧 v1.2 变更: 按新规范把环境变量用法移到版本号正下方 (名称/值格式); 无功能变化。
- *
- * 🔧 v1.1 变更 (与 IP-API v1.1 同一套方法, 查询接口地址不变):
- * - 修复获取失败: 节点查询原为单请求、无重试, 3.5s 超时一到就整块失败;
- *   改为超时 6s、失败隔 800ms 自动重试一次、成功结果写入缓存, 彻底失败时
- *   显示上次成功数据; 接口返回无 ip 的错误响应时不再永久卡在「获取中...」。
- * - 翻译接口提速 (本版最大开销): 原版每翻一个地名都要重新取一次 token 并
- *   串行等待, 一次刷新最多 14 个翻译请求, 经常把脚本总时长拖爆; 改为 token
- *   全程只取一次、地名打包成一次批量翻译 (节点 1 次、本地 2 次), 翻译失败
- *   仍按原逻辑回退原文。
- * - isResidential 字段缺失时旧版会误判为「商业/机房」, 改为缺失时按住宅处理;
- *   asOrganization/asn 都缺失时不再拼出 "(AS)" 这种残缺 ISP 文案。
- * - 新增环境变量 POLICY: 指定节点查询走的策略组 (如填 美国节点), 只影响
- *   节点查询的出口, 本地查询与翻译请求不走它。不填则按原默认路由。
- * - 小号专用布局: 只显示节点网络 + 本地网络两组信息, 去掉右侧风险圆环、
- *   原生/住宅与 IPPure 标注 (小号放不下, 原版左右挤压导致文字全被截断)。
- *
  */
 
 const API_MAIN = "https://my.ippure.com/v1/info";
@@ -39,6 +21,45 @@ export default async function(ctx) {
 
   // 💡 终极防线：常见国家名强制兜底字典
   const countryMap = { "united states": "美国", "us": "美国", "singapore": "新加坡", "japan": "日本", "hong kong": "香港", "taiwan": "台湾", "united kingdom": "英国", "uk": "英国", "korea": "韩国", "south korea": "韩国" };
+
+  // 💡 国家代码中文表 (翻译接口失效时兜底, 保证第一行国家名是中文)
+  const countryCodeCn = { US: "美国", CN: "中国", HK: "香港", TW: "台湾", MO: "澳门", JP: "日本", KR: "韩国", SG: "新加坡", GB: "英国", UK: "英国", DE: "德国", FR: "法国", CA: "加拿大", AU: "澳大利亚", NL: "荷兰", CH: "瑞士", SE: "瑞典", NO: "挪威", DK: "丹麦", FI: "芬兰", IT: "意大利", ES: "西班牙", PT: "葡萄牙", IE: "爱尔兰", AT: "奥地利", BE: "比利时", PL: "波兰", CZ: "捷克", HU: "匈牙利", GR: "希腊", TR: "土耳其", RU: "俄罗斯", UA: "乌克兰", IN: "印度", TH: "泰国", VN: "越南", MY: "马来西亚", ID: "印度尼西亚", PH: "菲律宾", NZ: "新西兰", MX: "墨西哥", BR: "巴西", AR: "阿根廷", CL: "智利", CO: "哥伦比亚", PE: "秘鲁", ZA: "南非", EG: "埃及", NG: "尼日利亚", KE: "肯尼亚", IL: "以色列", AE: "阿联酋", SA: "沙特阿拉伯", QA: "卡塔尔", KW: "科威特", IR: "伊朗", IQ: "伊拉克", PK: "巴基斯坦", BD: "孟加拉国", LK: "斯里兰卡", MM: "缅甸", KH: "柬埔寨", LA: "老挝", MN: "蒙古", NP: "尼泊尔", KZ: "哈萨克斯坦", UZ: "乌兹别克斯坦" };
+
+  // 💡 地区中文表: 按 "国家代码:地区代码" 查 (接口自带 regionCode, 不依赖翻译接口)
+  const regionCodeCn = {
+    "US:AL": "阿拉巴马州", "US:AK": "阿拉斯加州", "US:AZ": "亚利桑那州", "US:AR": "阿肯色州", "US:CA": "加利福尼亚州", "US:CO": "科罗拉多州", "US:CT": "康涅狄格州", "US:DE": "特拉华州", "US:FL": "佛罗里达州", "US:GA": "佐治亚州", "US:HI": "夏威夷州", "US:ID": "爱达荷州", "US:IL": "伊利诺伊州", "US:IN": "印第安纳州", "US:IA": "艾奥瓦州", "US:KS": "堪萨斯州", "US:KY": "肯塔基州", "US:LA": "路易斯安那州", "US:ME": "缅因州", "US:MD": "马里兰州", "US:MA": "马萨诸塞州", "US:MI": "密歇根州", "US:MN": "明尼苏达州", "US:MS": "密西西比州", "US:MO": "密苏里州", "US:MT": "蒙大拿州", "US:NE": "内布拉斯加州", "US:NV": "内华达州", "US:NH": "新罕布什尔州", "US:NJ": "新泽西州", "US:NM": "新墨西哥州", "US:NY": "纽约州", "US:NC": "北卡罗来纳州", "US:ND": "北达科他州", "US:OH": "俄亥俄州", "US:OK": "俄克拉荷马州", "US:OR": "俄勒冈州", "US:PA": "宾夕法尼亚州", "US:RI": "罗得岛州", "US:SC": "南卡罗来纳州", "US:SD": "南达科他州", "US:TN": "田纳西州", "US:TX": "得克萨斯州", "US:UT": "犹他州", "US:VT": "佛蒙特州", "US:VA": "弗吉尼亚州", "US:WA": "华盛顿州", "US:WV": "西弗吉尼亚州", "US:WI": "威斯康星州", "US:WY": "怀俄明州", "US:DC": "哥伦比亚特区", "US:PR": "波多黎各", "US:GU": "关岛", "US:VI": "美属维尔京群岛", "US:AS": "美属萨摩亚", "US:MP": "北马里亚纳群岛",
+    "CA:AB": "阿尔伯塔省", "CA:BC": "不列颠哥伦比亚省", "CA:MB": "曼尼托巴省", "CA:NB": "新不伦瑞克省", "CA:NL": "纽芬兰与拉布拉多省", "CA:NS": "新斯科舍省", "CA:NT": "西北地区", "CA:NU": "努纳武特地区", "CA:ON": "安大略省", "CA:PE": "爱德华王子岛省", "CA:QC": "魁北克省", "CA:SK": "萨斯喀彻温省", "CA:YT": "育空地区",
+    "AU:ACT": "澳大利亚首都领地", "AU:NSW": "新南威尔士州", "AU:NT": "北领地", "AU:QLD": "昆士兰州", "AU:SA": "南澳大利亚州", "AU:TAS": "塔斯马尼亚州", "AU:VIC": "维多利亚州", "AU:WA": "西澳大利亚州",
+    "CN:BJ": "北京市", "CN:TJ": "天津市", "CN:HE": "河北省", "CN:SX": "山西省", "CN:NM": "内蒙古自治区", "CN:LN": "辽宁省", "CN:JL": "吉林省", "CN:HL": "黑龙江省", "CN:SH": "上海市", "CN:JS": "江苏省", "CN:ZJ": "浙江省", "CN:AH": "安徽省", "CN:FJ": "福建省", "CN:JX": "江西省", "CN:SD": "山东省", "CN:HA": "河南省", "CN:HB": "湖北省", "CN:HN": "湖南省", "CN:GD": "广东省", "CN:GX": "广西壮族自治区", "CN:HI": "海南省", "CN:CQ": "重庆市", "CN:SC": "四川省", "CN:GZ": "贵州省", "CN:YN": "云南省", "CN:XZ": "西藏自治区", "CN:SN": "陕西省", "CN:GS": "甘肃省", "CN:QH": "青海省", "CN:NX": "宁夏回族自治区", "CN:XJ": "新疆维吾尔自治区", "CN:HK": "香港特别行政区", "CN:MO": "澳门特别行政区", "CN:TW": "台湾省",
+    "GB:ENG": "英格兰", "GB:SCT": "苏格兰", "GB:WLS": "威尔士", "GB:NIR": "北爱尔兰"
+  };
+
+  // 💡 地区中文表: 按英文全名查 (regionCode 缺失时兜底, 覆盖美国各州与中国各省)
+  const regionNameCn = {
+    "alabama": "阿拉巴马州", "alaska": "阿拉斯加州", "arizona": "亚利桑那州", "arkansas": "阿肯色州", "california": "加利福尼亚州", "colorado": "科罗拉多州", "connecticut": "康涅狄格州", "delaware": "特拉华州", "florida": "佛罗里达州", "georgia": "佐治亚州", "hawaii": "夏威夷州", "idaho": "爱达荷州", "illinois": "伊利诺伊州", "indiana": "印第安纳州", "iowa": "艾奥瓦州", "kansas": "堪萨斯州", "kentucky": "肯塔基州", "louisiana": "路易斯安那州", "maine": "缅因州", "maryland": "马里兰州", "massachusetts": "马萨诸塞州", "michigan": "密歇根州", "minnesota": "明尼苏达州", "mississippi": "密西西比州", "missouri": "密苏里州", "montana": "蒙大拿州", "nebraska": "内布拉斯加州", "nevada": "内华达州", "new hampshire": "新罕布什尔州", "new jersey": "新泽西州", "new mexico": "新墨西哥州", "new york": "纽约州", "north carolina": "北卡罗来纳州", "north dakota": "北达科他州", "ohio": "俄亥俄州", "oklahoma": "俄克拉荷马州", "oregon": "俄勒冈州", "pennsylvania": "宾夕法尼亚州", "rhode island": "罗得岛州", "south carolina": "南卡罗来纳州", "south dakota": "南达科他州", "tennessee": "田纳西州", "texas": "得克萨斯州", "utah": "犹他州", "vermont": "佛蒙特州", "virginia": "弗吉尼亚州", "washington": "华盛顿州", "west virginia": "西弗吉尼亚州", "wisconsin": "威斯康星州", "wyoming": "怀俄明州", "district of columbia": "哥伦比亚特区", "puerto rico": "波多黎各", "guam": "关岛",
+    "beijing": "北京市", "tianjin": "天津市", "hebei": "河北省", "shanxi": "山西省", "inner mongolia": "内蒙古自治区", "liaoning": "辽宁省", "jilin": "吉林省", "heilongjiang": "黑龙江省", "shanghai": "上海市", "jiangsu": "江苏省", "zhejiang": "浙江省", "anhui": "安徽省", "fujian": "福建省", "jiangxi": "江西省", "shandong": "山东省", "henan": "河南省", "hubei": "湖北省", "hunan": "湖南省", "guangdong": "广东省", "guangxi": "广西壮族自治区", "hainan": "海南省", "chongqing": "重庆市", "sichuan": "四川省", "guizhou": "贵州省", "yunnan": "云南省", "tibet": "西藏自治区", "shaanxi": "陕西省", "gansu": "甘肃省", "qinghai": "青海省", "ningxia": "宁夏回族自治区", "xinjiang": "新疆维吾尔自治区"
+  };
+
+  const isPureCn = (s) => !!s && !/[A-Za-z]/.test(s);
+
+  function localizedCountry(country, countryCode, translated) {
+    if (isPureCn(translated)) return String(translated).trim();
+    const byCode = countryCodeCn[(countryCode || "").toUpperCase()];
+    if (byCode) return byCode;
+    const byName = countryMap[(country || "").toLowerCase()];
+    if (byName) return byName;
+    return isPureCn(country) ? String(country).trim() : "";
+  }
+
+  function localizedRegion(countryCode, region, regionCode, translated) {
+    if (isPureCn(translated)) return String(translated).trim();
+    const cc = (countryCode || "").toUpperCase();
+    const rc = (regionCode || "").toUpperCase();
+    if (cc && rc && regionCodeCn[cc + ":" + rc]) return regionCodeCn[cc + ":" + rc];
+    const byName = regionNameCn[(region || "").trim().toLowerCase()];
+    if (byName) return byName;
+    return isPureCn(region) ? String(region).trim() : "";
+  }
 
   // 💡 终极防线：纯中文标题提取器（只要带英文直接丢弃去重）
   function getCnTitle(c, r, d) {
@@ -101,7 +122,7 @@ export default async function(ctx) {
 
   function saveProxyCache() {
     try {
-      ctx.storage.setString("ippure_proxy_v1", JSON.stringify({
+      ctx.storage.setString("ippure_proxy_v2", JSON.stringify({
         t: Date.now(),
         d: { ip: proxyData.ip, title: proxyData.title, detail: proxyData.detail, isp: proxyData.isp, flag: proxyData.flag, risk: proxyData.risk, isDC: proxyData.isDC }
       }));
@@ -110,7 +131,7 @@ export default async function(ctx) {
 
   function loadProxyCache() {
     try {
-      const raw = ctx.storage.getString("ippure_proxy_v1");
+      const raw = ctx.storage.getString("ippure_proxy_v2");
       if (!raw) return false;
       const c = JSON.parse(raw);
       if (!c || !c.d || !c.d.ip || (Date.now() - (c.t || 0)) > 24 * 3600 * 1000) return false;
@@ -134,9 +155,13 @@ export default async function(ctx) {
     let region = j.region || j.regionName || "";
     let city = j.city || "";
 
-    // 国家/州/城市一次批量翻译成中文
-    const [countryCn, regionCn, cityCn] = await msTranslateBatch([country, region, city], "zh-Hans");
-    proxyData.title = getCnTitle(countryCn, regionCn, cityCn);
+    // 第一行 = 国家 + 地区 (均为中文): 翻译结果优先, 翻译拿不到中文时查内置地名表;
+    // 地区字段缺失时才用城市兜底, 城市不再单独进第一行
+    const [countryTr, regionTr, cityTr] = await msTranslateBatch([country, region, city], "zh-Hans");
+    const countryCn = localizedCountry(country, j.countryCode, countryTr);
+    let regionCn = localizedRegion(j.countryCode, region, j.regionCode, regionTr);
+    if (!regionCn) regionCn = localizedRegion(j.countryCode, city, "", cityTr);
+    proxyData.title = [countryCn, regionCn].filter(Boolean).join(" ") || "未知节点";
     proxyData.detail = getEnDetail(country, region, city);
 
     const asOrg = j.asOrganization || "";
