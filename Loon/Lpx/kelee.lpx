@@ -1,0 +1,17 @@
+#!name = 可莉资源浏览器访问
+#!desc = 支持可莉资源浏览器的访问，绕过浏览器访问 WAF 拦截，通过修改请求和响应头适配特定客户端需求。
+#!author = yaowuliu
+#!homepage = https://kelee.one
+#!icon = https://hub.kelee.one/IMG/Web/favicon_32px.ico
+#!source = b169c824ffbe89855e95d2054298b94617b2ab50b6aa00339ffe830e99f76f1b
+#!system = iOS,iPadOS,tvOS,macOS
+#!date = 2026-11-05
+#!tag = 可莉
+#!type = normal
+
+[Rewrite]
+request if ${url} ~= /^https:\/\/kelee\.one/ then request.header.set("User-Agent", "StashCore/2.7.1 Stash/2.7.1 Clash/1.11.0")
+response if ${url} ~= /^https:\/\/kelee\.one/ then response.header.add("Content-Disposition", "inline") | response.header.set("Content-Type", "text/plain;charset=utf-8")
+
+[Mitm]
+hostname = kelee.one
