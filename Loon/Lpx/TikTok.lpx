@@ -1,10 +1,11 @@
 #!name = TikTok - 抖音
 #!desc = TikTok(Oracle Cloud ARM)与抖音(直连)
+#!author = Loon
 #!homepage = https://www.tiktok.com
 #!icon = https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/TikTok.png
 #!source = e72f0ba303f93676214041f1df2fcb932ee86a88c6bb961319a25658904dcc1b
 #!system = iOS,iPadOS,tvOS,macOS
-#!date = 2026-11-03
+#!date = 2026-11-05
 #!tag = TikTok,抖音
 #!type = normal
 
