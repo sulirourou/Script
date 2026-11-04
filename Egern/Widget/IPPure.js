@@ -1,6 +1,6 @@
 /**
  * 🌏 Egern IPPure 小组件
- * 版本：v1.7 (2026-11-04)
+ * 版本：v1.8 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -51,8 +51,19 @@ export default async function(ctx) {
     return isPureCn(country) ? String(country).trim() : "";
   }
 
+  // 翻译给出的地区名若是词表标准名的前缀 (如 MyMemory 把 California 译成
+  // 加利福尼亚, 少了州字), 补全为标准名 (加利福尼亚州); 词表没有、
+  // 或译名并非标准名前缀时原样返回, 不改动谷歌等正常译名
+  function completeRegion(countryCode, regionEn, regionCode, cn) {
+    if (!cn) return cn;
+    const cc = (countryCode || "").toUpperCase();
+    const rc = (regionCode || "").toUpperCase();
+    const canonical = (cc && rc && regionCodeCn[cc + ":" + rc]) || regionNameCn[String(regionEn || "").trim().toLowerCase()] || "";
+    return (canonical && canonical !== cn && canonical.startsWith(cn)) ? canonical : cn;
+  }
+
   function localizedRegion(countryCode, region, regionCode, translated) {
-    if (isPureCn(translated)) return String(translated).trim();
+    if (isPureCn(translated)) return completeRegion(countryCode, region, regionCode, String(translated).trim());
     const cc = (countryCode || "").toUpperCase();
     const rc = (regionCode || "").toUpperCase();
     if (cc && rc && regionCodeCn[cc + ":" + rc]) return regionCodeCn[cc + ":" + rc];
@@ -132,7 +143,7 @@ export default async function(ctx) {
 
   function saveProxyCache() {
     try {
-      ctx.storage.setString("ippure_proxy_v3", JSON.stringify({
+      ctx.storage.setString("ippure_proxy_v4", JSON.stringify({
         t: Date.now(),
         d: { ip: proxyData.ip, title: proxyData.title, detail: proxyData.detail, isp: proxyData.isp, flag: proxyData.flag, risk: proxyData.risk, isDC: proxyData.isDC }
       }));
@@ -141,7 +152,7 @@ export default async function(ctx) {
 
   function loadProxyCache() {
     try {
-      const raw = ctx.storage.getString("ippure_proxy_v3");
+      const raw = ctx.storage.getString("ippure_proxy_v4");
       if (!raw) return false;
       const c = JSON.parse(raw);
       if (!c || !c.d || !c.d.ip || (Date.now() - (c.t || 0)) > 24 * 3600 * 1000) return false;
@@ -194,6 +205,7 @@ export default async function(ctx) {
     const [countryTr, regionTr, cityTr] = await translateBatch([country, region, city], "zh-Hans");
     let countryCn = isPureCn(countryTr) ? countryTr.trim() : "";
     let regionCn = isPureCn(regionTr) ? regionTr.trim() : (isPureCn(cityTr) ? cityTr.trim() : "");
+    if (regionCn) regionCn = completeRegion(j.countryCode, isPureCn(regionTr) ? region : city, isPureCn(regionTr) ? j.regionCode : "", regionCn);
     if (!countryCn || !regionCn) {
       const geoCn = await lookupGeo(j.ip, "zh-CN");
       if (geoCn && isPureCn(geoCn.country)) {
@@ -249,6 +261,8 @@ export default async function(ctx) {
           localCarrierEn = "Telecom";
         } else if (locStr.includes("移动") || locStr.includes("mobile") || locStr.includes("cmcc")) {
           localCarrierEn = "Mobile";
+        } else if (locStr.includes("广电") || locStr.includes("broadnet") || locStr.includes("cbn")) {
+          localCarrierEn = "Broadnet";
         }
         localData.isp = `China ${localCarrierEn}`;
 
