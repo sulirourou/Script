@@ -1,6 +1,6 @@
 /**
  * 📶 Egern 本地测速小组件 (LocalSpeed)
- * 版本：v1.3 (2026-11-04)
+ * 版本：v1.4 (2026-11-04)
  * 环境变量：无 (全部请求优先 policy: DIRECT 直连; 若直连被当前构建拒绝, 自动回退规则路由并在界面注明)
  *
  * 只测本地网络本身: 当前 WiFi / 蜂窝链路直连互联网的实际速度, 不测代理节点。
@@ -8,8 +8,10 @@
  * 1) 官方接口按你的出口 IP 返回就近节点表 (AES 加密, 密钥取自其网页端代码, 脚本内含纯 JS 解密);
  * 2) 脚本内置节点快照 (2026-11-04 公开节点表, 57 个, 按 /hello 实测延迟并行选点);
  * 3) 远程更新同一份公开节点表 (jsDelivr / GitHub); 4) 上次缓存。
- * 取点来源与失败阶段写在组件上。下载优先响应流分段计数, 否则定量分段采样;
- * 头条取 90 百分位, 口径与 SpeedTest 一致。
+ * 取点来源与失败阶段写在组件上。公开表里混有两类节点: 测速网协议 (/download?ckSize=)
+ * 与 Ookla 协议 (如高校/运营商的 ooklaserver 主机, /hello 能应答但下载路径不同);
+ * 选中节点先做下载通道校验 (先测速网形, 后 Ookla 形), 不通就自动换下一个候选节点。
+ * 下载优先响应流分段计数, 否则定量分段采样; 头条取 90 百分位, 口径与 SpeedTest 一致。
  */
 export default async function(ctx) {
   const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -302,52 +304,81 @@ export default async function(ctx) {
     } catch (e) {}
     return -1;
   };
-  const tournament = async (pool) => {
-    let best = null, bestRtt = Infinity;
+  const tournamentRanked = async (pool) => {
+    const found = [];
     for (let b = 0; b < 2 && b * 10 < pool.length; b++) {
       const batch = pool.slice(b * 10, b * 10 + 10);
       const rs = await Promise.all(batch.map(async (nd) => ({ nd, rtt: await helloOnce(nd) })));
-      for (const { nd, rtt } of rs) if (rtt >= 0 && rtt < bestRtt) { bestRtt = rtt; best = nd; }
-      if (best && bestRtt <= 80) break;
+      for (const { nd, rtt } of rs) if (rtt >= 0) found.push({ nd, rtt });
+      found.sort((a, b2) => a.rtt - b2.rtt);
+      if (found.length >= 3 && found[0].rtt <= 80) break;
     }
-    return best;
+    found.sort((a, b) => a.rtt - b.rtt);
+    return found.map(f => f.nd);
+  };
+  // 下载通道校验: 先试测速网形 (/download?ckSize=1), 再试 Ookla 形 (/speedtest/random*.jpg)
+  let proto = null, seedSample = null, validateTried = 0, lastDlStatus = "", pickIndex = -1;
+  const originOf = (nd) => (nd.pingUrl && nd.pingUrl.endsWith("/hello")) ? nd.pingUrl.slice(0, nd.pingUrl.length - 6) : "";
+  const validateNode = async (nd) => {
+    validateTried++;
+    try {
+      const t0 = Date.now();
+      const resp = await http.get(`${nd.downloadUrl}?cors=true&r=${t0}&ckSize=1&size=1048576`, { timeout: 5000 });
+      if (resp && resp.status === 200) {
+        const buf = await resp.arrayBuffer();
+        const seconds = (Date.now() - t0) / 1000;
+        if (buf && buf.byteLength > 0 && seconds > 0) {
+          if (buf.byteLength > 1048576 * 1.5) return { proto: null };
+          return { proto: "cn", sample: { bytes: buf.byteLength, mbps: (buf.byteLength * 8) / seconds / 1e6, seconds } };
+        }
+        lastDlStatus = "下载返回空数据";
+      } else lastDlStatus = `HTTP ${resp ? resp.status : "无响应"}`;
+    } catch (e) { lastDlStatus = "请求失败"; }
+    const origin = originOf(nd);
+    if (origin) {
+      try {
+        const resp = await http.get(`${origin}/speedtest/random350x350.jpg`, { timeout: 5000 });
+        if (resp && resp.status === 200) {
+          const buf = await resp.arrayBuffer();
+          if (buf && buf.byteLength > 0) return { proto: "ookla" };
+        }
+        lastDlStatus = `Ookla 形 HTTP ${resp ? resp.status : "无响应"}`;
+      } catch (e) { lastDlStatus = "Ookla 形请求失败"; }
+    }
+    return { proto: null };
+  };
+  const pickFrom = async (cands, srcLabel) => {
+    const n = Math.min(3, cands.length);
+    for (let i = 0; i < n; i++) {
+      const v = await validateNode(cands[i]);
+      if (v.proto) { node = cands[i]; proto = v.proto; seedSample = v.sample || null; pickIndex = i; nodeSrc = srcLabel; return true; }
+    }
+    return false;
   };
   try {
     const official = await fetchOfficial();
     if (official) {
       try { ctx.storage.setJSON(NODES_KEY, { ts: Date.now(), nodes: official }); } catch (e) {}
-      nodeSrc = "官方接口";
-      for (const cand of rankOfficial(official).slice(0, 2)) {
-        const r = await pingFull(cand);
-        if (r.samples.length > 0) { node = cand; applyPing(r); break; }
+      if (!(await pickFrom(rankOfficial(official).slice(0, 3), "官方接口"))) {
+        nodeDiag = (nodeDiag ? nodeDiag + "; " : "") + "官方节点下载通道无响应";
       }
-      if (!node) nodeDiag = (nodeDiag ? nodeDiag + "; " : "") + "官方节点无响应";
     }
     if (!node) {
-      const snap = SNAPSHOT.map(snapNode);
-      node = await tournament(orderPool(snap));
-      if (node) nodeSrc = "内置节点表";
+      const ranked = await tournamentRanked(orderPool(SNAPSHOT.map(snapNode)));
+      if (ranked.length) await pickFrom(ranked.slice(0, 4), "内置节点表");
     }
     if (!node) {
       const csv = (await fetchCSVNodes()) || readCache(CSV_KEY, 0);
       if (csv) {
-        node = await tournament(orderPool(csv));
-        if (node) nodeSrc = "备用节点表";
+        const ranked = await tournamentRanked(orderPool(csv));
+        if (ranked.length) await pickFrom(ranked.slice(0, 4), "备用节点表");
       }
     }
     if (!node) {
       const cachedNodes = readCache(NODES_KEY, 0);
-      if (cachedNodes) {
-        for (const cand of rankOfficial(cachedNodes).slice(0, 2)) {
-          const r = await pingFull(cand);
-          if (r.samples.length > 0) { node = cand; nodeSrc = "节点缓存"; applyPing(r); break; }
-        }
-      }
+      if (cachedNodes) await pickFrom(rankOfficial(cachedNodes).slice(0, 2), "节点缓存");
     }
-    if (node && !measuredAny) {
-      // 快照/备用表选出的节点还没做完整延迟采样, 补做
-      applyPing(await pingFull(node));
-    }
+    if (node) applyPing(await pingFull(node));
   } catch (e) {}
 
   if (node) {
@@ -357,8 +388,11 @@ export default async function(ctx) {
     data.nodeOp = clean(node.operator);
     data.dist = (nodeSrc === "官方接口" && node.distance !== undefined && node.distance !== null && node.distance !== "") ? String(Math.round(parseFloat(node.distance))) : "";
     data.nodeSrc = nodeSrc;
+    // 本轮实测开始: 清空上一轮缓存里的测速值, 避免测速失败时把旧值当新值存回
+    data.dl = 0; data.ul = 0; data.dlBytes = 0; data.ulBytes = 0;
 
-    // ---------- 2) 下载: 优先响应流分段计数, 否则定量分段采样 ----------
+    // ---------- 2) 下载: 优先响应流分段计数, 否则定量分段采样 (按节点协议选路径) ----------
+    const origin = originOf(node);
     let dlDone = null;
     try {
       const STREAMS = onWifi ? 3 : 2;
@@ -367,9 +401,10 @@ export default async function(ctx) {
       const buckets = new Map();
       let total = 0;
       const t0 = Date.now();
+      const streamUrl = proto === "ookla" ? `${origin}/speedtest/random4000x4000.jpg` : `${node.downloadUrl}?cors=true&r=${Date.now()}&ckSize=10&size=10485760`;
       const oneStream = async () => {
         try {
-          const url = `${node.downloadUrl}?cors=true&r=${Date.now()}&ckSize=10&size=10485760`;
+          const url = streamUrl;
           const resp = await http.get(url, { timeout: WINDOW + 5000 });
           if (!resp || resp.status !== 200 || !resp.body || typeof resp.body.getReader !== "function") return false;
           const reader = resp.body.getReader();
@@ -401,13 +436,13 @@ export default async function(ctx) {
       }
     } catch (e) { dlDone = null; }
 
-    if (!dlDone) {
+    if (!dlDone && proto === "cn") {
       try {
         const PLAN = onWifi ? [1, 1, 2, 2, 5, 5] : [1, 1, 2, 2, 3];
-        const samples = [];
+        const samples = seedSample ? [seedSample] : [];
         const phaseStart = Date.now();
         for (const ck of PLAN) {
-          if (Date.now() - measureStart > 28000) break;
+          if (Date.now() - measureStart > 30000) break;
           let sample = null;
           try {
             const want = ck * 1048576;
@@ -418,6 +453,32 @@ export default async function(ctx) {
               const seconds = (Date.now() - t0) / 1000;
               if (buf && buf.byteLength > 0 && seconds > 0) {
                 if (buf.byteLength > want * 1.5) break;
+                sample = { bytes: buf.byteLength, mbps: (buf.byteLength * 8) / seconds / 1e6, seconds };
+                samples.push(sample);
+              }
+            }
+          } catch (e) { break; }
+          if (!sample) break;
+          if (Date.now() - phaseStart > 9000) break;
+          if (sample.seconds > 3) break;
+        }
+        if (samples.length > 0) dlDone = { mbps: headline(samples), bytes: samples.reduce((a, s) => a + s.bytes, 0) };
+      } catch (e) {}
+    }
+    if (!dlDone && proto === "ookla") {
+      try {
+        const samples = [];
+        const phaseStart = Date.now();
+        for (let i = 0; i < 4; i++) {
+          if (Date.now() - measureStart > 30000) break;
+          let sample = null;
+          try {
+            const t0 = Date.now();
+            const resp = await http.get(`${origin}/speedtest/random2000x2000.jpg?r=${t0}`, { timeout: 8000 });
+            if (resp && resp.status === 200) {
+              const buf = await resp.arrayBuffer();
+              const seconds = (Date.now() - t0) / 1000;
+              if (buf && buf.byteLength > 0 && seconds > 0) {
                 sample = { bytes: buf.byteLength, mbps: (buf.byteLength * 8) / seconds / 1e6, seconds };
                 samples.push(sample);
               }
@@ -447,7 +508,7 @@ export default async function(ctx) {
         try {
           const body = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz-=".repeat(Math.ceil(size / 64)).slice(0, size);
           const t0 = Date.now();
-          const resp = await http.post(`${node.uploadUrl}?r=${t0}`, { timeout: 10000, body, headers: { "Content-Type": "application/octet-stream" } });
+          const resp = await http.post(proto === "ookla" ? `${origin}/speedtest/upload` : `${node.uploadUrl}?r=${t0}`, { timeout: 10000, body, headers: { "Content-Type": "application/octet-stream" } });
           const seconds = (Date.now() - t0) / 1000;
           if (resp && resp.status === 200 && seconds > 0) {
             sample = { bytes: size, mbps: (size * 8) / seconds / 1e6, seconds };
@@ -470,8 +531,16 @@ export default async function(ctx) {
   {
     const parts = [];
     if (directState === "rejected") parts.push("直连被拒, 已回退规则路由");
-    if (!node) parts.push(nodeDiag ? `取点失败: ${nodeDiag}` : "取点失败: 全部节点无响应");
-    else if (nodeSrc && nodeSrc !== "官方接口") parts.push(`取点: ${nodeSrc}${nodeDiag ? " (" + nodeDiag + ")" : ""}`);
+    if (!node) {
+      if (validateTried > 0) parts.push(`测速失败: ${validateTried} 个候选节点下载通道均无响应 (最后状态 ${lastDlStatus || "未知"})`);
+      else parts.push(nodeDiag ? `取点失败: ${nodeDiag}` : "取点失败: 全部节点无响应");
+    } else {
+      if (nodeSrc && nodeSrc !== "官方接口") parts.push(`取点: ${nodeSrc}${nodeDiag ? " (" + nodeDiag + ")" : ""}`);
+      if (pickIndex > 0) parts.push(`前 ${pickIndex} 个节点下载不通, 已自动切换`);
+      if (proto === "ookla") parts.push("该节点为 Ookla 协议");
+      if (node && !data.dl && !data.ul) parts.push("节点已选定但测速无数据");
+      else if (node && data.dl && !data.ul) parts.push("上传无数据");
+    }
     data.diag = parts.join(" · ");
   }
 
