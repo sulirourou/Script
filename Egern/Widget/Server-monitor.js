@@ -1,9 +1,7 @@
 // 作者原创链接:https://raw.githubusercontent.com/egerndaddy/quick-start/main/modules/server-monitor.js
 
-
-
-// Server Monitor Widget for Egern
-//
+// 🖥️ Server Monitor
+// 版本：v1.0 (2026-11-04)
 // 环境变量：
 // 名称：host
 // 值：服务器地址（必填）
