@@ -1,6 +1,6 @@
 /**
  * 📶 Egern 本地测速小组件 (LocalSpeed)
- * 版本：v1.8 (2026-11-04)
+ * 版本：v1.9 (2026-11-04)
  * 环境变量：无 (全部请求优先 policy: DIRECT 直连; 若直连被当前构建拒绝, 自动回退规则路由并在界面注明)
  *
  * 只测本地网络本身: 当前 WiFi / 蜂窝链路直连互联网的实际速度, 不测代理节点。
@@ -17,6 +17,8 @@
  * 内存纪律 (SpeedTest jetsam 教训): 任何单个请求体不超过 5MiB; 流式下载分轮进行 --
  * 每轮只申请 5MiB, 下完立刻接下一轮, 采样桶按全局时间连续填充; 全部在途请求体合计
  * 峰值约 11MiB, 远离扩展进程内存上限, 不会把隧道进程拖爆。
+ * 全程纪律: 内部截止 30 秒 -- 任一阶段到点即停, 已测出的结果照常交卷;
+ * 绝不让串行等待叠加到被脚本超时整轮杀掉 (被杀 = 界面永远停在上一轮的旧帧)。
  */
 export default async function(ctx) {
   const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -170,23 +172,18 @@ export default async function(ctx) {
   // ---------- 取点各来源 ----------
   let nodeDiag = "";
   const fetchOfficial = async () => {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const resp = await http.get("https://nodes-api.speedtest.cn/", { timeout: 3500, headers: { "User-Agent": UA }, __probe: true });
-        if (!resp || resp.status !== 200) { nodeDiag = `官方接口 HTTP ${resp ? resp.status : "无响应"}`; }
-        else {
-          const j = (typeof resp.json === "function") ? await resp.json() : JSON.parse(await resp.text());
-          if (!j || typeof j.data !== "string") { nodeDiag = "官方接口返回格式异常"; return null; }
-          let parsed = null;
-          try { parsed = decryptNodes(j.data); } catch (e) { nodeDiag = "节点表解密失败"; return null; }
-          if (parsed && Array.isArray(parsed.data) && parsed.data.length) return parsed.data;
-          nodeDiag = "官方接口节点为空";
-          return null;
-        }
-      } catch (e) { nodeDiag = "官方接口请求失败"; }
-      if (attempt === 0) await sleep(400);
-    }
-    return null;
+    // 只试一次: 该接口在本地网络长期不通, 重试只是每轮白烧几秒 (锦标赛已并行备好)
+    try {
+      const resp = await http.get("https://nodes-api.speedtest.cn/", { timeout: 3000, headers: { "User-Agent": UA }, __probe: true });
+      if (!resp || resp.status !== 200) { nodeDiag = `官方接口 HTTP ${resp ? resp.status : "无响应"}`; return null; }
+      const j = (typeof resp.json === "function") ? await resp.json() : JSON.parse(await resp.text());
+      if (!j || typeof j.data !== "string") { nodeDiag = "官方接口返回格式异常"; return null; }
+      let parsed = null;
+      try { parsed = decryptNodes(j.data); } catch (e) { nodeDiag = "节点表解密失败"; return null; }
+      if (parsed && Array.isArray(parsed.data) && parsed.data.length) return parsed.data;
+      nodeDiag = "官方接口节点为空";
+      return null;
+    } catch (e) { nodeDiag = "官方接口请求失败"; return null; }
   };
   const parseCSV = (text) => {
     const lines = String(text || "").split(/\r?\n/).filter(l => l.trim());
@@ -263,6 +260,7 @@ export default async function(ctx) {
   } catch (e) {}
 
   const measureStart = Date.now();
+  const DEADLINE = measureStart + 30000;
   let measuredAny = false;
   let ulSwitched = false, ulFailInfo = "";
   const p90 = (nums) => {
@@ -366,6 +364,7 @@ export default async function(ctx) {
   const pickFrom = async (cands, srcLabel) => {
     const n = Math.min(3, cands.length);
     for (let i = 0; i < n; i++) {
+      if (i > 0 && Date.now() > DEADLINE - 8000) break;
       const v = await validateNode(cands[i]);
       if (v.proto) { node = cands[i]; proto = v.proto; seedSample = v.sample || null; pickIndex = i; nodeSrc = srcLabel; ulPool = cands; return true; }
     }
@@ -427,7 +426,7 @@ export default async function(ctx) {
         let got = false;
         try {
           while (Date.now() - t0 < WINDOW && total < CAP) {
-            const resp = await http.get(streamUrl, { timeout: 4000 });
+            const resp = await Promise.race([http.get(streamUrl, { timeout: 4000 }), sleep(4500).then(() => null)]);
             if (!resp || resp.status !== 200 || !resp.body || typeof resp.body.getReader !== "function") return got;
             const reader = resp.body.getReader();
             let roundOver = false;
@@ -473,7 +472,7 @@ export default async function(ctx) {
         const samples = seedSample ? [seedSample] : [];
         const phaseStart = Date.now();
         for (const ck of PLAN) {
-          if (Date.now() - measureStart > 30000) break;
+          if (Date.now() > DEADLINE) break;
           let sample = null;
           try {
             const want = ck * 1048576;
@@ -501,7 +500,7 @@ export default async function(ctx) {
         const samples = [];
         const phaseStart = Date.now();
         for (let i = 0; i < 4; i++) {
-          if (Date.now() - measureStart > 30000) break;
+          if (Date.now() > DEADLINE) break;
           let sample = null;
           try {
             const t0 = Date.now();
@@ -535,10 +534,15 @@ export default async function(ctx) {
       const phaseStart = Date.now();
       let ulStatus = "";
       const postTo = async (url, size) => {
+        // 竞速守卫: 单个上传请求最多等 budget, 节点挂死 (不回包) 也不能拖住整轮
+        const budget = Math.max(1500, Math.min(7000, DEADLINE - Date.now()));
         const body = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz-=".repeat(Math.ceil(size / 64)).slice(0, size);
         const t0 = Date.now();
         try {
-          const resp = await http.post(url, { timeout: 10000, body, headers: { "Content-Type": "application/octet-stream" } });
+          const resp = await Promise.race([
+            http.post(url, { timeout: budget, body, headers: { "Content-Type": "application/octet-stream" } }),
+            sleep(budget + 500).then(() => { throw new Error("post race timeout"); }),
+          ]);
           const seconds = (Date.now() - t0) / 1000;
           if (resp && resp.status === 200 && seconds > 0) return { bytes: size, mbps: (size * 8) / seconds / 1e6, seconds };
           ulStatus = `HTTP ${resp ? resp.status : "无响应"}`;
@@ -549,7 +553,7 @@ export default async function(ctx) {
       let retried = false;
       let pi = 0;
       while (pi < PLAN.length) {
-        if (Date.now() - measureStart > 36000) break;
+        if (Date.now() > DEADLINE) break;
         const s = await postTo(urlFor(node, proto), PLAN[pi]);
         if (s) {
           samples.push(s); pi++;
@@ -560,11 +564,11 @@ export default async function(ctx) {
         if (!retried) { retried = true; await sleep(600); continue; }
         break;
       }
-      if (samples.length === 0) {
+      if (samples.length === 0 && Date.now() < DEADLINE - 6000) {
         // 换节点: 同池其它候选逐个探测 (两种上传路径都试), 通了就在那儿跑完阶梯
         const alts = (ulPool || []).filter(c => c && c !== node).slice(0, 2);
         for (const cand of alts) {
-          if (Date.now() - measureStart > 42000) break;
+          if (Date.now() > DEADLINE - 4000) break;
           const shapes = [`${cand.uploadUrl}?r=${Date.now()}`];
           if (originOf(cand)) shapes.push(`${originOf(cand)}/speedtest/upload`);
           let goodUrl = "";
@@ -575,7 +579,7 @@ export default async function(ctx) {
           if (!goodUrl) continue;
           ulSwitched = true;
           for (let pj = 1; pj < PLAN.length; pj++) {
-            if (Date.now() - measureStart > 48000) break;
+            if (Date.now() > DEADLINE) break;
             const s = await postTo(goodUrl, PLAN[pj]);
             if (!s) break;
             samples.push(s);
@@ -590,6 +594,7 @@ export default async function(ctx) {
         data.ulSeries = samples.map(s => parseFloat(s.mbps.toFixed(1)));
         measuredAny = true;
       } else if (ulStatus) ulFailInfo = ulStatus;
+      else if (Date.now() > DEADLINE) ulFailInfo = "超时未完成";
     } catch (e) {}
   }
 
