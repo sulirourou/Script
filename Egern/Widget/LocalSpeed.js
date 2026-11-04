@@ -1,6 +1,6 @@
 /**
  * 📶 Egern 本地测速小组件 (LocalSpeed)
- * 版本：v1.4 (2026-11-04)
+ * 版本：v1.5 (2026-11-04)
  * 环境变量：无 (全部请求优先 policy: DIRECT 直连; 若直连被当前构建拒绝, 自动回退规则路由并在界面注明)
  *
  * 只测本地网络本身: 当前 WiFi / 蜂窝链路直连互联网的实际速度, 不测代理节点。
@@ -12,6 +12,8 @@
  * 与 Ookla 协议 (如高校/运营商的 ooklaserver 主机, /hello 能应答但下载路径不同);
  * 选中节点先做下载通道校验 (先测速网形, 后 Ookla 形), 不通就自动换下一个候选节点。
  * 下载优先响应流分段计数, 否则定量分段采样; 头条取 90 百分位, 口径与 SpeedTest 一致。
+ * 大号带下载/上传全程采样曲线 (与 SpeedTest 同款: 本轮样本现场生成 SVG, 随缓存保留,
+ * 灰虚线为头条值) ---- 曲线是这一轮测速过程的记录图, 不是实时动画; 组件仍是测完一次性出图。
  */
 export default async function(ctx) {
   const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
@@ -241,7 +243,7 @@ export default async function(ctx) {
   };
 
   // ---------- 结果与缓存 ----------
-  let data = { dl: 0, ul: 0, ping: 0, jitter: 0, pl: "-", ts: 0, nodeProv: "", nodeCity: "", nodeOp: "", dist: "", dlBytes: 0, ulBytes: 0, netName, netDetail, nodeSrc: "", diag: "" };
+  let data = { dl: 0, ul: 0, ping: 0, jitter: 0, pl: "-", ts: 0, nodeProv: "", nodeCity: "", nodeOp: "", dist: "", dlBytes: 0, ulBytes: 0, netName, netDetail, nodeSrc: "", diag: "", dlSeries: [], ulSeries: [] };
   let fromCache = false;
   try {
     const cached = ctx.storage.getJSON(CACHE_KEY);
@@ -389,7 +391,7 @@ export default async function(ctx) {
     data.dist = (nodeSrc === "官方接口" && node.distance !== undefined && node.distance !== null && node.distance !== "") ? String(Math.round(parseFloat(node.distance))) : "";
     data.nodeSrc = nodeSrc;
     // 本轮实测开始: 清空上一轮缓存里的测速值, 避免测速失败时把旧值当新值存回
-    data.dl = 0; data.ul = 0; data.dlBytes = 0; data.ulBytes = 0;
+    data.dl = 0; data.ul = 0; data.dlBytes = 0; data.ulBytes = 0; data.dlSeries = []; data.ulSeries = [];
 
     // ---------- 2) 下载: 优先响应流分段计数, 否则定量分段采样 (按节点协议选路径) ----------
     const origin = originOf(node);
@@ -432,6 +434,7 @@ export default async function(ctx) {
           const secs = (Date.now() - t0) / 1000 - 0.5;
           mbps = (b2 > 0 && secs > 0) ? (b2 * 8 / secs / 1e6) : (total * 8 / ((Date.now() - t0) / 1000) / 1e6);
         }
+        data.dlSeries = [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([, b]) => parseFloat((b * 8 / 0.25 / 1e6).toFixed(1)));
         dlDone = { mbps, bytes: total };
       }
     } catch (e) { dlDone = null; }
@@ -462,7 +465,7 @@ export default async function(ctx) {
           if (Date.now() - phaseStart > 9000) break;
           if (sample.seconds > 3) break;
         }
-        if (samples.length > 0) dlDone = { mbps: headline(samples), bytes: samples.reduce((a, s) => a + s.bytes, 0) };
+        if (samples.length > 0) { data.dlSeries = samples.map(s => parseFloat(s.mbps.toFixed(1))); dlDone = { mbps: headline(samples), bytes: samples.reduce((a, s) => a + s.bytes, 0) }; }
       } catch (e) {}
     }
     if (!dlDone && proto === "ookla") {
@@ -488,7 +491,7 @@ export default async function(ctx) {
           if (Date.now() - phaseStart > 9000) break;
           if (sample.seconds > 3) break;
         }
-        if (samples.length > 0) dlDone = { mbps: headline(samples), bytes: samples.reduce((a, s) => a + s.bytes, 0) };
+        if (samples.length > 0) { data.dlSeries = samples.map(s => parseFloat(s.mbps.toFixed(1))); dlDone = { mbps: headline(samples), bytes: samples.reduce((a, s) => a + s.bytes, 0) }; }
       } catch (e) {}
     }
     if (dlDone) {
@@ -522,6 +525,7 @@ export default async function(ctx) {
       if (samples.length > 0) {
         data.ul = parseFloat(headline(samples).toFixed(1));
         data.ulBytes = samples.reduce((a, s) => a + s.bytes, 0);
+        data.ulSeries = samples.map(s => parseFloat(s.mbps.toFixed(1)));
         measuredAny = true;
       }
     } catch (e) {}
@@ -571,6 +575,18 @@ export default async function(ctx) {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 10"><rect width="300" height="10" rx="5" fill="${C.track}"/><rect width="${(pct * 300).toFixed(0)}" height="10" rx="5" fill="${color}"/></svg>`;
     return { type: "image", src: svgDataURI(svg), width: w, height: 10, resizable: true };
   };
+  // 全程采样曲线 (与 SpeedTest 同款画法): 面积填充 + 折线 + 头条值灰虚线; 样本不足返回 null 回退速度条
+  const sparkline = (series, head, color, w, h) => {
+    if (!series || series.length < 2 || !(head > 0)) return null;
+    const max = Math.max(...series, head) * 1.12;
+    if (!(max > 0)) return null;
+    const stepX = w / (series.length - 1);
+    const X = (i) => (i * stepX).toFixed(1);
+    const Y = (v) => (h - 2 - (v / max) * (h - 8)).toFixed(1);
+    const pts = series.map((v, i) => `${X(i)},${Y(v)}`).join(" ");
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polygon points="0,${h} ${pts} ${w},${h}" fill="${color}" opacity="0.16"/><line x1="0" y1="${Y(head)}" x2="${w}" y2="${Y(head)}" stroke="#8E8E93" stroke-width="1" stroke-dasharray="4 3"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+    return { type: "image", src: svgDataURI(svg), width: w, height: h, resizable: true };
+  };
   // 统一指标块: 上灰小标签, 下粗体值 + 小单位
   const metric = (label, value, unit) => col([T(label, 10, C.sub), row([T(value, 15, C.text, "bold"), T(unit, 10, C.sub)], 2)], 1);
   const metricsRow = row([
@@ -592,18 +608,17 @@ export default async function(ctx) {
   let widget;
   if (isLarge) {
     const dlChildren = [
-      row([T("Download 下载", 12, C.dl, "bold"), spacer, T(nodeShort, 11, C.sub)]),
-      row([T(data.dl ? data.dl : "--", 46, C.text, "bold"), T("Mbps", 13, C.sub)], 4),
-      bar(data.dl, C.dl, 326),
-      T(`本次下载 ${(data.dlBytes / 1e6).toFixed(1)} MB`, 10, C.sub),
+      row([T("Download 下载", 12, C.dl, "bold"), spacer, T(`本次 ${(data.dlBytes / 1e6).toFixed(1)} MB`, 10, C.sub)]),
+      row([T(data.dl ? data.dl : "--", 42, C.text, "bold"), T("Mbps", 13, C.sub)], 4),
+      sparkline(data.dlSeries, data.dl, C.dl, 326, 30) || bar(data.dl, C.dl, 326),
     ];
     if (!node && data.diag) dlChildren.push(T(`⚠ ${data.diag}`, 10, C.warn));
     const nodeChildren = [T(nodeLine, 12, C.text), T(srcLine, 10, C.sub)];
     if (node && data.diag) nodeChildren.push(T(`⚠ ${data.diag}`, 10, C.warn));
     widget = {
-      type: "widget", padding: 12, gap: 6, backgroundColor: C.rootBg,
+      type: "widget", padding: 12, gap: 5, backgroundColor: C.rootBg,
       children: [
-        row([T("📶 本地测速", 16, "#FFFFFF", "bold"), spacer, T(timeStr, 11, "rgba(255,255,255,0.75)")], { padding: [8, 12], backgroundGradient: grad(GRAD_HEAD), borderRadius: 14 }),
+        row([T("📶 本地测速", 16, "#FFFFFF", "bold"), spacer, T(timeStr, 11, "rgba(255,255,255,0.75)")], { padding: [6, 12], backgroundGradient: grad(GRAD_HEAD), borderRadius: 14 }),
         panel([
           row([col([T(data.netName, 15, C.text, "bold"), T(data.netDetail || "--", 11, C.sub)], 2), spacer, col([T("本地 IP", 10, C.sub), T(localIP || "--", 13, C.text, "bold")], 2)]),
           T(localBits, 10, C.sub),
@@ -612,7 +627,7 @@ export default async function(ctx) {
         panel([
           row([T("Upload 上传", 12, C.ul, "bold"), spacer, T(`本次上传 ${(data.ulBytes / 1e6).toFixed(1)} MB`, 10, C.sub)]),
           row([T(data.ul ? data.ul : "--", 28, C.text, "bold"), T("Mbps", 11, C.sub)], 4),
-          bar(data.ul, C.ul, 326),
+          sparkline(data.ulSeries, data.ul, C.ul, 326, 30) || bar(data.ul, C.ul, 326),
           metricsRow,
         ]),
         panel(nodeChildren),
