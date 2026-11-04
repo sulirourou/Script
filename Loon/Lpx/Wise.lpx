@@ -3,6 +3,7 @@
 #!author = Gemini
 #!icon = https://icons.duckduckgo.com/ip3/wise.com.ico
 #!date = 2025-12-23
+#!type = normal
 
 [Rule]
 # --- Wise (TransferWise) 合并互补完整版 ---
