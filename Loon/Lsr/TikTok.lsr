@@ -1,5 +1,4 @@
-# TikTok(Oracle Cloud ARM)
-# 在主配置 [Remote Rule] 引用时指定策略：policy=Oracle Cloud ARM
+# TikTok
 USER-AGENT,TikTok*
 DOMAIN-SUFFIX,tiktok.com
 DOMAIN-SUFFIX,tiktokv.com
