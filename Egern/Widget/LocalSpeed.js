@@ -1,6 +1,6 @@
 /**
  * 📶 Egern 本地测速小组件 (LocalSpeed)
- * 版本：v1.7 (2026-11-04)
+ * 版本：v1.8 (2026-11-04)
  * 环境变量：无 (全部请求优先 policy: DIRECT 直连; 若直连被当前构建拒绝, 自动回退规则路由并在界面注明)
  *
  * 只测本地网络本身: 当前 WiFi / 蜂窝链路直连互联网的实际速度, 不测代理节点。
@@ -22,20 +22,29 @@ export default async function(ctx) {
   const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-  // ---------- HTTP: 优先 DIRECT 直连; 首个请求若被拒, 本轮回退规则路由 ----------
+  // ---------- HTTP: 优先 DIRECT 直连; 只有官方接口探测有权判定 DIRECT 是否可用 ----------
+  // (死节点的连接失败不等于 DIRECT 被拒: 锦标赛里一个坏节点的抛错曾把整轮请求毒化成规则路由)
   let directState = "unknown"; // unknown | ok | rejected
   const callHttp = async (method, url, opts) => {
-    if (directState === "unknown") {
-      // 首批请求可能并发: 任一请求发现 DIRECT 被拒, 都置 rejected 并回退普通路由重试
-      try {
-        const r = await ctx.http[method](url, { ...opts, policy: "DIRECT" });
-        directState = "ok";
-        return r;
-      } catch (e) { directState = "rejected"; }
-    } else if (directState === "ok") {
-      return ctx.http[method](url, { ...opts, policy: "DIRECT" });
+    const probe = !!(opts && opts.__probe);
+    const cleanOpts = { ...(opts || {}) };
+    delete cleanOpts.__probe;
+    if (directState === "rejected") return ctx.http[method](url, cleanOpts);
+    if (directState === "unknown" && !probe) {
+      // 非探测请求: 乐观带 DIRECT 发送, 其成败不改判 (只是该节点自己的失败)
+      return ctx.http[method](url, { ...cleanOpts, policy: "DIRECT" });
     }
-    return ctx.http[method](url, opts);
+    try {
+      const r = await ctx.http[method](url, { ...cleanOpts, policy: "DIRECT" });
+      if (directState === "unknown") directState = "ok";
+      return r;
+    } catch (e) {
+      if (probe && directState === "unknown") {
+        directState = "rejected";
+        return ctx.http[method](url, cleanOpts);
+      }
+      throw e;
+    }
   };
   const http = {
     get: (url, opts = {}) => callHttp("get", url, opts),
@@ -163,7 +172,7 @@ export default async function(ctx) {
   const fetchOfficial = async () => {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const resp = await http.get("https://nodes-api.speedtest.cn/", { timeout: 3500, headers: { "User-Agent": UA } });
+        const resp = await http.get("https://nodes-api.speedtest.cn/", { timeout: 3500, headers: { "User-Agent": UA }, __probe: true });
         if (!resp || resp.status !== 200) { nodeDiag = `官方接口 HTTP ${resp ? resp.status : "无响应"}`; }
         else {
           const j = (typeof resp.json === "function") ? await resp.json() : JSON.parse(await resp.text());
@@ -255,6 +264,7 @@ export default async function(ctx) {
 
   const measureStart = Date.now();
   let measuredAny = false;
+  let ulSwitched = false, ulFailInfo = "";
   const p90 = (nums) => {
     if (!nums || nums.length === 0) return 0;
     const s = [...nums].sort((a, b) => a - b);
@@ -323,6 +333,7 @@ export default async function(ctx) {
   };
   // 下载通道校验: 先试测速网形 (/download?ckSize=1), 再试 Ookla 形 (/speedtest/random*.jpg)
   let proto = null, seedSample = null, validateTried = 0, lastDlStatus = "", pickIndex = -1;
+  let ulPool = [];
   const originOf = (nd) => (nd.pingUrl && nd.pingUrl.endsWith("/hello")) ? nd.pingUrl.slice(0, nd.pingUrl.length - 6) : "";
   const validateNode = async (nd) => {
     validateTried++;
@@ -356,7 +367,7 @@ export default async function(ctx) {
     const n = Math.min(3, cands.length);
     for (let i = 0; i < n; i++) {
       const v = await validateNode(cands[i]);
-      if (v.proto) { node = cands[i]; proto = v.proto; seedSample = v.sample || null; pickIndex = i; nodeSrc = srcLabel; return true; }
+      if (v.proto) { node = cands[i]; proto = v.proto; seedSample = v.sample || null; pickIndex = i; nodeSrc = srcLabel; ulPool = cands; return true; }
     }
     return false;
   };
@@ -439,15 +450,19 @@ export default async function(ctx) {
       };
       const oks = await Promise.all(Array.from({ length: STREAMS }, oneStream));
       if (oks.some(Boolean) && total > 0) {
+        // 只统计完整的 250ms 桶: 末尾半截桶字节不满却按整桶算会把曲线尾巴拉塌
+        const fullN = Math.floor((Date.now() - t0) / 250);
+        let entries = [...buckets.entries()].filter(([idx]) => idx < fullN);
+        if (entries.length < 3) entries = [...buckets.entries()];
         const rates = [];
-        for (const [idx, bytes] of buckets) if (idx >= 2) rates.push(bytes * 8 / 0.25 / 1e6);
+        for (const [idx, bytes] of entries) if (idx >= 2) rates.push(bytes * 8 / 0.25 / 1e6);
         let mbps = rates.length >= 3 ? p90(rates) : 0;
         if (!mbps) {
-          let b2 = 0; for (const [idx, bytes] of buckets) if (idx >= 2) b2 += bytes;
+          let b2 = 0; for (const [idx, bytes] of entries) if (idx >= 2) b2 += bytes;
           const secs = (Date.now() - t0) / 1000 - 0.5;
           mbps = (b2 > 0 && secs > 0) ? (b2 * 8 / secs / 1e6) : (total * 8 / ((Date.now() - t0) / 1000) / 1e6);
         }
-        data.dlSeries = [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([, b]) => parseFloat((b * 8 / 0.25 / 1e6).toFixed(1)));
+        data.dlSeries = entries.sort((a, b) => a[0] - b[0]).map(([, b]) => parseFloat((b * 8 / 0.25 / 1e6).toFixed(1)));
         dlDone = { mbps, bytes: total };
       }
     } catch (e) { dlDone = null; }
@@ -513,37 +528,68 @@ export default async function(ctx) {
       measuredAny = true;
     }
 
-    // ---------- 3) 上传: 定量 POST 到节点 /upload ----------
+    // ---------- 3) 上传: 定量 POST 到节点 /upload; 主节点全灭时切同池备用节点 ----------
     try {
       const PLAN = onWifi ? [500000, 1000000, 2000000, 3000000, 3000000] : [500000, 1000000, 2000000, 2000000];
       const samples = [];
       const phaseStart = Date.now();
-      let retried = false;
-      for (let pi = 0; pi < PLAN.length; pi++) {
-        const size = PLAN[pi];
-        if (Date.now() - measureStart > 36000) break;
-        let sample = null;
+      let ulStatus = "";
+      const postTo = async (url, size) => {
+        const body = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz-=".repeat(Math.ceil(size / 64)).slice(0, size);
+        const t0 = Date.now();
         try {
-          const body = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz-=".repeat(Math.ceil(size / 64)).slice(0, size);
-          const t0 = Date.now();
-          const resp = await http.post(proto === "ookla" ? `${origin}/speedtest/upload` : `${node.uploadUrl}?r=${t0}`, { timeout: 10000, body, headers: { "Content-Type": "application/octet-stream" } });
+          const resp = await http.post(url, { timeout: 10000, body, headers: { "Content-Type": "application/octet-stream" } });
           const seconds = (Date.now() - t0) / 1000;
-          if (resp && resp.status === 200 && seconds > 0) {
-            sample = { bytes: size, mbps: (size * 8) / seconds / 1e6, seconds };
-            samples.push(sample);
+          if (resp && resp.status === 200 && seconds > 0) return { bytes: size, mbps: (size * 8) / seconds / 1e6, seconds };
+          ulStatus = `HTTP ${resp ? resp.status : "无响应"}`;
+        } catch (e) { ulStatus = "请求失败"; }
+        return null;
+      };
+      const urlFor = (nd, pr) => pr === "ookla" ? `${originOf(nd)}/speedtest/upload` : `${nd.uploadUrl}?r=${Date.now()}`;
+      let retried = false;
+      let pi = 0;
+      while (pi < PLAN.length) {
+        if (Date.now() - measureStart > 36000) break;
+        const s = await postTo(urlFor(node, proto), PLAN[pi]);
+        if (s) {
+          samples.push(s); pi++;
+          if (Date.now() - phaseStart > 8000) break;
+          if (s.seconds > 3.5) break;
+          continue;
+        }
+        if (!retried) { retried = true; await sleep(600); continue; }
+        break;
+      }
+      if (samples.length === 0) {
+        // 换节点: 同池其它候选逐个探测 (两种上传路径都试), 通了就在那儿跑完阶梯
+        const alts = (ulPool || []).filter(c => c && c !== node).slice(0, 2);
+        for (const cand of alts) {
+          if (Date.now() - measureStart > 42000) break;
+          const shapes = [`${cand.uploadUrl}?r=${Date.now()}`];
+          if (originOf(cand)) shapes.push(`${originOf(cand)}/speedtest/upload`);
+          let goodUrl = "";
+          for (const u of shapes) {
+            const probe = await postTo(u, 500000);
+            if (probe) { samples.push(probe); goodUrl = u; break; }
           }
-        } catch (e) { sample = null; }
-        if (!sample && samples.length === 0 && !retried) { retried = true; pi--; await sleep(600); continue; }
-        if (!sample) break;
-        if (Date.now() - phaseStart > 8000) break;
-        if (sample.seconds > 3.5) break;
+          if (!goodUrl) continue;
+          ulSwitched = true;
+          for (let pj = 1; pj < PLAN.length; pj++) {
+            if (Date.now() - measureStart > 48000) break;
+            const s = await postTo(goodUrl, PLAN[pj]);
+            if (!s) break;
+            samples.push(s);
+            if (s.seconds > 3.5) break;
+          }
+          break;
+        }
       }
       if (samples.length > 0) {
         data.ul = parseFloat(headline(samples).toFixed(1));
         data.ulBytes = samples.reduce((a, s) => a + s.bytes, 0);
         data.ulSeries = samples.map(s => parseFloat(s.mbps.toFixed(1)));
         measuredAny = true;
-      }
+      } else if (ulStatus) ulFailInfo = ulStatus;
     } catch (e) {}
   }
 
@@ -558,8 +604,9 @@ export default async function(ctx) {
       if (nodeSrc && nodeSrc !== "官方接口") parts.push(`取点: ${nodeSrc}${nodeDiag ? " (" + nodeDiag + ")" : ""}`);
       if (pickIndex > 0) parts.push(`前 ${pickIndex} 个节点下载不通, 已自动切换`);
       if (proto === "ookla") parts.push("该节点为 Ookla 协议");
+      if (ulSwitched) parts.push("上传已切换至同池备用节点");
       if (node && !data.dl && !data.ul) parts.push("节点已选定但测速无数据");
-      else if (node && data.dl && !data.ul) parts.push("上传无数据");
+      else if (node && data.dl && !data.ul) parts.push(`上传无数据${ulFailInfo ? " (最后状态 " + ulFailInfo + ")" : ""}`);
     }
     data.diag = parts.join(" · ");
   }
@@ -584,7 +631,7 @@ export default async function(ctx) {
   const col = (children, extra) => merge({ type: "stack", direction: "column", alignItems: "start", children: children || [] }, extra);
   const spacer = { type: "spacer" };
   const grad = (colors) => ({ type: "linear", colors, startPoint: { x: 0, y: 0 }, endPoint: { x: 1, y: 1 } });
-  const panel = (children, extra) => merge({ type: "stack", direction: "column", alignItems: "start", padding: [9, 12], gap: 5, backgroundColor: C.card, borderRadius: 16, children: children || [] }, extra);
+  const panel = (children, extra) => merge({ type: "stack", direction: "column", alignItems: "start", padding: [8, 12], gap: 4, backgroundColor: C.card, borderRadius: 16, children: children || [] }, extra);
   const svgDataURI = (svg) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg).replace(/'/g, "%27").replace(/"/g, "%22");
   const bar = (mbps, color, w) => {
     const pct = mbps > 0 ? Math.max(0.02, Math.min(1, Math.log10(mbps + 1) / 3)) : 0;
@@ -594,11 +641,11 @@ export default async function(ctx) {
   // 全程采样曲线 (与 SpeedTest 同款画法): 面积填充 + 折线 + 头条值灰虚线; 样本不足返回 null 回退速度条
   const sparkline = (series, head, color, w, h, minPts) => {
     if (!series || series.length < (minPts || 2) || !(head > 0)) return null;
-    const max = Math.max(...series, head) * 1.12;
-    if (!(max > 0)) return null;
+    // 标尺按头条与 p90 定, 不按单个最大桶: 否则一个爆发桶会把整条曲线压扁、虚线浮空
+    const max = Math.max(head * 1.3, p90(series) * 1.15, 1);
     const stepX = w / (series.length - 1);
     const X = (i) => (i * stepX).toFixed(1);
-    const Y = (v) => (h - 2 - (v / max) * (h - 8)).toFixed(1);
+    const Y = (v) => Math.max(2, h - 2 - (Math.min(v, max) / max) * (h - 8)).toFixed(1);
     const pts = series.map((v, i) => `${X(i)},${Y(v)}`).join(" ");
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polygon points="0,${h} ${pts} ${w},${h}" fill="${color}" opacity="0.16"/><line x1="0" y1="${Y(head)}" x2="${w}" y2="${Y(head)}" stroke="#8E8E93" stroke-width="1" stroke-dasharray="4 3"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
     return { type: "image", src: svgDataURI(svg), width: w, height: h, resizable: true };
@@ -618,36 +665,35 @@ export default async function(ctx) {
     : "测速点 未知";
   const timeStr = fromCache ? `缓存 ${fmtT(data.ts)}` : fmtT(data.ts || Date.now());
   const usedMB = ((data.dlBytes + data.ulBytes) / 1e6).toFixed(1);
-  const localBits = [localIP ? `本机 ${localIP}` : "", iface ? `接口 ${iface}` : "", showGateway ? `网关 ${gateway}` : ""].filter(Boolean).join(" · ");
+  const localBits = [iface ? `接口 ${iface}` : "", showGateway ? `网关 ${gateway}` : ""].filter(Boolean).join(" · ");
   const srcLine = `节点来源: ${data.nodeSrc || "--"} · 本次约 ${usedMB} MB`;
 
   let widget;
   if (isLarge) {
     const dlChildren = [
       row([T("Download 下载", 12, C.dl, "bold"), spacer, T(`本次 ${(data.dlBytes / 1e6).toFixed(1)} MB`, 10, C.sub)]),
-      row([T(data.dl ? data.dl : "--", 42, C.text, "bold"), T("Mbps", 13, C.sub)], 4),
-      sparkline(data.dlSeries, data.dl, C.dl, 326, 30, 4) || bar(data.dl, C.dl, 326),
+      row([T(data.dl ? data.dl : "--", 36, C.text, "bold"), T("Mbps", 13, C.sub)], 4),
+      sparkline(data.dlSeries, data.dl, C.dl, 326, 25, 4) || bar(data.dl, C.dl, 326),
     ];
     if (!node && data.diag) dlChildren.push(T(`⚠ ${data.diag}`, 10, C.warn));
-    // 底部不再用整块面板 (真机上会被卡片高度裁掉下半截): 测速点与来源合并成一行小字, 诊断紧随其后
+    // 底部用薄面板收尾 (与其它卡片同底色语言, 不再是浮在灰底上的裸文字行); 内容仍是一行小字+诊断
     const footChildren = [T(`${nodeLine} · ${srcLine}`, 10, C.sub)];
     if (node && data.diag) footChildren.push(T(`⚠ ${data.diag}`, 10, C.warn));
     widget = {
-      type: "widget", padding: 12, gap: 5, backgroundColor: C.rootBg,
+      type: "widget", padding: 10, gap: 3, backgroundColor: C.rootBg,
       children: [
-        row([T("📶 本地测速", 16, "#FFFFFF", "bold"), spacer, T(timeStr, 11, "rgba(255,255,255,0.75)")], { padding: [6, 12], backgroundGradient: grad(GRAD_HEAD), borderRadius: 14 }),
+        row([T("📶 本地测速", 16, "#FFFFFF", "bold"), spacer, T(timeStr, 11, "rgba(255,255,255,0.75)")], { padding: [7, 12], backgroundGradient: grad(GRAD_HEAD), borderRadius: 16 }),
         panel([
-          row([col([T(data.netName, 15, C.text, "bold"), T(data.netDetail || "--", 11, C.sub)], 2), spacer, col([T("本地 IP", 10, C.sub), T(localIP || "--", 13, C.text, "bold")], 2)]),
-          T(localBits, 10, C.sub),
+          row([col([T(data.netName, 15, C.text, "bold"), T(data.netDetail || "--", 11, C.sub)], 2), spacer, col([T("本地 IP", 10, C.sub), T(localIP || "--", 13, C.text, "bold"), T(localBits, 10, C.sub)], 2)]),
         ]),
         panel(dlChildren),
         panel([
           row([T("Upload 上传", 12, C.ul, "bold"), spacer, T(`本次上传 ${(data.ulBytes / 1e6).toFixed(1)} MB`, 10, C.sub)]),
-          row([T(data.ul ? data.ul : "--", 28, C.text, "bold"), T("Mbps", 11, C.sub)], 4),
-          sparkline(data.ulSeries, data.ul, C.ul, 326, 30, 3) || bar(data.ul, C.ul, 326),
+          row([T(data.ul ? data.ul : "--", 26, C.text, "bold"), T("Mbps", 11, C.sub)], 4),
+          sparkline(data.ulSeries, data.ul, C.ul, 326, 25, 3) || bar(data.ul, C.ul, 326),
           metricsRow,
         ]),
-        col(footChildren, 3),
+        panel(footChildren, { padding: [7, 12], gap: 3, borderRadius: 12 }),
       ],
     };
   } else if (!isSmall) {
