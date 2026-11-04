@@ -1,6 +1,6 @@
 /**
  * 🌏 Egern IPPure 小组件
- * 版本：v1.4 (2026-11-04)
+ * 版本：v1.6 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -86,43 +86,48 @@ export default async function(ctx) {
     return res.join(" ").trim() || "未知";
   }
 
-  // 2. 微软 Edge 翻译: token 全程只取一次 + 批量翻译 (失败整组回退原文)
-  let tokenPromise = null;
-  function getMsToken() {
-    if (!tokenPromise) {
-      tokenPromise = (async () => {
-        const r = await ctx.http.get("https://edge.microsoft.com/translate/auth", { timeout: TIMEOUT_TRANS, headers: { 'User-Agent': UA } });
-        return await r.text();
-      })();
-    }
-    return tokenPromise;
+  // 2. 在线翻译 (双接口, 均免 key): 谷歌 gtx 优先 (地名质量最好), 逐条失败
+  // 再落 MyMemory (可直连); 两者都失败回退原文。已是目标语种的条目直接跳过,
+  // 不发请求。批量条目并行发出, 不再串行瀑布。
+  async function googleTranslate(text, to) {
+    const tl = to === "en" ? "en" : "zh-CN";
+    const r = await ctx.http.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`, { timeout: TIMEOUT_TRANS, headers: { 'User-Agent': UA } });
+    const j = await r.json();
+    if (!Array.isArray(j) || !Array.isArray(j[0])) return "";
+    return j[0].map(seg => (seg && seg[0]) || "").join("");
   }
 
-  async function msTranslateBatch(texts, to) {
+  async function myMemoryTranslate(text, to) {
+    const pair = to === "en" ? "zh-CN|en" : "en|zh-CN";
+    const r = await ctx.http.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(pair)}`, { timeout: TIMEOUT_TRANS, headers: { 'User-Agent': UA } });
+    const j = await r.json();
+    if (!j || !j.responseData || String(j.responseStatus) !== "200" || j.responseData.quotaFinished) return "";
+    return j.responseData.translatedText || "";
+  }
+
+  async function translateBatch(texts, to) {
     const list = texts.map(t => t || "");
-    try {
-      const token = await getMsToken();
-      if (!token) return list;
-      const reqRes = await ctx.http.post(`https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=${to}`, {
-        timeout: TIMEOUT_TRANS,
-        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(list.map(t => ({ "Text": t || " " })))
-      });
-      const res = await reqRes.json();
-      if (!Array.isArray(res)) return list;
-      return list.map((t, i) => {
-        if (!t || t === "Unknown") return "";
-        const tr = res[i] && res[i].translations && res[i].translations[0] && res[i].translations[0].text;
-        return tr || t;
-      });
-    } catch (e) { return list; }
+    const settled = await Promise.allSettled(list.map(async (t) => {
+      if (!t || t === "Unknown") return "";
+      const hasCjk = /[\u4e00-\u9fff]/.test(t);
+      if (to !== "en" && hasCjk && !/[A-Za-z]/.test(t)) return t;
+      if (to === "en" && !hasCjk) return t;
+      try { const g = await googleTranslate(t, to); if (g) return g; } catch (e) {}
+      try { const m = await myMemoryTranslate(t, to); if (m) return m; } catch (e) {}
+      return t;
+    }));
+    return list.map((t, i) => {
+      const v = settled[i].status === "fulfilled" ? settled[i].value : "";
+      if (!t || t === "Unknown") return v || "";
+      return v || t;
+    });
   }
 
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
   function saveProxyCache() {
     try {
-      ctx.storage.setString("ippure_proxy_v2", JSON.stringify({
+      ctx.storage.setString("ippure_proxy_v3", JSON.stringify({
         t: Date.now(),
         d: { ip: proxyData.ip, title: proxyData.title, detail: proxyData.detail, isp: proxyData.isp, flag: proxyData.flag, risk: proxyData.risk, isDC: proxyData.isDC }
       }));
@@ -131,7 +136,7 @@ export default async function(ctx) {
 
   function loadProxyCache() {
     try {
-      const raw = ctx.storage.getString("ippure_proxy_v2");
+      const raw = ctx.storage.getString("ippure_proxy_v3");
       if (!raw) return false;
       const c = JSON.parse(raw);
       if (!c || !c.d || !c.d.ip || (Date.now() - (c.t || 0)) > 24 * 3600 * 1000) return false;
@@ -145,7 +150,7 @@ export default async function(ctx) {
   // 3. 按 IP 查本地化地名: ip-api 支持指定任意 IP + lang 返回对应语言地名
   // (与 IP-API 组件同源)。代理标题要中文名 (zh-CN), 本地详情要全英文名 (en)。
   // 这是按 IP 查数据库, 不经过代理出口, 不影响 IPPure 主数据; 结果按 IP
-  // 缓存 24h。查不到返回 null, 由后面的翻译/内置表兜底。
+  // 缓存 24h。在线翻译给不全地名时由本函数补缺, 查不到返回 null。
   async function lookupGeo(ip, lang) {
     if (!ip) return null;
     const key = "ippure_geo_v1:" + lang + ":" + ip;
@@ -179,21 +184,24 @@ export default async function(ctx) {
     let region = j.region || j.regionName || "";
     let city = j.city || "";
 
-    // 第一行 = 国家 + 地区 (均为中文): 首选按 IP 查到的中文地名 (全球覆盖,
-    // 不受词表限制); 查不到才退回翻译结果与内置地名表
-    let title = "";
-    const geoCn = await lookupGeo(j.ip, "zh-CN");
-    if (geoCn && isPureCn(geoCn.country)) {
-      const reg = isPureCn(geoCn.region) ? geoCn.region : (isPureCn(geoCn.city) ? geoCn.city : "");
-      title = [geoCn.country, reg].filter(Boolean).join(" ");
+    // 第一行 = 国家 + 地区 (均为中文): 首选在线翻译 (谷歌 gtx -> MyMemory),
+    // 翻译给不全时按 IP 查到的中文地名补缺, 最后才用内置地名表
+    const [countryTr, regionTr, cityTr] = await translateBatch([country, region, city], "zh-Hans");
+    let countryCn = isPureCn(countryTr) ? countryTr.trim() : "";
+    let regionCn = isPureCn(regionTr) ? regionTr.trim() : (isPureCn(cityTr) ? cityTr.trim() : "");
+    if (!countryCn || !regionCn) {
+      const geoCn = await lookupGeo(j.ip, "zh-CN");
+      if (geoCn && isPureCn(geoCn.country)) {
+        if (!countryCn) countryCn = geoCn.country;
+        if (!regionCn) regionCn = isPureCn(geoCn.region) ? geoCn.region : (isPureCn(geoCn.city) ? geoCn.city : "");
+      }
     }
-    if (!title) {
-      const [countryTr, regionTr, cityTr] = await msTranslateBatch([country, region, city], "zh-Hans");
-      const countryCn = localizedCountry(country, j.countryCode, countryTr);
-      let regionCn = localizedRegion(j.countryCode, region, j.regionCode, regionTr);
+    if (!countryCn) countryCn = localizedCountry(country, j.countryCode, countryTr);
+    if (!regionCn) {
+      regionCn = localizedRegion(j.countryCode, region, j.regionCode, regionTr);
       if (!regionCn) regionCn = localizedRegion(j.countryCode, city, "", cityTr);
-      title = [countryCn, regionCn].filter(Boolean).join(" ");
     }
+    const title = [countryCn, regionCn].filter(Boolean).join(" ");
     proxyData.title = title || "未知节点";
     proxyData.detail = getEnDetail(country, region, city);
 
@@ -239,16 +247,17 @@ export default async function(ctx) {
         }
         localData.isp = `China ${localCarrierEn}`;
 
-        // 标题 (中文) 沿用原翻译路径; 详情行要全英文: 首选按本地 IP 查到的
-        // 英文地名 (全拼, 不混中文), 查不到才退回原来的翻译路径
-        const zh = await msTranslateBatch([country, city], "zh-Hans");
+        // 标题 (中文) 沿用原翻译路径; 详情行要全英文: 首选在线翻译,
+        // 译文仍带中文 (翻译失败回退了原文) 时才按本地 IP 查英文地名补缺
+        const zh = await translateBatch([country, city], "zh-Hans");
         localData.title = getCnTitle(zh[0], "", zh[1]) || "本地网络";
-        const geoEn = await lookupGeo(localData.ip, "en");
-        if (geoEn) {
-          localData.detail = getEnDetail(geoEn.country, geoEn.region, geoEn.city);
+        const en = await translateBatch([prov, city], "en");
+        const enDetail = getEnDetail("China", en[0], en[1]);
+        if (enDetail && !/[\u4e00-\u9fff]/.test(enDetail)) {
+          localData.detail = enDetail;
         } else {
-          const en = await msTranslateBatch([prov, city], "en");
-          localData.detail = getEnDetail("China", en[0], en[1]);
+          const geoEn = await lookupGeo(localData.ip, "en");
+          localData.detail = geoEn ? getEnDetail(geoEn.country, geoEn.region, geoEn.city) : enDetail;
         }
 
         localData.flag = "🇨🇳";
