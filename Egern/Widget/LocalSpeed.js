@@ -1,6 +1,6 @@
 /**
  * 📶 Egern 本地测速小组件 (LocalSpeed)
- * 版本：v2.0 (2026-11-04)
+ * 版本：v2.1 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则全部测速请求按 Egern 默认规则路由
@@ -12,8 +12,11 @@
  * 延迟探测 GET 节点 /hello, 下载 GET /download?ckSize=&size=, 上传 POST /upload。
  * 取点顺序: 1) 官方接口按出口 IP 返回的就近节点表 (AES 加密, 脚本内含纯 JS 解密);
  * 2) 内置节点快照按 /hello 实测延迟选点; 3) 远程公开节点表; 4) 上次缓存的节点表。
- * 候选先做双向校验 (1MiB 下载 + 100KB 上传), 都通才用 (下载样本直接算作阶梯第一档,
- * 不浪费; 上传坏的节点在选点阶段就淘汰, 不会测出上传 0); 只认测速网协议的节点。
+ * 候选先做双向校验 (1MiB 下载 + 100KB 上传), 都通才用 (上传坏的节点在选点阶段
+ * 就淘汰, 不会测出上传 0); 只认测速网协议的节点。
+ * 响应体读法 (真机记录, 勿改): 这批节点的下载体是二进制流 -- 校验用 text() 判非空,
+ * 测速用 body 流式逐块数字节; 曾用 arrayBuffer() 做校验, 在真机上对这批节点
+ * 100% 失败 (v1.8~v2.0), 而 text()/流式读法在 v1.4/v1.5/v1.7 均真机通过。
  * 全部请求跟随 Egern 规则路由 (与 SpeedTest 相同),
  * 不再强制 DIRECT。建议在 Egern 的脚本设置里把本脚本超时调到 60 秒。
  */
@@ -275,31 +278,55 @@ export default async function(ctx) {
   const UL_BODY_PAT = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz-=";
   const ulBody = (size) => UL_BODY_PAT.repeat(Math.ceil(size / 64)).slice(0, size);
 
-  // ---------- 选点: 候选先做一发 1MiB 下载校验, 样本直接用作下载阶梯第一档 ----------
-  let node = null, nodeSrc = "", seedSample = null;
+  // ---------- 下载读取: 流式逐块数字节 (真机验证过的读法, 块用完即弃, 不整包驻留) ----------
+  const fetchDownload = async (url, timeoutMs) => {
+    try {
+      const t0 = Date.now();
+      const resp = await http.get(url, { headers: { "Cache-Control": "no-cache" }, timeout: timeoutMs });
+      if (!resp || resp.status !== 200) return null;
+      let bytes = 0;
+      const body = resp.body;
+      if (body && typeof body.getReader === "function") {
+        const reader = body.getReader();
+        try {
+          for (;;) {
+            const r = await reader.read();
+            if (!r || r.done) break;
+            if (r.value) bytes += r.value.byteLength || r.value.length || 0;
+            if (bytes > 6291456) { try { await reader.cancel(); } catch (e) {} return null; }
+          }
+        } catch (e) { try { await reader.cancel(); } catch (e2) {} return null; }
+      } else {
+        const buf = await resp.arrayBuffer();
+        bytes = buf ? buf.byteLength : 0;
+      }
+      const seconds = (Date.now() - t0) / 1000;
+      return (bytes > 0 && seconds > 0) ? { bytes, seconds } : null;
+    } catch (e) { return null; }
+  };
+
+  // ---------- 选点: 候选先做双向校验 (下载 text() 判非空 + 100KB 上传探活) ----------
+  let node = null, nodeSrc = "";
   const SEL_BUDGET_MS = 12000;
   const validateDownload = async (nd) => {
     try {
-      const t0 = Date.now();
       const resp = await http.get(dlUrl(nd, 1048576), { timeout: 5000, headers: { "Cache-Control": "no-cache" } });
-      if (!resp || resp.status !== 200) return null;
-      const buf = await resp.arrayBuffer();
-      const seconds = (Date.now() - t0) / 1000;
-      if (!buf || !buf.byteLength || buf.byteLength > 2097152 || seconds <= 0) return null;
+      if (!resp || resp.status !== 200) return false;
+      const txt = await resp.text();
+      if (!txt || !txt.length) return false;
       if (typeof http.post === "function") {
         const presp = await http.post(ulUrl(nd), { headers: { "Cache-Control": "no-cache", "Content-Type": "application/octet-stream" }, body: ulBody(100000), timeout: 5000 });
-        if (!presp || presp.status !== 200) return null;
+        if (!presp || presp.status !== 200) return false;
       }
-      return { bytes: buf.byteLength, mbps: (buf.byteLength * 8) / seconds / 1e6, seconds };
+      return true;
     } catch (e) {}
-    return null;
+    return false;
   };
   const tryCandidates = async (list, srcLabel, maxTry) => {
     const n = Math.min(maxTry, list.length);
     for (let i = 0; i < n; i++) {
       if (i > 0 && Date.now() - measureStart > SEL_BUDGET_MS) break;
-      const s = await validateDownload(list[i]);
-      if (s) { node = list[i]; nodeSrc = srcLabel; seedSample = s; return true; }
+      if (await validateDownload(list[i])) { node = list[i]; nodeSrc = srcLabel; return true; }
     }
     return false;
   };
@@ -375,25 +402,15 @@ export default async function(ctx) {
 
     // ---------- 2) 下载测速: 阶梯多样本采样 (SpeedTest 同款) ----------
     const DL_PLAN = [100000, 100000, 500000, 500000, 1000000, 1000000, 3000000, 5000000, 5000000];
-    const dlSamples = seedSample ? [seedSample] : [];
+    const dlSamples = [];
     try {
       const dlPhaseStart = Date.now();
       for (const planBytes of DL_PLAN) {
         if (Date.now() - measureStart > 22000) break;
-        let sample = null;
-        try {
-          const t0 = Date.now();
-          const resp = await http.get(dlUrl(node, planBytes), { headers: { "Cache-Control": "no-cache" }, timeout: 10000 });
-          if (resp && resp.status === 200) {
-            const buf = await resp.arrayBuffer();
-            const seconds = (Date.now() - t0) / 1000;
-            if (buf && buf.byteLength > 0 && buf.byteLength <= 6291456 && seconds > 0) {
-              sample = { bytes: buf.byteLength, mbps: (buf.byteLength * 8) / seconds / 1e6, seconds };
-              dlSamples.push(sample);
-            }
-          }
-        } catch (e) { break; }
-        if (!sample) break;
+        const r = await fetchDownload(dlUrl(node, planBytes), 10000);
+        if (!r) break;
+        const sample = { bytes: r.bytes, mbps: (r.bytes * 8) / r.seconds / 1e6, seconds: r.seconds };
+        dlSamples.push(sample);
         if (Date.now() - dlPhaseStart > 9000) break;
         if (sample.seconds > 3) break;
       }
@@ -477,14 +494,10 @@ export default async function(ctx) {
           let total = 0;
           while (Date.now() - t0 < 2200 && total < 40000000) {
             const endSpan = beginSpan();
-            try {
-              const resp = await http.get(dlUrl(node, 1000000), { headers: { "Cache-Control": "no-cache" }, timeout: 6000 });
-              if (!resp || resp.status !== 200) { endSpan(); break; }
-              const buf = await resp.arrayBuffer();
-              endSpan();
-              if (!buf || !buf.byteLength) break;
-              total += buf.byteLength;
-            } catch (e) { endSpan(); break; }
+            const r = await fetchDownload(dlUrl(node, 1000000), 6000);
+            endSpan();
+            if (!r) break;
+            total += r.bytes;
           }
           const sec = (Date.now() - t0) / 1000;
           if (total > 0 && sec > 0.2) return { bytes: total, mbps: (total * 8) / sec / 1e6, seconds: sec };
