@@ -1,6 +1,6 @@
 /**
  * 📶 Egern 本地测速小组件 (LocalSpeed)
- * 版本：v1.5 (2026-11-04)
+ * 版本：v1.6 (2026-11-04)
  * 环境变量：无 (全部请求优先 policy: DIRECT 直连; 若直连被当前构建拒绝, 自动回退规则路由并在界面注明)
  *
  * 只测本地网络本身: 当前 WiFi / 蜂窝链路直连互联网的实际速度, 不测代理节点。
@@ -22,15 +22,15 @@ export default async function(ctx) {
   // ---------- HTTP: 优先 DIRECT 直连; 首个请求若被拒, 本轮回退规则路由 ----------
   let directState = "unknown"; // unknown | ok | rejected
   const callHttp = async (method, url, opts) => {
-    if (directState !== "rejected") {
+    if (directState === "unknown") {
+      // 首批请求可能并发: 任一请求发现 DIRECT 被拒, 都置 rejected 并回退普通路由重试
       try {
         const r = await ctx.http[method](url, { ...opts, policy: "DIRECT" });
         directState = "ok";
         return r;
-      } catch (e) {
-        if (directState !== "unknown") throw e;
-        directState = "rejected";
-      }
+      } catch (e) { directState = "rejected"; }
+    } else if (directState === "ok") {
+      return ctx.http[method](url, { ...opts, policy: "DIRECT" });
     }
     return ctx.http[method](url, opts);
   };
@@ -160,7 +160,7 @@ export default async function(ctx) {
   const fetchOfficial = async () => {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const resp = await http.get("https://nodes-api.speedtest.cn/", { timeout: 5000, headers: { "User-Agent": UA } });
+        const resp = await http.get("https://nodes-api.speedtest.cn/", { timeout: 3500, headers: { "User-Agent": UA } });
         if (!resp || resp.status !== 200) { nodeDiag = `官方接口 HTTP ${resp ? resp.status : "无响应"}`; }
         else {
           const j = (typeof resp.json === "function") ? await resp.json() : JSON.parse(await resp.text());
@@ -172,7 +172,7 @@ export default async function(ctx) {
           return null;
         }
       } catch (e) { nodeDiag = "官方接口请求失败"; }
-      if (attempt === 0) await sleep(800);
+      if (attempt === 0) await sleep(400);
     }
     return null;
   };
@@ -358,7 +358,10 @@ export default async function(ctx) {
     return false;
   };
   try {
-    const official = await fetchOfficial();
+    // 官方接口与内置表选点并行启动: 官方不通时不再干等它两次超时, 锦标赛结果已经备好
+    const officialP = fetchOfficial();
+    const snapRankedP = tournamentRanked(orderPool(SNAPSHOT.map(snapNode)));
+    const official = await officialP;
     if (official) {
       try { ctx.storage.setJSON(NODES_KEY, { ts: Date.now(), nodes: official }); } catch (e) {}
       if (!(await pickFrom(rankOfficial(official).slice(0, 3), "官方接口"))) {
@@ -366,7 +369,7 @@ export default async function(ctx) {
       }
     }
     if (!node) {
-      const ranked = await tournamentRanked(orderPool(SNAPSHOT.map(snapNode)));
+      const ranked = await snapRankedP;
       if (ranked.length) await pickFrom(ranked.slice(0, 4), "内置节点表");
     }
     if (!node) {
@@ -403,7 +406,7 @@ export default async function(ctx) {
       const buckets = new Map();
       let total = 0;
       const t0 = Date.now();
-      const streamUrl = proto === "ookla" ? `${origin}/speedtest/random4000x4000.jpg` : `${node.downloadUrl}?cors=true&r=${Date.now()}&ckSize=10&size=10485760`;
+      const streamUrl = proto === "ookla" ? `${origin}/speedtest/random4000x4000.jpg` : `${node.downloadUrl}?cors=true&r=${Date.now()}&ckSize=100&size=104857600`;
       const oneStream = async () => {
         try {
           const url = streamUrl;
@@ -505,7 +508,9 @@ export default async function(ctx) {
       const PLAN = onWifi ? [500000, 1000000, 2000000, 3000000, 3000000] : [500000, 1000000, 2000000, 2000000];
       const samples = [];
       const phaseStart = Date.now();
-      for (const size of PLAN) {
+      let retried = false;
+      for (let pi = 0; pi < PLAN.length; pi++) {
+        const size = PLAN[pi];
         if (Date.now() - measureStart > 36000) break;
         let sample = null;
         try {
@@ -517,7 +522,8 @@ export default async function(ctx) {
             sample = { bytes: size, mbps: (size * 8) / seconds / 1e6, seconds };
             samples.push(sample);
           }
-        } catch (e) { break; }
+        } catch (e) { sample = null; }
+        if (!sample && samples.length === 0 && !retried) { retried = true; pi--; await sleep(600); continue; }
         if (!sample) break;
         if (Date.now() - phaseStart > 8000) break;
         if (sample.seconds > 3.5) break;
@@ -576,8 +582,8 @@ export default async function(ctx) {
     return { type: "image", src: svgDataURI(svg), width: w, height: 10, resizable: true };
   };
   // 全程采样曲线 (与 SpeedTest 同款画法): 面积填充 + 折线 + 头条值灰虚线; 样本不足返回 null 回退速度条
-  const sparkline = (series, head, color, w, h) => {
-    if (!series || series.length < 2 || !(head > 0)) return null;
+  const sparkline = (series, head, color, w, h, minPts) => {
+    if (!series || series.length < (minPts || 2) || !(head > 0)) return null;
     const max = Math.max(...series, head) * 1.12;
     if (!(max > 0)) return null;
     const stepX = w / (series.length - 1);
@@ -603,18 +609,19 @@ export default async function(ctx) {
   const timeStr = fromCache ? `缓存 ${fmtT(data.ts)}` : fmtT(data.ts || Date.now());
   const usedMB = ((data.dlBytes + data.ulBytes) / 1e6).toFixed(1);
   const localBits = [localIP ? `本机 ${localIP}` : "", iface ? `接口 ${iface}` : "", showGateway ? `网关 ${gateway}` : ""].filter(Boolean).join(" · ");
-  const srcLine = `节点来源: ${data.nodeSrc || "--"} · 本次流量约 ${usedMB} MB · 全程直连不经代理`;
+  const srcLine = `节点来源: ${data.nodeSrc || "--"} · 本次约 ${usedMB} MB`;
 
   let widget;
   if (isLarge) {
     const dlChildren = [
       row([T("Download 下载", 12, C.dl, "bold"), spacer, T(`本次 ${(data.dlBytes / 1e6).toFixed(1)} MB`, 10, C.sub)]),
       row([T(data.dl ? data.dl : "--", 42, C.text, "bold"), T("Mbps", 13, C.sub)], 4),
-      sparkline(data.dlSeries, data.dl, C.dl, 326, 30) || bar(data.dl, C.dl, 326),
+      sparkline(data.dlSeries, data.dl, C.dl, 326, 30, 4) || bar(data.dl, C.dl, 326),
     ];
     if (!node && data.diag) dlChildren.push(T(`⚠ ${data.diag}`, 10, C.warn));
-    const nodeChildren = [T(nodeLine, 12, C.text), T(srcLine, 10, C.sub)];
-    if (node && data.diag) nodeChildren.push(T(`⚠ ${data.diag}`, 10, C.warn));
+    // 底部不再用整块面板 (真机上会被卡片高度裁掉下半截): 测速点与来源合并成一行小字, 诊断紧随其后
+    const footChildren = [T(`${nodeLine} · ${srcLine}`, 10, C.sub)];
+    if (node && data.diag) footChildren.push(T(`⚠ ${data.diag}`, 10, C.warn));
     widget = {
       type: "widget", padding: 12, gap: 5, backgroundColor: C.rootBg,
       children: [
@@ -627,10 +634,10 @@ export default async function(ctx) {
         panel([
           row([T("Upload 上传", 12, C.ul, "bold"), spacer, T(`本次上传 ${(data.ulBytes / 1e6).toFixed(1)} MB`, 10, C.sub)]),
           row([T(data.ul ? data.ul : "--", 28, C.text, "bold"), T("Mbps", 11, C.sub)], 4),
-          sparkline(data.ulSeries, data.ul, C.ul, 326, 30) || bar(data.ul, C.ul, 326),
+          sparkline(data.ulSeries, data.ul, C.ul, 326, 30, 3) || bar(data.ul, C.ul, 326),
           metricsRow,
         ]),
-        panel(nodeChildren),
+        col(footChildren, 3),
       ],
     };
   } else if (!isSmall) {
@@ -647,8 +654,7 @@ export default async function(ctx) {
         T(`抖动 ${data.ping ? data.jitter : "--"} ms`, 11, C.text), spacer,
         T(`丢包 ${data.pl === "-" ? "--" : data.pl} %`, 11, C.text),
       ]),
-      T(nodeLine, 11, C.sub),
-      T(srcLine, 10, C.sub),
+      T(`${nodeLine} · ${srcLine}`, 10, C.sub),
     ];
     if (data.diag) children.push(T(`⚠ ${data.diag}`, 10, C.warn));
     widget = { type: "widget", padding: 12, gap: 6, backgroundColor: C.rootBg, children };
