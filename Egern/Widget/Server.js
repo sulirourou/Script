@@ -1,15 +1,18 @@
 /**
  * 📌 桌面大组件: 🖥️ Server
- * * 📖 【使用指南 · 必读】
- * 1. 🔐 环境变量配置 (Environment Variables)：
- * 👉 Host: 服务器 IP (例如 192.168.1.1)
- * 👉 User: 登录用户名 (例如 root)
- * 👉 Privatekey: SSH 私钥 (私钥登录使用)
- * 👉 Password: 登录密码 (密码登录使用)
- * 👉 Port: SSH 端口 (如果不填，代码会自动默认 22)
- * 2. 🎨 界面自定义：
- * 👉 你可以在下方的【UI 颜色与字体手动配置区】自由调整底部文字的字号 and 颜色。
- * */
+ * 环境变量：
+ * 名称：Host
+ * 值：服务器 IP（必填，也认全大写 HOST）
+ * 名称：User
+ * 值：登录用户名，例如 root（必填，也认全大写 USER；不填默认 root）
+ * 名称：Privatekey
+ * 值：SSH 私钥，私钥登录使用（与 Password 二选一，也认 KEY）
+ * 名称：Password
+ * 值：登录密码，密码登录使用（与 Privatekey 二选一）
+ * 名称：Port
+ * 值：SSH 端口（可选，不填代码会自动默认 22）
+ * 界面自定义：你可以在下方的【UI 颜色与字体手动配置区】自由调整底部文字的字号和颜色。
+ */
 
 export default async function(ctx) {
   
