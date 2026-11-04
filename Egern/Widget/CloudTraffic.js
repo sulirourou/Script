@@ -1,15 +1,25 @@
 /**
  * 🌐 云服务器流量监控 (SSH 直连 · vnStat 数据)
  * 版本：v1.4 (2026-11-03)
- * 名称：host / 值：服务器地址 (必填，如 170.9.22.31)
- * 名称：port / 值：SSH 端口 (不填默认 22)
- * 名称：username / 值：SSH 用户名 (必填，如 ubuntu)
- * 名称：privateKey / 值：SSH 私钥全文 (直接粘贴即可，脚本会自动重排私钥的换行与空格，OpenSSH / PEM 格式都行)
- * 名称：password / 值：SSH 密码 (与 privateKey 二选一)
- * 名称：passphrase / 值：私钥密码 (私钥没设密码则不填)
- * 名称：name / 值：显示名称 (不填自动用服务器主机名，如 Oracle Cloud)
- * 名称：quota / 值：月流量上限 GB (填了才显示使用百分比，如 Oracle 免费额度 10TB 填 10000；不填则圆环显示本月下载/上传占比)
- * 名称：iface / 值：网卡名 (不填自动选流量最大的网卡，如 ens3 / eth0)
+ * 环境变量：
+ * 名称：host
+ * 值：服务器地址（必填）
+ * 名称：port
+ * 值：SSH 端口（可选，不填默认 22）
+ * 名称：username
+ * 值：SSH 用户名（必填，也认 user）
+ * 名称：privateKey
+ * 值：SSH 私钥全文（与 password 二选一，也认 key、sshKey；直接粘贴即可，脚本会自动重排私钥的换行与空格，OpenSSH / PEM 格式都行）
+ * 名称：password
+ * 值：SSH 密码（与 privateKey 二选一）
+ * 名称：passphrase
+ * 值：私钥密码（可选，私钥没设密码则不填）
+ * 名称：name
+ * 值：显示名称（可选，不填自动用服务器主机名）
+ * 名称：quota
+ * 值：月流量上限，单位 GB（可选，填了才显示使用百分比；不填则圆环显示本月下载/上传占比）
+ * 名称：iface
+ * 值：网卡名（可选，不填自动选流量最大的网卡）
  */
 
 export default async function (ctx) {
