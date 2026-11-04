@@ -1,7 +1,8 @@
 #!name = 可莉资源浏览器访问
 #!desc = 支持可莉资源浏览器的访问，绕过浏览器访问 WAF 拦截，通过修改请求和响应头适配特定客户端需求。
+#!openUrl= https://hub.kelee.one
 #!author = yaowuliu
-#!homepage = https://kelee.one
+#!homepage = https://raw.githubusercontent.com/158212892/QuantumultXMark/main/My/Egern/modules/kelee.yaml
 #!icon = https://hub.kelee.one/IMG/Web/favicon_32px.ico
 #!source = b169c824ffbe89855e95d2054298b94617b2ab50b6aa00339ffe830e99f76f1b
 #!system = iOS,iPadOS,tvOS,macOS
