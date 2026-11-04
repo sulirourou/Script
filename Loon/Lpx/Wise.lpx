@@ -1,5 +1,6 @@
 #!name = Wise Direct Rules
 #!desc = Wise (TransferWise) 完整直连规则，包含核心业务、验证及支付网关，防止风控。
+#!openUrl = https://apps.apple.com/app/id612261027
 #!author = Gemini
 #!homepage = https://wise.com
 #!icon = https://icons.duckduckgo.com/ip3/wise.com.ico
