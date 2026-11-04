@@ -1,6 +1,6 @@
 /**
  * 🌏 Egern IPPure 小组件
- * 版本：v1.8 (2026-11-04)
+ * 版本：v1.9 (2026-11-04)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -143,7 +143,7 @@ export default async function(ctx) {
 
   function saveProxyCache() {
     try {
-      ctx.storage.setString("ippure_proxy_v4", JSON.stringify({
+      ctx.storage.setString("ippure_proxy_v5", JSON.stringify({
         t: Date.now(),
         d: { ip: proxyData.ip, title: proxyData.title, detail: proxyData.detail, isp: proxyData.isp, flag: proxyData.flag, risk: proxyData.risk, isDC: proxyData.isDC }
       }));
@@ -152,7 +152,7 @@ export default async function(ctx) {
 
   function loadProxyCache() {
     try {
-      const raw = ctx.storage.getString("ippure_proxy_v4");
+      const raw = ctx.storage.getString("ippure_proxy_v5");
       if (!raw) return false;
       const c = JSON.parse(raw);
       if (!c || !c.d || !c.d.ip || (Date.now() - (c.t || 0)) > 24 * 3600 * 1000) return false;
@@ -210,7 +210,7 @@ export default async function(ctx) {
       const geoCn = await lookupGeo(j.ip, "zh-CN");
       if (geoCn && isPureCn(geoCn.country)) {
         if (!countryCn) countryCn = geoCn.country;
-        if (!regionCn) regionCn = isPureCn(geoCn.region) ? geoCn.region : (isPureCn(geoCn.city) ? geoCn.city : "");
+        if (!regionCn) regionCn = trimAdmin(isPureCn(geoCn.region) ? geoCn.region : (isPureCn(geoCn.city) ? geoCn.city : ""));
       }
     }
     if (!countryCn) countryCn = localizedCountry(country, j.countryCode, countryTr);
