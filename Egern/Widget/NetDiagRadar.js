@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.0 (2026-11-05)
+ * 版本：v3.1 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1215,10 +1215,18 @@ export default async function (ctx) {
   const natColor = toneColor(nat.tone, C);
   const quicColor = toneColor(quic.tone, C);
 
-  const purityColor =
-    purity.score >= 75 ? C.green :
-    purity.score >= 45 ? C.amber :
-    C.red;
+  // 官网同步时主分数就是 IPPure系数（越大越危险），颜色与文案都要跟着翻过来；
+  // 无 fraudScore 回退时才是原来的纯净分（越大越干净）。
+  const isIPPureScore = Boolean(purity.isIPPure);
+  const scoreLabel = isIPPureScore ? "IPPure系数" : "纯净评分";
+  const scoreText = isIPPureScore ? purity.score + "%" : purity.score + "分";
+  const purityColor = isIPPureScore
+    ? purity.score >= 70 ? C.red :
+      purity.score >= 40 ? C.amber :
+      C.green
+    : purity.score >= 75 ? C.green :
+      purity.score >= 45 ? C.amber :
+      C.red;
 
   const riskColor =
     risk === "低风险" ? C.green :
@@ -1754,7 +1762,8 @@ export default async function (ctx) {
           glow: uiColor(C.scoreGlow),
           text: uiColor(C.scoreLeft),
           muted: uiColor(C.muted)
-        }
+        },
+        scoreLabel
       ),
       width || 60,
       height || 45,
@@ -2212,8 +2221,8 @@ export default async function (ctx) {
 
             footerCell(
               "checkmark.shield.fill",
-              "纯净评分",
-              purity.score + "分",
+              scoreLabel,
+              scoreText,
               purityColor
             ),
 
@@ -2376,8 +2385,8 @@ export default async function (ctx) {
 
             metricBox(
               "checkmark.shield.fill",
-              "纯净",
-              purity.score + "分",
+              scoreLabel,
+              scoreText,
               purityColor
             )
           ],
@@ -3265,8 +3274,9 @@ function maskIP(value) {
   return raw;
 }
 
-function purityGaugeSVG(score, colors) {
+function purityGaugeSVG(score, colors, label) {
   const value = Math.max(0, Math.min(100, Number(score) || 0));
+  const scoreLabelText = label || "纯净评分";
 
   const cx = 75;
   const cy = 85;
@@ -3308,7 +3318,7 @@ function purityGaugeSVG(score, colors) {
     '<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="4.2" fill="' + safeLeft + '" filter="url(#softGlow)" opacity="1"/>',
     '<text x="75" y="61" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="30" font-weight="850" fill="' + safeText + '">' + Math.round(value) + "</text>",
     '<text x="75" y="75" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="10" font-weight="760" fill="' + safeMuted + '">/100</text>',
-    '<text x="75" y="90" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="10" font-weight="760" fill="' + safeMuted + '">纯净评分</text>',
+    '<text x="75" y="90" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="10" font-weight="760" fill="' + safeMuted + '">' + scoreLabelText + '</text>',
     "</svg>"
   ].join("");
 }
@@ -4414,15 +4424,16 @@ function purityScore(exit) {
   const evidence = flags.evidence || {};
   const kind = clean(exit && exit.kind);
 
-  // 同步 ippure.com 官网方法：IPPure系数就是 fraudScore（越大越危险），
-  // 纯净分 = 100 - fraudScore，不再按机房类型另扣分（fraudScore 本身已含机房风险）。
+  // 同步 ippure.com 官网方法：官网直接显示 IPPure系数 = fraudScore 本身（越大越危险），
+  // 不要再用 100 - fraudScore 换算成纯净分，否则官网 51 会变成 49。
   // 只有 IPv6 / 无 fraudScore 时才回退到下面旧的按类型打分。
   const officialRisk = Number(flags.risk);
   if (Number.isFinite(officialRisk)) {
-    const officialScore = Math.max(0, Math.min(100, Math.round(100 - officialRisk)));
+    const officialScore = Math.max(0, Math.min(100, Math.round(officialRisk)));
     return {
       score: officialScore,
       risk: officialRisk,
+      isIPPure: true,
       evidence: evidence
     };
   }
