@@ -2562,8 +2562,8 @@ export default async function (ctx) {
 
       row(
         [
-          serviceCard("流媒体解锁", "play.rectangle.fill", media, C.blue),
-          serviceCard("AI 解锁检测", "sparkles", ai, C.purple)
+          serviceCard("流媒体", "play.rectangle.fill", media, C.blue),
+          serviceCard("AI", "sparkles", ai, C.purple)
         ],
         {
           height: 138,
