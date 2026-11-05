@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.1 (2026-11-05)
+ * 版本：v3.2 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -505,7 +505,7 @@ export default async function (ctx) {
     // 官网方法：IP来源与IP属性是两个独立字段
     // isBroadcast=false=原生IP, true=广播IP；isResidential=false=机房IP, true=住宅IP
     const isBroadcast = typeof data.isBroadcast === "boolean" ? data.isBroadcast : null;
-    const sourceType = isBroadcast === true ? "广播IP" : isBroadcast === false ? "原生IP" : "";
+    const sourceType = isBroadcast === true ? "广播 IP" : isBroadcast === false ? "原生 IP" : "";
 
     const flags = {
       datacenter: isResidential === false || cloud.hit,
@@ -1336,6 +1336,46 @@ export default async function (ctx) {
     );
   }
 
+  function dividerVertical(height) {
+    return {
+      type: "stack",
+      direction: "column",
+      width: 1,
+      height: S(height || 14),
+      backgroundColor: C.footerDivider,
+      borderRadius: 0.5
+    };
+  }
+
+  function connectionPill(ok, extra) {
+    const tone = ok ? C.green : C.red;
+    const fill = ok ? C.greenSoft : C.redSoft;
+    return row(
+      [
+        image(
+          ok ? "checkmark.circle.fill" : "xmark.circle.fill",
+          tone,
+          8,
+          8
+        ),
+        text(ok ? "连接正常" : "检测失败", 6, "semibold", tone, {
+          maxLines: 1,
+          minScale: 0.72,
+          textAlign: "center"
+        })
+      ],
+      merge(
+        {
+          padding: [2, 5],
+          backgroundColor: fill,
+          borderRadius: 8,
+          gap: 2
+        },
+        extra
+      )
+    );
+  }
+
   function pill(value, tone, fill, extra) {
     return row(
       [
@@ -1510,6 +1550,8 @@ export default async function (ctx) {
           }
         ),
 
+        dividerVertical(28),
+
         row(
           [
             spacer(),
@@ -1560,6 +1602,8 @@ export default async function (ctx) {
           }
         ),
 
+        dividerVertical(28),
+
         col(
           [
             text(timeLabel(now), 11, "bold", C.text, {
@@ -1601,7 +1645,9 @@ export default async function (ctx) {
 
         row(
           [
-            iconBox(localNetIcon, C.blue, C.blueSoft, 36),
+            onWiFi
+              ? iconBox("wifi", C.blue, C.blueSoft, 36)
+              : flagBox(),
 
             col(
               [
@@ -1648,48 +1694,55 @@ export default async function (ctx) {
 
         row(
           [
-            image("globe", C.blue, 7, 7),
+            row(
+              [
+                image("globe", C.blue, 7, 7),
 
-            text("公网", 5, "medium", C.muted, {
-              maxLines: 1,
-              minScale: 0.72
-            }),
+                text("公网", 5, "medium", C.muted, {
+                  maxLines: 1,
+                  minScale: 0.72
+                }),
 
-            text(
-              localExit.ip ? displayIP(localExit.ip) : "未获取",
-              6.5,
-              "semibold",
-              C.text,
-              {
-                maxLines: 1,
-                minScale: 0.6
-              }
+                text(
+                  localExit.ip ? displayIP(localExit.ip) : "未获取",
+                  6.5,
+                  "semibold",
+                  C.text,
+                  {
+                    maxLines: 1,
+                    minScale: 0.6
+                  }
+                )
+              ],
+              { flex: 1, gap: 3, alignItems: "center" }
+            ),
+
+            dividerVertical(14),
+
+            row(
+              [
+                image("wifi.router.fill", C.blue, 7, 7),
+
+                text("网关", 5, "medium", C.muted, {
+                  maxLines: 1,
+                  minScale: 0.72
+                }),
+
+                text(
+                  gatewayLabel(displayIP(gateway)),
+                  6.5,
+                  "semibold",
+                  C.text,
+                  {
+                    maxLines: 1,
+                    minScale: 0.6
+                  }
+                )
+              ],
+              { flex: 1, gap: 3, alignItems: "center" }
             )
           ],
-          { gap: 3, alignItems: "center" }
-        ),
-
-        row(
-          [
-            image("wifi.router.fill", C.blue, 7, 7),
-
-            text("网关", 5, "medium", C.muted, {
-              maxLines: 1,
-              minScale: 0.72
-            }),
-
-            text(
-              gatewayLabel(displayIP(gateway)),
-              6.5,
-              "semibold",
-              C.text,
-              {
-                maxLines: 1,
-                minScale: 0.6
-              }
-            )
-          ],
-          { gap: 3, alignItems: "center" }
+          { gap: 4, alignItems: "center" }
         ),
 
         row(
@@ -1800,11 +1853,7 @@ export default async function (ctx) {
         sectionTitle(
           "point.3.connected.trianglepath.dotted",
           "当前代理",
-          pill(
-            proxyLatency.ok ? "连接正常" : "检测失败",
-            proxyLatency.ok ? C.green : C.red,
-            proxyLatency.ok ? C.greenSoft : C.redSoft
-          ),
+          connectionPill(proxyLatency.ok),
           C.purple
         ),
 
@@ -2210,6 +2259,8 @@ export default async function (ctx) {
               C.blue
             ),
 
+            dividerVertical(18),
+
             footerCell(
               "house.fill",
               "属性类型",
@@ -2219,6 +2270,8 @@ export default async function (ctx) {
                 : C.green
             ),
 
+            dividerVertical(18),
+
             footerCell(
               "checkmark.shield.fill",
               scoreLabel,
@@ -2226,12 +2279,16 @@ export default async function (ctx) {
               purityColor
             ),
 
+            dividerVertical(18),
+
             footerCell(
               "shield.lefthalf.filled",
               "风险等级",
               risk,
               riskColor
             ),
+
+            dividerVertical(18),
 
             footerCell(
               "arrow.clockwise",
@@ -2343,7 +2400,7 @@ export default async function (ctx) {
                   [
                     text(flag(exit.countryCode) || "🌐", 7, "regular", C.text),
 
-                    text(city, 9, "semibold", C.text, {
+                    text(city, 9.2, "semibold", C.text, {
                       flex: 1,
                       maxLines: 1,
                       minScale: 0.55
@@ -2352,12 +2409,12 @@ export default async function (ctx) {
                   { gap: 2 }
                 ),
 
-                text(shortISP(exit.isp), 7.5, "medium", C.subtext, {
+                text(shortISP(exit.isp), 7.2, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.6
                 }),
 
-                text(displayIP(exit.ip) || "未识别", 10, "semibold", C.text, {
+                text(displayIP(exit.ip) || "未识别", 9.5, "semibold", C.text, {
                   maxLines: 1,
                   minScale: 0.5
                 })
@@ -4078,7 +4135,7 @@ function formatLocalArea(countryCodeValue, country, region, city) {
     }
 
     if (r && c && r !== c) {
-      return r + c;
+      return r + " " + c;
     }
 
     return c || r || "中国";
