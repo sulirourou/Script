@@ -2442,13 +2442,13 @@ export default async function (ctx) {
 
             col(
               [
-                text(city, 10, "semibold", C.text, {
+                text(city, 11, "semibold", C.text, {
                   flex: 1,
                   maxLines: 1,
                   minScale: 0.55
                 }),
 
-                text(shortISP(exit.isp), 9, "medium", C.subtext, {
+                text(shortISP(exit.isp), 8, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.62
                 }),
