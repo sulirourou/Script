@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v2.9 (2026-11-05)
+ * 版本：v3.0 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -502,6 +502,10 @@ export default async function (ctx) {
     const isp = asOrg ? (asOrg + (asn !== "" ? " (AS" + asn + ")" : "")) : "未知组织";
     const cloud = cloudProviderFromText(asOrg);
     const isResidential = typeof data.isResidential === "boolean" ? data.isResidential : null;
+    // 官网方法：IP来源与IP属性是两个独立字段
+    // isBroadcast=false=原生IP, true=广播IP；isResidential=false=机房IP, true=住宅IP
+    const isBroadcast = typeof data.isBroadcast === "boolean" ? data.isBroadcast : null;
+    const sourceType = isBroadcast === true ? "广播IP" : isBroadcast === false ? "原生IP" : "";
 
     const flags = {
       datacenter: isResidential === false || cloud.hit,
@@ -513,6 +517,7 @@ export default async function (ctx) {
       abuser: false,
       mobile: false,
       residential: isResidential === true,
+      broadcast: isBroadcast === true,
       risk: numberOrNull(data.fraudScore)
     };
 
@@ -526,6 +531,7 @@ export default async function (ctx) {
       isp: cloud.name || isp,
       cloudProvider: cloud.name,
       kind: classifyExitKind(flags),
+      sourceType: sourceType,
       flags: flags
     };
   }
@@ -1764,7 +1770,9 @@ export default async function (ctx) {
       clean(exit.country) ||
       "未知地区";
 
-    const tagOne = exit.kind || "未知网络";
+    const tagOne = exit.sourceType
+      ? (exit.kind || "未知网络") + " · " + exit.sourceType
+      : exit.kind || "未知网络";
 
     // 第二个标签 (云厂商名) 与上方 ISP 行内容重复 (如两处都是 Oracle)，v2 删除，
     // 腾出的位置给出口 IP。
@@ -3827,6 +3835,7 @@ function mergeExitSources(sources) {
     isp: cloud.name || bestField(sameIP, "isp") || "未知组织",
     cloudProvider: cloud.name,
     kind: kind,
+    sourceType: bestField(sameIP, "sourceType") || "",
     flags: mergedFlags,
     sources: sameIP
       .map(function (item) {
@@ -4405,6 +4414,19 @@ function purityScore(exit) {
   const evidence = flags.evidence || {};
   const kind = clean(exit && exit.kind);
 
+  // 同步 ippure.com 官网方法：IPPure系数就是 fraudScore（越大越危险），
+  // 纯净分 = 100 - fraudScore，不再按机房类型另扣分（fraudScore 本身已含机房风险）。
+  // 只有 IPv6 / 无 fraudScore 时才回退到下面旧的按类型打分。
+  const officialRisk = Number(flags.risk);
+  if (Number.isFinite(officialRisk)) {
+    const officialScore = Math.max(0, Math.min(100, Math.round(100 - officialRisk)));
+    return {
+      score: officialScore,
+      risk: officialRisk,
+      evidence: evidence
+    };
+  }
+
   let score;
 
   if (kind === "住宅 IP") {
@@ -4495,6 +4517,17 @@ function riskLevel(exit, purity) {
   const proxyVpnEvidenceCount =
     Number(evidence.proxyCount || 0) +
     Number(evidence.vpnCount || 0);
+
+  // 同步官网：fraudScore >= 70 高风险，>= 40 中风险，否则低风险（官网 51% 就是中度风险）。
+  if (Number.isFinite(riskValue)) {
+    if (flags.tor || flags.abuser || riskValue >= 70) {
+      return "高风险";
+    }
+    if (riskValue >= 40) {
+      return "中风险";
+    }
+    return "低风险";
+  }
 
   if (
     flags.tor ||
