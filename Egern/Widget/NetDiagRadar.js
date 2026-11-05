@@ -1703,7 +1703,7 @@ export default async function (ctx) {
                   minScale: 0.68
                 }),
 
-                text(displayIP(localIP), 9, "semibold", C.text, {
+                text(displayIP(localIP), 8, "semibold", C.text, {
                   maxLines: 1,
                   minScale: 0.72
                 }),
@@ -1925,7 +1925,7 @@ export default async function (ctx) {
                   minScale: 0.62
                 }),
 
-                text(displayIP(exit.ip) || "未识别", 9, "semibold", C.text, {
+                text(displayIP(exit.ip) || "未识别", 8, "semibold", C.text, {
                   maxLines: 1,
                   minScale: 0.5
                 }),
