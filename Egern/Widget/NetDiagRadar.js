@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.14.2 (2026-11-05)
+ * 版本：v3.14.3 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1934,7 +1934,8 @@ export default async function (ctx) {
               ],
               {
                 flex: 1,
-                gap: 0
+                gap: 0,
+                padding: [4, 0]
               }
             ),
 
@@ -2447,19 +2448,20 @@ export default async function (ctx) {
                   minScale: 0.55
                 }),
 
-                text(shortISP(exit.isp), 10, "medium", C.subtext, {
+                text(shortISP(exit.isp), 9, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.62
                 }),
 
-                text(displayIP(exit.ip) || "未识别", 9, "semibold", C.text, {
+                text(displayIP(exit.ip) || "未识别", 8, "semibold", C.text, {
                   maxLines: 1,
                   minScale: 0.5
                 })
               ],
               {
                 flex: 1,
-                gap: 1
+                gap: 1,
+                padding: [4, 0]
               }
             )
           ],
