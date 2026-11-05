@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.9 (2026-11-05)
+ * 版本：v3.10 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1399,18 +1399,18 @@ export default async function (ctx) {
   function proxyTagLine(value, tone, fill) {
     return row(
       [
-        text(value, 6, "semibold", tone, {
+        text(value, 7, "semibold", tone, {
           maxLines: 1,
           minScale: 0.55,
           textAlign: "center"
         })
       ],
       {
-        width: 46,
-        height: 8.5,
-        padding: [0.7, 2.5],
+        width: 66,
+        height: 11,
+        padding: [1, 3],
         backgroundColor: fill,
-        borderRadius: 4.8,
+        borderRadius: 5.5,
         alignItems: "center"
       }
     );
@@ -1722,6 +1722,8 @@ export default async function (ctx) {
           { gap: 6 }
         ),
 
+        spacer(),
+
         row(
           [
             col(
@@ -1830,7 +1832,7 @@ export default async function (ctx) {
       {
         flex: 1,
         height: 134,
-        gap: 5
+        gap: 4
       }
     );
   }
@@ -1912,13 +1914,13 @@ export default async function (ctx) {
 
             col(
               [
-                text(city, 12, "semibold", C.text, {
+                text(city, 13, "semibold", C.text, {
                   flex: 1,
                   maxLines: 1,
                   minScale: 0.55
                 }),
 
-                text(shortISP(exit.isp), 9, "medium", C.subtext, {
+                text(shortISP(exit.isp), 10, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.62
                 }),
@@ -1938,7 +1940,7 @@ export default async function (ctx) {
 
             col(
               [
-                scoreGauge(54, 42),
+                scoreGauge(54, 34),
 
                 text(risk, 8, "semibold", riskColor, {
                   maxLines: 1,
@@ -2445,7 +2447,7 @@ export default async function (ctx) {
                   minScale: 0.55
                 }),
 
-                text(shortISP(exit.isp), 9, "medium", C.subtext, {
+                text(shortISP(exit.isp), 10, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.62
                 }),
@@ -3394,7 +3396,7 @@ function purityGaugeSVG(score, colors, label) {
       : Math.max(0.1, value).toFixed(1) + " 100";
 
   return [
-    '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="112" viewBox="0 0 150 112">',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="94" viewBox="0 0 150 94">',
     "<defs>",
     '<filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">',
     '<feGaussianBlur stdDeviation="2.1" result="blur"/>',
