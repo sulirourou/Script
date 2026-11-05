@@ -448,9 +448,7 @@ export default async function (ctx) {
     if (!policyExitCache[key]) {
       policyExitCache[key] = (async function () {
         const urls = [
-          "http://ip-api.com/json/?lang=zh-CN&fields=status,message,query,country,countryCode,regionName,city,isp,org,as,asname&_=" + Date.now(),
-          "https://ipwho.is/?lang=zh-CN&_=" + Date.now(),
-          "https://api.ipapi.is/?_=" + Date.now()
+          "https://my.ippure.com/v1/info?_=" + Date.now()
         ];
 
         for (let index = 0; index < urls.length; index += 1) {
@@ -490,6 +488,46 @@ export default async function (ctx) {
     }
 
     return await policyExitCache[key];
+  }
+
+  // 当前代理出口改用 IPPure 单一接口：字段见 IPPure.js / my.ippure.com/v1/info
+  // ip / country / countryCode / region / city / asOrganization / asn / fraudScore / isResidential
+  function parseIPPureExit(data) {
+    if (!data || typeof data !== "object" || !data.ip) {
+      return {};
+    }
+
+    const asOrg = clean(data.asOrganization || "");
+    const asn = data.asn !== undefined && data.asn !== null && data.asn !== "" ? data.asn : "";
+    const isp = asOrg ? (asOrg + (asn !== "" ? " (AS" + asn + ")" : "")) : "未知组织";
+    const cloud = cloudProviderFromText(asOrg);
+    const isResidential = typeof data.isResidential === "boolean" ? data.isResidential : null;
+
+    const flags = {
+      datacenter: isResidential === false || cloud.hit,
+      hosting: isResidential === false || cloud.hit,
+      cloud: cloud.hit,
+      proxy: false,
+      vpn: false,
+      tor: false,
+      abuser: false,
+      mobile: false,
+      residential: isResidential === true,
+      risk: numberOrNull(data.fraudScore)
+    };
+
+    return {
+      source: "ippure",
+      ip: clean(data.ip),
+      city: clean(pick(data.city, data.region, "未知城市")),
+      region: clean(pick(data.region, data.regionName)),
+      country: clean(data.country),
+      countryCode: countryCode(data.countryCode),
+      isp: cloud.name || isp,
+      cloudProvider: cloud.name,
+      kind: classifyExitKind(flags),
+      flags: flags
+    };
   }
 
   function parsePolicyExit(data) {
@@ -670,43 +708,11 @@ export default async function (ctx) {
   }
 
   async function getExit() {
-    const baseResults = await Promise.all([
-      getJSON("https://api.ipapi.is/?_=" + Date.now()),
-      getJSON(
-        "http://ip-api.com/json/?lang=zh-CN&fields=status,message,query,country,countryCode,regionName,city,isp,org,as,asname,proxy,hosting,mobile&_=" +
-          Date.now()
-      ),
-      getJSON("https://ipwho.is/?lang=zh-CN&_=" + Date.now()),
-      getJSON("https://ipinfo.io/json?_=" + Date.now())
-    ]);
+    const result = await getJSON(
+      "https://my.ippure.com/v1/info?_=" + Date.now()
+    );
 
-    const sourceNames = [
-      "ipapi.is",
-      "ip-api",
-      "ipwho.is",
-      "ipinfo"
-    ];
-
-    const candidates = [];
-
-    for (let index = 0; index < baseResults.length; index += 1) {
-      if (!baseResults[index].ok || !baseResults[index].data) {
-        continue;
-      }
-
-      const parsed = parseExitSource(
-        baseResults[index].data,
-        sourceNames[index]
-      );
-
-      if (parsed.ip) {
-        candidates.push(parsed);
-      }
-    }
-
-    let merged = mergeExitSources(candidates);
-
-    if (!merged.ip || merged.ip === "未识别") {
+    if (!result.ok || !result.data || !clean(result.data.ip)) {
       return {
         ip: "未识别",
         city: "出口检测失败",
@@ -719,13 +725,7 @@ export default async function (ctx) {
       };
     }
 
-    const proxyCheck = await getProxyCheck(merged.ip);
-
-    if (proxyCheck && proxyCheck.ip) {
-      merged = mergeExitSources([merged, proxyCheck]);
-    }
-
-    return merged;
+    return mergeExitSources([parseIPPureExit(result.data)]);
   }
 
   async function getLocalExit() {
@@ -1028,27 +1028,6 @@ export default async function (ctx) {
         url: url
       };
     }
-  }
-
-  async function getProxyCheck(ip) {
-    const target = clean(ip);
-
-    if (!target || target === "未识别") {
-      return null;
-    }
-
-    const result = await getJSON(
-      "https://proxycheck.io/v2/" +
-        encodeURIComponent(target) +
-        "?vpn=1&asn=1&risk=1&time=1&_=" +
-        Date.now()
-    );
-
-    if (!result.ok || !result.data) {
-      return null;
-    }
-
-    return parseProxyCheck(result.data, target);
   }
 
   async function getQuic() {
@@ -3730,108 +3709,6 @@ function parseExitSource(data, sourceName) {
       )
     ),
     isp: cloud.name || isp,
-    cloudProvider: cloud.name,
-    kind: classifyExitKind(flags),
-    flags: flags
-  };
-}
-
-function parseProxyCheck(data, ip) {
-  if (!data || typeof data !== "object") {
-    return null;
-  }
-
-  const target = clean(ip);
-  const keys = Object.keys(data);
-  const fallbackKey = keys.find(function (key) {
-    return key !== "status" && key !== "message";
-  });
-
-  const item = data[target] || data[fallbackKey];
-
-  if (!item || typeof item !== "object") {
-    return null;
-  }
-
-  const typeText = clean(
-    pick(
-      item.type,
-      item.proxy,
-      item.provider,
-      item.organisation,
-      item.asn,
-      item.operator
-    )
-  );
-
-  const orgText = [
-    item.provider,
-    item.organisation,
-    item.operator,
-    item.asn,
-    item.type
-  ].join(" ");
-
-  const cloud = cloudProviderFromText(orgText);
-
-  const proxyValue = clean(item.proxy).toLowerCase();
-  const typeLower = typeText.toLowerCase();
-
-  const flags = {
-    datacenter:
-      cloud.hit ||
-      typeLower.includes("hosting") ||
-      typeLower.includes("server") ||
-      typeLower.includes("business"),
-
-    hosting:
-      cloud.hit ||
-      typeLower.includes("hosting") ||
-      typeLower.includes("server"),
-
-    cloud: cloud.hit,
-
-    proxy:
-      proxyValue === "yes" ||
-      typeLower.includes("proxy"),
-
-    vpn:
-      typeLower.includes("vpn"),
-
-    tor:
-      typeLower.includes("tor"),
-
-    abuser:
-      typeLower.includes("abuse") ||
-      typeLower.includes("blacklist") ||
-      typeLower.includes("spam"),
-
-    mobile:
-      typeLower.includes("mobile"),
-
-    residential:
-      typeLower.includes("residential"),
-
-    risk:
-      numberOrNull(item.risk)
-  };
-
-  return {
-    source: "proxycheck.io",
-    ip: target,
-    city: clean(item.city),
-    region: clean(item.region),
-    country: clean(item.country),
-    countryCode: countryCode(item.isocode),
-    isp: clean(
-      pick(
-        cloud.name,
-        item.provider,
-        item.organisation,
-        item.operator,
-        "未知组织"
-      )
-    ),
     cloudProvider: cloud.name,
     kind: classifyExitKind(flags),
     flags: flags
