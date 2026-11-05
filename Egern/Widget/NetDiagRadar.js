@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.4 (2026-11-05)
+ * 版本：v3.5 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1452,7 +1452,7 @@ export default async function (ctx) {
 
   function sectionTitle(symbol, title, right, tone) {
     const children = [
-      image(symbol, tone, 13, 13),
+      image(symbol, tone, 14, 14),
       text(title, 12, "semibold", C.text, {
         maxLines: 1
       })
@@ -1486,7 +1486,7 @@ export default async function (ctx) {
       [
         row(
           [
-            image(symbol, tone, 8, 8),
+            image(symbol, tone, 10, 10),
             text(label, labelSize, "medium", C.muted, {
               maxLines: 1,
               minScale: labelMinScale,
@@ -1567,7 +1567,7 @@ export default async function (ctx) {
           [
             spacer(),
 
-            image("scope", C.purple, 11, 11),
+            image("scope", C.purple, 15, 15),
 
             col(
               [
@@ -1877,7 +1877,7 @@ export default async function (ctx) {
               [
                 row(
                   [
-                    text(flag(exit.countryCode) || "🌐", 8, "regular", C.text),
+                    text(flag(exit.countryCode) || "🌐", 11, "regular", C.text),
 
                     text(city, 12, "semibold", C.text, {
                       flex: 1,
@@ -2027,7 +2027,7 @@ export default async function (ctx) {
     if (item.kind === "chatgpt") {
       return row(
         [
-          image("circle.hexagongrid", item.color, 17, 17)
+          image("circle.hexagongrid.fill", item.color, 17, 17)
         ],
         base
       );
@@ -2093,9 +2093,10 @@ export default async function (ctx) {
       countryCode(item.countryCode) ||
       countryCode(exit.countryCode);
 
-    const serviceRegionLabel = serviceCountryCode
-      ? flag(serviceCountryCode) + " " + serviceCountryCode
-      : "NET";
+    const serviceFlag = serviceCountryCode
+      ? flag(serviceCountryCode)
+      : "";
+    const serviceCode = serviceCountryCode || "NET";
 
     return row(
       [
@@ -2110,15 +2111,13 @@ export default async function (ctx) {
 
             row(
               [
-                text(
-                  serviceRegionLabel,
-                  6,
-                  "medium",
-                  C.subtext,
-                  {
-                    maxLines: 1
-                  }
-                ),
+                text(serviceFlag, 9, "regular", C.text, {
+                  maxLines: 1
+                }),
+
+                text(serviceCode, 6, "medium", C.subtext, {
+                  maxLines: 1
+                }),
 
                 text(
                   item.ok ? "OK" : "失败",
@@ -2410,7 +2409,7 @@ export default async function (ctx) {
               [
                 row(
                   [
-                    text(flag(exit.countryCode) || "🌐", 7, "regular", C.text),
+                    text(flag(exit.countryCode) || "🌐", 10, "regular", C.text),
 
                     text(city, 11, "semibold", C.text, {
                       flex: 1,
