@@ -1920,7 +1920,7 @@ export default async function (ctx) {
                   minScale: 0.55
                 }),
 
-                text(shortISP(exit.isp), 9, "medium", C.subtext, {
+                text(shortISP(exit.isp), 8, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.62
                 }),
