@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.3 (2026-11-05)
+ * 版本：v3.4 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1358,7 +1358,7 @@ export default async function (ctx) {
           8,
           8
         ),
-        text(label || (ok ? "连接正常" : "检测失败"), 6, "semibold", tone, {
+        text(label || (ok ? "连接正常" : "检测失败"), 7, "semibold", tone, {
           maxLines: 1,
           minScale: 0.72,
           textAlign: "center"
@@ -1379,7 +1379,7 @@ export default async function (ctx) {
   function pill(value, tone, fill, extra) {
     return row(
       [
-        text(value, 6, "semibold", tone, {
+        text(value, 7, "semibold", tone, {
           maxLines: 1,
           minScale: 0.72,
           textAlign: "center"
@@ -1399,15 +1399,15 @@ export default async function (ctx) {
   function proxyTagLine(value, tone, fill) {
     return row(
       [
-        text(value, 5.2, "semibold", tone, {
+        text(value, 6.5, "semibold", tone, {
           maxLines: 1,
           minScale: 0.55,
           textAlign: "center"
         })
       ],
       {
-        width: 44,
-        height: 8,
+        width: 52,
+        height: 9.5,
         padding: [0.7, 2.5],
         backgroundColor: fill,
         borderRadius: 4.8,
@@ -1436,8 +1436,8 @@ export default async function (ctx) {
         image(
           symbol,
           tone,
-          Math.round(side * 0.52),
-          Math.round(side * 0.52)
+          Math.round(side * 0.62),
+          Math.round(side * 0.62)
         )
       ],
       {
@@ -1452,8 +1452,8 @@ export default async function (ctx) {
 
   function sectionTitle(symbol, title, right, tone) {
     const children = [
-      image(symbol, tone, 11, 11),
-      text(title, 10, "semibold", C.text, {
+      image(symbol, tone, 13, 13),
+      text(title, 12, "semibold", C.text, {
         maxLines: 1
       })
     ];
@@ -1466,18 +1466,27 @@ export default async function (ctx) {
     return row(children, { gap: 3 });
   }
 
+  function softFillForTone(tone) {
+    if (tone === C.green) return C.greenSoft;
+    if (tone === C.amber) return C.amberSoft;
+    if (tone === C.purple) return C.purpleSoft;
+    if (tone === C.blue) return C.blueSoft;
+    if (tone === C.red) return C.redSoft;
+    return C.tileBg;
+  }
+
   function metricBox(symbol, label, value, tone, extra) {
     const options = extra || {};
-    const valueSize = options.valueSize || 6.5;
+    const valueSize = options.valueSize || 9;
     const valueMinScale = options.valueMinScale || 0.35;
-    const labelSize = options.labelSize || 5;
+    const labelSize = options.labelSize || 6.5;
     const labelMinScale = options.labelMinScale || 0.72;
 
     return col(
       [
         row(
           [
-            image(symbol, tone, 7, 7),
+            image(symbol, tone, 8, 8),
             text(label, labelSize, "medium", C.muted, {
               maxLines: 1,
               minScale: labelMinScale,
@@ -1498,11 +1507,11 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 26,
+        height: 30,
         padding: [2, 3],
         gap: 0,
         alignItems: "center",
-        backgroundColor: C.tileBg,
+        backgroundColor: softFillForTone(tone),
         borderRadius: 9
       }
     );
@@ -1519,7 +1528,7 @@ export default async function (ctx) {
               [
                 row(
                   [
-                    text("网络诊断雷达", 11, "bold", C.text, {
+                    text("网络诊断雷达", 14, "bold", C.text, {
                       maxLines: 1,
                       minScale: 0.72
                     }),
@@ -1534,7 +1543,7 @@ export default async function (ctx) {
                   }
                 ),
 
-                text("Egern · 全面网络状态检测", 6, "medium", C.muted, {
+                text("Egern · 全面网络状态检测", 7, "medium", C.muted, {
                   maxLines: 1,
                   minScale: 0.78
                 })
@@ -1547,7 +1556,7 @@ export default async function (ctx) {
           ],
           {
             width: 171,
-            height: 34,
+            height: 38,
             gap: 6
           }
         ),
@@ -1562,7 +1571,7 @@ export default async function (ctx) {
 
             col(
               [
-                text("当前策略", 5, "medium", C.muted, {
+                text("当前策略", 6, "medium", C.muted, {
                   maxLines: 1,
                   textAlign: "center"
                 }),
@@ -1571,12 +1580,12 @@ export default async function (ctx) {
                   [
                     text(
                       POLICY ? "●" : "○",
-                      7,
+                      8,
                       "bold",
                       POLICY ? C.green : C.purple
                     ),
 
-                    text(POLICY_LABEL, 7, "semibold", C.text, {
+                    text(POLICY_LABEL, 8.5, "semibold", C.text, {
                       maxLines: 1,
                       minScale: 0.72
                     })
@@ -1598,7 +1607,7 @@ export default async function (ctx) {
           ],
           {
             flex: 1,
-            height: 34,
+            height: 38,
             padding: [3, 0],
             gap: 3
           }
@@ -1608,13 +1617,13 @@ export default async function (ctx) {
 
         col(
           [
-            text(timeLabel(now), 11, "bold", C.text, {
+            text(timeLabel(now), 15, "bold", C.text, {
               maxLines: 1,
               minScale: 0.82,
               textAlign: "right"
             }),
 
-            text(dateLabel(now), 5, "medium", C.muted, {
+            text(dateLabel(now), 6.5, "medium", C.muted, {
               maxLines: 1,
               minScale: 0.82,
               textAlign: "right"
@@ -1622,14 +1631,14 @@ export default async function (ctx) {
           ],
           {
             width: 43,
-            height: 34,
+            height: 38,
             alignItems: "end",
             gap: 0
           }
         )
       ],
       {
-        height: 34,
+        height: 38,
         gap: 4
       }
     );
@@ -1653,18 +1662,18 @@ export default async function (ctx) {
 
             col(
               [
-                text(networkName, 11, "semibold", C.text, {
+                text(networkName, 12.5, "semibold", C.text, {
                   flex: 1,
                   maxLines: 1,
                   minScale: 0.68
                 }),
 
-                text(displayIP(localIP), 8, "medium", C.subtext, {
+                text(displayIP(localIP), 10, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.72
                 }),
 
-                text(localArea, 7, "medium", C.muted, {
+                text(localArea, 8.5, "medium", C.muted, {
                   maxLines: 1,
                   minScale: 0.72
                 })
@@ -1686,7 +1695,7 @@ export default async function (ctx) {
                   [
                     image("globe", C.blue, 7, 7),
 
-                    text("公网", 5, "medium", C.muted, {
+                    text("公网", 6.5, "medium", C.muted, {
                       maxLines: 1,
                       minScale: 0.72
                     })
@@ -1696,7 +1705,7 @@ export default async function (ctx) {
 
                 text(
                   localExit.ip ? displayIP(localExit.ip) : "未获取",
-                  6.5,
+                  9,
                   "semibold",
                   C.text,
                   {
@@ -1716,7 +1725,7 @@ export default async function (ctx) {
                   [
                     image("wifi.router.fill", C.blue, 7, 7),
 
-                    text("网关", 5, "medium", C.muted, {
+                    text("网关", 6.5, "medium", C.muted, {
                       maxLines: 1,
                       minScale: 0.72
                     })
@@ -1726,7 +1735,7 @@ export default async function (ctx) {
 
                 text(
                   gatewayLabel(displayIP(gateway)),
-                  6.5,
+                  9,
                   "semibold",
                   C.text,
                   {
@@ -1773,7 +1782,7 @@ export default async function (ctx) {
               dnsLabel,
               C.purple,
               {
-                valueSize: 5.4,
+                valueSize: 7,
                 valueMinScale: 0.28
               }
             )
@@ -1783,7 +1792,7 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 118,
+        height: 128,
         gap: 3
       }
     );
@@ -1792,7 +1801,7 @@ export default async function (ctx) {
   function flagBox(countryCodeValue) {
     return row(
       [
-        text(flag(countryCodeValue || exit.countryCode) || "🌐", 22, "regular", C.text, {
+        text(flag(countryCodeValue || exit.countryCode) || "🌐", 26, "regular", C.text, {
           maxLines: 1,
           textAlign: "center"
         })
@@ -1868,9 +1877,9 @@ export default async function (ctx) {
               [
                 row(
                   [
-                    text(flag(exit.countryCode) || "🌐", 7, "regular", C.text),
+                    text(flag(exit.countryCode) || "🌐", 8, "regular", C.text),
 
-                    text(city, 9.2, "semibold", C.text, {
+                    text(city, 12, "semibold", C.text, {
                       flex: 1,
                       maxLines: 1,
                       minScale: 0.55
@@ -1879,12 +1888,12 @@ export default async function (ctx) {
                   { gap: 2 }
                 ),
 
-                text(shortISP(exit.isp), 7.2, "medium", C.subtext, {
+                text(shortISP(exit.isp), 9, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.62
                 }),
 
-                text(displayIP(exit.ip) || "未识别", 9.5, "semibold", C.text, {
+                text(displayIP(exit.ip) || "未识别", 10.5, "semibold", C.text, {
                   maxLines: 1,
                   minScale: 0.5
                 }),
@@ -1899,16 +1908,16 @@ export default async function (ctx) {
 
             col(
               [
-                scoreGauge(64, 48),
+                scoreGauge(72, 54),
 
-                text(risk, 6, "semibold", riskColor, {
+                text(risk, 7.5, "semibold", riskColor, {
                   maxLines: 1,
                   minScale: 0.7,
                   textAlign: "center"
                 })
               ],
               {
-                width: 64,
+                width: 72,
                 gap: 1,
                 alignItems: "center"
               }
@@ -1942,7 +1951,7 @@ export default async function (ctx) {
               quic.value,
               quicColor,
               {
-                labelSize: 4.25,
+                labelSize: 5.5,
                 labelMinScale: 0.38
               }
             ),
@@ -1953,7 +1962,7 @@ export default async function (ctx) {
               NODE_PROTOCOL,
               C.purple,
               {
-                valueSize: 5.4,
+                valueSize: 7,
                 valueMinScale: 0.34
               }
             )
@@ -1963,7 +1972,7 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 118,
+        height: 128,
         padding: [5, 6],
         gap: 3
       }
@@ -1972,17 +1981,17 @@ export default async function (ctx) {
 
   function serviceLogoLarge(item) {
     const base = {
-      width: 23,
-      height: 23,
+      width: 26,
+      height: 26,
       padding: 2,
       backgroundColor: C.tileIconBg,
-      borderRadius: 7
+      borderRadius: 8
     };
 
     if (item.kind === "spotify") {
       return row(
         [
-          image("dot.radiowaves.left.and.right", item.color, 15, 15)
+          image("dot.radiowaves.left.and.right", item.color, 17, 17)
         ],
         base
       );
@@ -1991,7 +2000,7 @@ export default async function (ctx) {
     if (item.kind === "tiktok") {
       return row(
         [
-          image("music.note", item.color, 15, 15)
+          image("music.note", item.color, 17, 17)
         ],
         base
       );
@@ -2000,7 +2009,7 @@ export default async function (ctx) {
     if (item.kind === "youtube") {
       return row(
         [
-          image("play.rectangle.fill", item.color, 15, 15)
+          image("play.rectangle.fill", item.color, 17, 17)
         ],
         base
       );
@@ -2009,7 +2018,7 @@ export default async function (ctx) {
     if (item.kind === "prime") {
       return row(
         [
-          image("play.tv.fill", item.color, 15, 15)
+          image("play.tv.fill", item.color, 17, 17)
         ],
         base
       );
@@ -2018,7 +2027,7 @@ export default async function (ctx) {
     if (item.kind === "chatgpt") {
       return row(
         [
-          image("circle.hexagongrid", item.color, 15, 15)
+          image("circle.hexagongrid", item.color, 17, 17)
         ],
         base
       );
@@ -2027,7 +2036,7 @@ export default async function (ctx) {
     if (item.kind === "gemini") {
       return row(
         [
-          image("sparkles", item.color, 15, 15)
+          image("sparkles", item.color, 17, 17)
         ],
         base
       );
@@ -2036,7 +2045,7 @@ export default async function (ctx) {
     if (item.kind === "grok") {
       return row(
         [
-          image("xmark", item.color, 14, 14)
+          image("xmark", item.color, 16, 16)
         ],
         base
       );
@@ -2045,7 +2054,7 @@ export default async function (ctx) {
     if (item.kind === "perplexity") {
       return row(
         [
-          image("magnifyingglass", item.color, 14, 14)
+          image("magnifyingglass", item.color, 16, 16)
         ],
         base
       );
@@ -2062,10 +2071,10 @@ export default async function (ctx) {
 
     const fontSize =
       item.kind === "claude"
-        ? 10
+        ? 12
         : item.kind === "disney"
-          ? 10
-          : 13;
+          ? 12
+          : 15;
 
     return row(
       [
@@ -2094,7 +2103,7 @@ export default async function (ctx) {
 
         col(
           [
-            text(item.name, 7.5, "semibold", C.text, {
+            text(item.name, 9.5, "semibold", C.text, {
               maxLines: 1,
               minScale: 0.66
             }),
@@ -2103,7 +2112,7 @@ export default async function (ctx) {
               [
                 text(
                   serviceRegionLabel,
-                  5,
+                  6,
                   "medium",
                   C.subtext,
                   {
@@ -2113,7 +2122,7 @@ export default async function (ctx) {
 
                 text(
                   item.ok ? "OK" : "失败",
-                  5.6,
+                  6.5,
                   "semibold",
                   statusColor,
                   {
@@ -2132,8 +2141,8 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 31,
-        padding: [4, 4],
+        height: 36,
+        padding: [4, 5],
         gap: 4,
         backgroundColor: C.tileBg,
         borderRadius: 9,
@@ -2152,7 +2161,7 @@ export default async function (ctx) {
             compactServiceTile(items[1])
           ],
           {
-            height: 31,
+            height: 36,
             gap: 5
           }
         ),
@@ -2163,7 +2172,7 @@ export default async function (ctx) {
             compactServiceTile(items[3])
           ],
           {
-            height: 31,
+            height: 36,
             gap: 5
           }
         ),
@@ -2174,14 +2183,14 @@ export default async function (ctx) {
             compactServiceTile(items[5])
           ],
           {
-            height: 31,
+            height: 36,
             gap: 5
           }
         )
       ],
       {
         flex: 1,
-        height: 101,
+        height: 116,
         gap: 4
       }
     );
@@ -2207,7 +2216,7 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 139,
+        height: 148,
         padding: [5, 6],
         gap: 5
       }
@@ -2219,15 +2228,15 @@ export default async function (ctx) {
       [
         row(
           [
-            image(symbol, tone, 15, 15),
+            image(symbol, tone, 17, 17),
 
             col(
               [
-                text(label, 6, "medium", C.muted, {
+                text(label, 7, "medium", C.muted, {
                   maxLines: 1
                 }),
 
-                text(value, 8, "semibold", tone, {
+                text(value, 10, "semibold", tone, {
                   maxLines: 1,
                   minScale: 0.6
                 })
@@ -2301,7 +2310,7 @@ export default async function (ctx) {
             )
           ],
           {
-            height: 34,
+            height: 38,
             padding: [0, 0],
             gap: 0,
             alignItems: "center"
@@ -2309,7 +2318,7 @@ export default async function (ctx) {
         )
       ],
       {
-        height: 44,
+        height: 50,
         padding: [4, 5],
         gap: 0
       }
@@ -2326,19 +2335,19 @@ export default async function (ctx) {
       [
         iconBox("waveform.path.ecg", C.blue, C.blueSoft, 20),
 
-        text("网络诊断雷达", 10, "bold", C.text, {
+        text("网络诊断雷达", 12, "bold", C.text, {
           maxLines: 1,
           minScale: 0.72
         }),
 
         spacer(),
 
-        text(POLICY_LABEL, 6, "medium", C.muted, {
+        text(POLICY_LABEL, 7, "medium", C.muted, {
           maxLines: 1,
           minScale: 0.6
         }),
 
-        text(timeLabel(now), 10, "bold", C.text, {
+        text(timeLabel(now), 12, "bold", C.text, {
           maxLines: 1
         })
       ],
@@ -2360,14 +2369,14 @@ export default async function (ctx) {
             proxyCard()
           ],
           {
-            height: 118,
+            height: 128,
             gap: 6,
             alignItems: "start"
           }
         )
       ],
       {
-        height: 162,
+        height: 174,
         padding: [8, 8],
         gap: 6
       }
@@ -2403,7 +2412,7 @@ export default async function (ctx) {
                   [
                     text(flag(exit.countryCode) || "🌐", 7, "regular", C.text),
 
-                    text(city, 9.2, "semibold", C.text, {
+                    text(city, 11, "semibold", C.text, {
                       flex: 1,
                       maxLines: 1,
                       minScale: 0.55
@@ -2412,12 +2421,12 @@ export default async function (ctx) {
                   { gap: 2 }
                 ),
 
-                text(shortISP(exit.isp), 7.2, "medium", C.subtext, {
+                text(shortISP(exit.isp), 8.5, "medium", C.subtext, {
                   maxLines: 1,
-                  minScale: 0.6
+                  minScale: 0.62
                 }),
 
-                text(displayIP(exit.ip) || "未识别", 9.5, "semibold", C.text, {
+                text(displayIP(exit.ip) || "未识别", 10.5, "semibold", C.text, {
                   maxLines: 1,
                   minScale: 0.5
                 })
@@ -2468,7 +2477,7 @@ export default async function (ctx) {
               NODE_PROTOCOL,
               C.purple,
               {
-                valueSize: 5.4,
+                valueSize: 7,
                 valueMinScale: 0.34
               }
             )
@@ -2478,14 +2487,14 @@ export default async function (ctx) {
 
         row(
           [
-            text(POLICY_LABEL, 6, "medium", C.muted, {
+            text(POLICY_LABEL, 7, "medium", C.muted, {
               maxLines: 1,
               minScale: 0.6
             }),
 
             spacer(),
 
-            text(timeLabel(now), 6, "medium", C.muted, {
+            text(timeLabel(now), 7, "medium", C.muted, {
               maxLines: 1
             })
           ],
@@ -2493,7 +2502,7 @@ export default async function (ctx) {
         )
       ],
       {
-        height: 142,
+        height: 156,
         padding: [6, 7],
         gap: 4
       }
@@ -2502,7 +2511,7 @@ export default async function (ctx) {
     return col(
       [inner],
       {
-        height: 150,
+        height: 164,
         padding: [4, 4],
         gap: 0
       }
@@ -2519,7 +2528,7 @@ export default async function (ctx) {
           proxyCard()
         ],
         {
-          height: 118,
+          height: 128,
           gap: 6,
           alignItems: "start"
         }
@@ -2531,7 +2540,7 @@ export default async function (ctx) {
           serviceCard("AI 解锁检测", "sparkles", ai, C.purple)
         ],
         {
-          height: 139,
+          height: 148,
           gap: 6,
           alignItems: "start"
         }
@@ -2540,7 +2549,7 @@ export default async function (ctx) {
       footer()
     ],
     {
-      height: 370,
+      height: 398,
       padding: [8, 8],
       gap: 6
     }
@@ -2608,11 +2617,11 @@ function palette() {
     proxyTop: adaptive("#FFFFFF", "#142039"),
     proxyBottom: adaptive("#F0F5FF", "#0D1728"),
 
-    cardBorder: adaptive("#B5C7E5", "#30476F"),
+    cardBorder: adaptive("#A8BFE6", "#30476F"),
 
-    tileBg: adaptive("#EDF3FC", "#162238"),
+    tileBg: adaptive("#E7EFFB", "#162238"),
     tileIconBg: adaptive("#DFE9F8", "#1D3154"),
-    tileBorder: adaptive("#B7C8E6", "#2E4876"),
+    tileBorder: adaptive("#A9BFE6", "#2E4876"),
 
     scoreTrack: adaptive("#D8E1EA", "#273045"),
     scoreGlow: adaptive("#1AE27F", "#1AE27F"),
@@ -3377,8 +3386,8 @@ function purityGaugeSVG(score, colors, label) {
     '<path d="M20 85 A55 55 0 0 1 130 85" fill="none" stroke="' + safeLeft + '" stroke-width="8.4" stroke-linecap="round" pathLength="100" stroke-dasharray="' + leftDash + '" opacity="1"/>',
     '<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="6.5" fill="' + safeGlow + '" opacity="0.20"/>',
     '<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="4.2" fill="' + safeLeft + '" filter="url(#softGlow)" opacity="1"/>',
-    '<text x="75" y="61" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="30" font-weight="850" fill="' + safeText + '">' + Math.round(value) + "</text>",
-    '<text x="75" y="75" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="10" font-weight="760" fill="' + safeMuted + '">/100</text>',
+    '<text x="75" y="61" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="36" font-weight="850" fill="' + safeText + '">' + Math.round(value) + "</text>",
+    '<text x="75" y="75" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="11" font-weight="760" fill="' + safeMuted + '">/100</text>',
     '<text x="75" y="90" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="10" font-weight="760" fill="' + safeMuted + '">' + scoreLabelText + '</text>',
     "</svg>"
   ].join("");
