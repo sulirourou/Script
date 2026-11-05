@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.7 (2026-11-05)
+ * 版本：v3.8 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1475,7 +1475,51 @@ export default async function (ctx) {
     return C.tileBg;
   }
 
+  // 横向版：本地卡用的，图标+标签一行、数值在下，宽扁
   function metricBox(symbol, label, value, tone, extra) {
+    const options = extra || {};
+    const valueSize = options.valueSize || 7.5;
+    const valueMinScale = options.valueMinScale || 0.35;
+    const labelSize = options.labelSize || 5.5;
+    const labelMinScale = options.labelMinScale || 0.72;
+
+    return col(
+      [
+        row(
+          [
+            image(symbol, tone, 9, 9),
+            text(label, labelSize, "medium", C.muted, {
+              maxLines: 1,
+              minScale: labelMinScale,
+              textAlign: "center"
+            })
+          ],
+          {
+            gap: 1,
+            alignItems: "center"
+          }
+        ),
+
+        text(value, valueSize, "semibold", tone, {
+          maxLines: 1,
+          minScale: valueMinScale,
+          textAlign: "center"
+        })
+      ],
+      {
+        flex: 1,
+        height: 27,
+        padding: [2, 3],
+        gap: 0,
+        alignItems: "center",
+        backgroundColor: softFillForTone(tone),
+        borderRadius: 9
+      }
+    );
+  }
+
+  // 竖向版：代理卡用的，图标在上、标签在中、数值在下，竖扁长
+  function metricBoxVertical(symbol, label, value, tone, extra) {
     const options = extra || {};
     const valueSize = options.valueSize || 7.5;
     const valueMinScale = options.valueMinScale || 0.35;
@@ -1749,6 +1793,8 @@ export default async function (ctx) {
           }
         ),
 
+        spacer(),
+
         row(
           [
             metricBox(
@@ -1926,21 +1972,21 @@ export default async function (ctx) {
 
         row(
           [
-            metricBox(
+            metricBoxVertical(
               "clock",
               "延迟",
               proxyLatency.ok ? proxyLatency.ms + "ms" : "失败",
               proxyLatencyColor
             ),
 
-            metricBox(
+            metricBoxVertical(
               "circle.hexagongrid.fill",
               "NAT",
               nat.label,
               natColor
             ),
 
-            metricBox(
+            metricBoxVertical(
               "paperplane.fill",
               "UDP/QUIC",
               quic.value,
@@ -1951,7 +1997,7 @@ export default async function (ctx) {
               }
             ),
 
-            metricBox(
+            metricBoxVertical(
               "slider.horizontal.3",
               "协议",
               NODE_PROTOCOL,
@@ -2439,14 +2485,14 @@ export default async function (ctx) {
 
         row(
           [
-            metricBox(
+            metricBoxVertical(
               "clock",
               "延迟",
               proxyLatency.ok ? proxyLatency.ms + "ms" : "失败",
               proxyLatencyColor
             ),
 
-            metricBox(
+            metricBoxVertical(
               "checkmark.shield.fill",
               scoreLabel,
               scoreText,
@@ -2458,14 +2504,14 @@ export default async function (ctx) {
 
         row(
           [
-            metricBox(
+            metricBoxVertical(
               "circle.hexagongrid.fill",
               "NAT",
               nat.label,
               natColor
             ),
 
-            metricBox(
+            metricBoxVertical(
               "slider.horizontal.3",
               "协议",
               NODE_PROTOCOL,
