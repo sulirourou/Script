@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.8 (2026-11-05)
+ * 版本：v3.9 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1478,9 +1478,9 @@ export default async function (ctx) {
   // 横向版：本地卡用的，图标+标签一行、数值在下，宽扁
   function metricBox(symbol, label, value, tone, extra) {
     const options = extra || {};
-    const valueSize = options.valueSize || 7.5;
+    const valueSize = options.valueSize || 8;
     const valueMinScale = options.valueMinScale || 0.35;
-    const labelSize = options.labelSize || 5.5;
+    const labelSize = options.labelSize || 6;
     const labelMinScale = options.labelMinScale || 0.72;
 
     return col(
@@ -1521,9 +1521,9 @@ export default async function (ctx) {
   // 竖向版：代理卡用的，图标在上、标签在中、数值在下，竖扁长
   function metricBoxVertical(symbol, label, value, tone, extra) {
     const options = extra || {};
-    const valueSize = options.valueSize || 7.5;
+    const valueSize = options.valueSize || 8;
     const valueMinScale = options.valueMinScale || 0.35;
-    const labelSize = options.labelSize || 5.5;
+    const labelSize = options.labelSize || 6;
     const labelMinScale = options.labelMinScale || 0.72;
 
     return col(
@@ -1544,7 +1544,7 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 36,
+        height: 38,
         padding: [2, 3],
         gap: 1,
         alignItems: "center",
@@ -1565,7 +1565,7 @@ export default async function (ctx) {
               [
                 row(
                   [
-                    text("网络诊断雷达", 12, "bold", C.text, {
+                    text("网络诊断雷达", 13, "bold", C.text, {
                       maxLines: 1,
                       minScale: 0.72
                     }),
@@ -1580,7 +1580,7 @@ export default async function (ctx) {
                   }
                 ),
 
-                text("Egern · 全面网络状态检测", 6.5, "medium", C.muted, {
+                text("Egern · 全面网络状态检测", 7, "medium", C.muted, {
                   maxLines: 1,
                   minScale: 0.78
                 })
@@ -1593,7 +1593,7 @@ export default async function (ctx) {
           ],
           {
             width: 171,
-            height: 36,
+            height: 34,
             gap: 6
           }
         ),
@@ -1644,7 +1644,7 @@ export default async function (ctx) {
           ],
           {
             flex: 1,
-            height: 36,
+            height: 34,
             padding: [3, 0],
             gap: 3
           }
@@ -1654,7 +1654,7 @@ export default async function (ctx) {
 
         col(
           [
-            text(timeLabel(now), 13, "bold", C.text, {
+            text(timeLabel(now), 14, "bold", C.text, {
               maxLines: 1,
               minScale: 0.82,
               textAlign: "right"
@@ -1668,14 +1668,14 @@ export default async function (ctx) {
           ],
           {
             width: 43,
-            height: 36,
+            height: 34,
             alignItems: "end",
             gap: 0
           }
         )
       ],
       {
-        height: 36,
+        height: 34,
         gap: 4
       }
     );
@@ -1693,24 +1693,22 @@ export default async function (ctx) {
 
         row(
           [
-            onWiFi
-              ? iconBox("wifi", C.blue, C.blueSoft, 36)
-              : flagBox(localExit.countryCode),
+            flagBox(localExit.countryCode),
 
             col(
               [
-                text(networkName, 11.5, "semibold", C.text, {
+                text(networkName, 12, "semibold", C.text, {
                   flex: 1,
                   maxLines: 1,
                   minScale: 0.68
                 }),
 
-                text(displayIP(localIP), 9, "medium", C.subtext, {
+                text(displayIP(localIP), 9.5, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.72
                 }),
 
-                text(localArea, 7.5, "medium", C.muted, {
+                text(localArea, 8, "medium", C.muted, {
                   maxLines: 1,
                   minScale: 0.72
                 })
@@ -1821,7 +1819,7 @@ export default async function (ctx) {
               dnsLabel,
               C.purple,
               {
-                valueSize: 6,
+                valueSize: 7,
                 valueMinScale: 0.28
               }
             )
@@ -1831,8 +1829,8 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 142,
-        gap: 6
+        height: 134,
+        gap: 5
       }
     );
   }
@@ -1914,25 +1912,18 @@ export default async function (ctx) {
 
             col(
               [
-                row(
-                  [
-                    text(flag(exit.countryCode) || "🌐", 9, "regular", C.text),
+                text(city, 12, "semibold", C.text, {
+                  flex: 1,
+                  maxLines: 1,
+                  minScale: 0.55
+                }),
 
-                    text(city, 11, "semibold", C.text, {
-                      flex: 1,
-                      maxLines: 1,
-                      minScale: 0.55
-                    })
-                  ],
-                  { gap: 2 }
-                ),
-
-                text(shortISP(exit.isp), 8, "medium", C.subtext, {
+                text(shortISP(exit.isp), 9, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.62
                 }),
 
-                text(displayIP(exit.ip) || "未识别", 9.5, "semibold", C.text, {
+                text(displayIP(exit.ip) || "未识别", 10, "semibold", C.text, {
                   maxLines: 1,
                   minScale: 0.5
                 }),
@@ -1941,23 +1932,23 @@ export default async function (ctx) {
               ],
               {
                 flex: 1,
-                gap: 1
+                gap: 0
               }
             ),
 
             col(
               [
-                scoreGauge(60, 45),
+                scoreGauge(54, 42),
 
-                text(risk, 7, "semibold", riskColor, {
+                text(risk, 8, "semibold", riskColor, {
                   maxLines: 1,
                   minScale: 0.7,
                   textAlign: "center"
                 })
               ],
               {
-                width: 60,
-                gap: 1,
+                width: 54,
+                gap: 0,
                 alignItems: "center"
               }
             )
@@ -1992,7 +1983,7 @@ export default async function (ctx) {
               quic.value,
               quicColor,
               {
-                labelSize: 5,
+                labelSize: 5.5,
                 labelMinScale: 0.38
               }
             ),
@@ -2003,7 +1994,7 @@ export default async function (ctx) {
               NODE_PROTOCOL,
               C.purple,
               {
-                valueSize: 6,
+                valueSize: 7,
                 valueMinScale: 0.34
               }
             )
@@ -2013,9 +2004,9 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 142,
+        height: 134,
         padding: [5, 6],
-        gap: 6
+        gap: 5
       }
     );
   }
@@ -2145,7 +2136,7 @@ export default async function (ctx) {
 
         col(
           [
-            text(item.name, 8.5, "semibold", C.text, {
+            text(item.name, 9, "semibold", C.text, {
               maxLines: 1,
               minScale: 0.66
             }),
@@ -2181,7 +2172,7 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 33,
+        height: 32,
         padding: [4, 5],
         gap: 4,
         backgroundColor: C.tileBg,
@@ -2201,7 +2192,7 @@ export default async function (ctx) {
             compactServiceTile(items[1])
           ],
           {
-            height: 33,
+            height: 32,
             gap: 5
           }
         ),
@@ -2212,7 +2203,7 @@ export default async function (ctx) {
             compactServiceTile(items[3])
           ],
           {
-            height: 33,
+            height: 32,
             gap: 5
           }
         ),
@@ -2223,14 +2214,14 @@ export default async function (ctx) {
             compactServiceTile(items[5])
           ],
           {
-            height: 33,
+            height: 32,
             gap: 5
           }
         )
       ],
       {
         flex: 1,
-        height: 107,
+        height: 104,
         gap: 4
       }
     );
@@ -2256,7 +2247,7 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 142,
+        height: 138,
         padding: [5, 6],
         gap: 5
       }
@@ -2272,11 +2263,11 @@ export default async function (ctx) {
 
             col(
               [
-                text(label, 6.5, "medium", C.muted, {
+                text(label, 7, "medium", C.muted, {
                   maxLines: 1
                 }),
 
-                text(value, 9, "semibold", tone, {
+                text(value, 10, "semibold", tone, {
                   maxLines: 1,
                   minScale: 0.6
                 })
@@ -2409,14 +2400,14 @@ export default async function (ctx) {
             proxyCard()
           ],
           {
-            height: 142,
+            height: 134,
             gap: 6,
             alignItems: "start"
           }
         )
       ],
       {
-        height: 188,
+        height: 180,
         padding: [8, 8],
         gap: 6
       }
@@ -2448,25 +2439,18 @@ export default async function (ctx) {
 
             col(
               [
-                row(
-                  [
-                    text(flag(exit.countryCode) || "🌐", 9, "regular", C.text),
+                text(city, 10, "semibold", C.text, {
+                  flex: 1,
+                  maxLines: 1,
+                  minScale: 0.55
+                }),
 
-                    text(city, 10, "semibold", C.text, {
-                      flex: 1,
-                      maxLines: 1,
-                      minScale: 0.55
-                    })
-                  ],
-                  { gap: 2 }
-                ),
-
-                text(shortISP(exit.isp), 8, "medium", C.subtext, {
+                text(shortISP(exit.isp), 9, "medium", C.subtext, {
                   maxLines: 1,
                   minScale: 0.62
                 }),
 
-                text(displayIP(exit.ip) || "未识别", 9.5, "semibold", C.text, {
+                text(displayIP(exit.ip) || "未识别", 10, "semibold", C.text, {
                   maxLines: 1,
                   minScale: 0.5
                 })
@@ -2517,7 +2501,7 @@ export default async function (ctx) {
               NODE_PROTOCOL,
               C.purple,
               {
-                valueSize: 6,
+                valueSize: 7,
                 valueMinScale: 0.34
               }
             )
@@ -2568,7 +2552,7 @@ export default async function (ctx) {
           proxyCard()
         ],
         {
-          height: 142,
+          height: 134,
           gap: 6,
           alignItems: "start"
         }
@@ -2580,7 +2564,7 @@ export default async function (ctx) {
           serviceCard("AI 解锁检测", "sparkles", ai, C.purple)
         ],
         {
-          height: 142,
+          height: 138,
           gap: 6,
           alignItems: "start"
         }
@@ -2589,7 +2573,7 @@ export default async function (ctx) {
       footer()
     ],
     {
-      height: 400,
+      height: 386,
       padding: [8, 8],
       gap: 6
     }
@@ -3426,7 +3410,7 @@ function purityGaugeSVG(score, colors, label) {
     '<path d="M20 85 A55 55 0 0 1 130 85" fill="none" stroke="' + safeLeft + '" stroke-width="8.4" stroke-linecap="round" pathLength="100" stroke-dasharray="' + leftDash + '" opacity="1"/>',
     '<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="6.5" fill="' + safeGlow + '" opacity="0.20"/>',
     '<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="4.2" fill="' + safeLeft + '" filter="url(#softGlow)" opacity="1"/>',
-    '<text x="75" y="61" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="30" font-weight="850" fill="' + safeText + '">' + Math.round(value) + "</text>",
+    '<text x="75" y="61" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="32" font-weight="850" fill="' + safeText + '">' + Math.round(value) + "</text>",
     '<text x="75" y="75" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="10" font-weight="760" fill="' + safeMuted + '">/100</text>',
     '<text x="75" y="90" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="10" font-weight="760" fill="' + safeMuted + '">' + scoreLabelText + '</text>',
     "</svg>"
