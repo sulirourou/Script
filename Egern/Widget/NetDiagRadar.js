@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.16 (2026-11-05)
+ * 版本：v3.17 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1399,7 +1399,7 @@ export default async function (ctx) {
   function proxyTagLine(value, tone, fill) {
     return row(
       [
-        text(value, 6, "semibold", tone, {
+        text(value, 7, "semibold", tone, {
           maxLines: 1,
           minScale: 0.55,
           textAlign: "center"
@@ -1407,7 +1407,7 @@ export default async function (ctx) {
       ],
       {
         width: 66,
-        height: 10,
+        height: 8,
         padding: [1, 3],
         backgroundColor: fill,
         borderRadius: 5.5,
