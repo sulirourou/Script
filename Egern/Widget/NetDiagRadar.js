@@ -1914,7 +1914,7 @@ export default async function (ctx) {
 
             col(
               [
-                text(city, 13, "semibold", C.text, {
+                text(city, 10, "semibold", C.text, {
                   flex: 1,
                   maxLines: 1,
                   minScale: 0.55
