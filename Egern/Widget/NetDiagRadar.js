@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.6 (2026-11-05)
+ * 版本：v3.7 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1484,20 +1484,13 @@ export default async function (ctx) {
 
     return col(
       [
-        row(
-          [
-            image(symbol, tone, 9, 9),
-            text(label, labelSize, "medium", C.muted, {
-              maxLines: 1,
-              minScale: labelMinScale,
-              textAlign: "center"
-            })
-          ],
-          {
-            gap: 1,
-            alignItems: "center"
-          }
-        ),
+        image(symbol, tone, 12, 12),
+
+        text(label, labelSize, "medium", C.muted, {
+          maxLines: 1,
+          minScale: labelMinScale,
+          textAlign: "center"
+        }),
 
         text(value, valueSize, "semibold", tone, {
           maxLines: 1,
@@ -1507,9 +1500,9 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 27,
+        height: 36,
         padding: [2, 3],
-        gap: 0,
+        gap: 1,
         alignItems: "center",
         backgroundColor: softFillForTone(tone),
         borderRadius: 9
@@ -1792,8 +1785,8 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 122,
-        gap: 3
+        height: 142,
+        gap: 6
       }
     );
   }
@@ -1929,6 +1922,8 @@ export default async function (ctx) {
           }
         ),
 
+        spacer(),
+
         row(
           [
             metricBox(
@@ -1972,9 +1967,9 @@ export default async function (ctx) {
       ],
       {
         flex: 1,
-        height: 122,
+        height: 142,
         padding: [5, 6],
-        gap: 3
+        gap: 6
       }
     );
   }
@@ -2368,14 +2363,14 @@ export default async function (ctx) {
             proxyCard()
           ],
           {
-            height: 122,
+            height: 142,
             gap: 6,
             alignItems: "start"
           }
         )
       ],
       {
-        height: 168,
+        height: 188,
         padding: [8, 8],
         gap: 6
       }
@@ -2501,7 +2496,7 @@ export default async function (ctx) {
         )
       ],
       {
-        height: 148,
+        height: 166,
         padding: [6, 7],
         gap: 4
       }
@@ -2510,7 +2505,7 @@ export default async function (ctx) {
     return col(
       [inner],
       {
-        height: 156,
+        height: 174,
         padding: [4, 4],
         gap: 0
       }
@@ -2527,7 +2522,7 @@ export default async function (ctx) {
           proxyCard()
         ],
         {
-          height: 122,
+          height: 142,
           gap: 6,
           alignItems: "start"
         }
@@ -2548,7 +2543,7 @@ export default async function (ctx) {
       footer()
     ],
     {
-      height: 380,
+      height: 400,
       padding: [8, 8],
       gap: 6
     }
