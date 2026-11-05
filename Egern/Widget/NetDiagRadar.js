@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.10 (2026-11-05)
+ * 版本：v3.11 (2026-11-05)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -2304,7 +2304,7 @@ export default async function (ctx) {
               C.blue
             ),
 
-            dividerVertical(18),
+            dividerVertical(16),
 
             footerCell(
               "house.fill",
@@ -2315,7 +2315,7 @@ export default async function (ctx) {
                 : C.green
             ),
 
-            dividerVertical(18),
+            dividerVertical(16),
 
             footerCell(
               "checkmark.shield.fill",
@@ -2324,7 +2324,7 @@ export default async function (ctx) {
               purityColor
             ),
 
-            dividerVertical(18),
+            dividerVertical(16),
 
             footerCell(
               "shield.lefthalf.filled",
@@ -2333,7 +2333,7 @@ export default async function (ctx) {
               riskColor
             ),
 
-            dividerVertical(18),
+            dividerVertical(16),
 
             footerCell(
               "arrow.clockwise",
@@ -2343,7 +2343,7 @@ export default async function (ctx) {
             )
           ],
           {
-            height: 34,
+            height: 30,
             padding: [0, 0],
             gap: 0,
             alignItems: "center"
@@ -2351,7 +2351,7 @@ export default async function (ctx) {
         )
       ],
       {
-        height: 46,
+        height: 40,
         padding: [4, 5],
         gap: 0
       }
@@ -2575,7 +2575,7 @@ export default async function (ctx) {
       footer()
     ],
     {
-      height: 386,
+      height: 380,
       padding: [8, 8],
       gap: 6
     }
