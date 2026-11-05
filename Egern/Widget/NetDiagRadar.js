@@ -1406,8 +1406,8 @@ export default async function (ctx) {
         })
       ],
       {
-        width: 66,
-        height: 8,
+        width: 60,
+        height: 11,
         padding: [1, 3],
         backgroundColor: fill,
         borderRadius: 5.5,
