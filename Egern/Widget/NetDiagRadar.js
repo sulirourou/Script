@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.23 (2026-11-06)
+ * 版本：v3.24 (2026-11-06)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1867,7 +1867,7 @@ export default async function (ctx) {
           text: uiColor(C.scoreLeft),
           muted: uiColor(C.muted)
         },
-        scoreLabel
+        isIPPureScore ? "IPPure" : scoreLabel
       ),
       width || 60,
       height || 45,
@@ -3381,6 +3381,8 @@ function purityGaugeSVG(score, colors, label) {
   const rx = 55;
   const ry = 55;
 
+  // Boundary point: value% along the semicircle from the left end.
+  // theta = PI (left, value 0) -> 0 (right, value 100).
   const theta = Math.PI - Math.PI * value / 100;
   const px = cx + rx * Math.cos(theta);
   const py = cy - ry * Math.sin(theta);
@@ -3388,14 +3390,34 @@ function purityGaugeSVG(score, colors, label) {
   const safeTrack = svgColor(colors.track, "#D8E1EA");
   const safeLeft = svgColor(colors.left, "#22C96D");
   const safeRight = svgColor(colors.right, "#E25769");
-  const safeGlow = svgColor(colors.glow, "#1AE27F");
   const safeText = svgColor(colors.text, "#22C96D");
   const safeMuted = svgColor(colors.muted, "#74839A");
 
-  const leftDash =
-    value >= 99.9
-      ? "100 0"
-      : Math.max(0.1, value).toFixed(1) + " 100";
+  // v3.24: draw the two arcs explicitly by angle instead of dasharray +
+  // pathLength, so the proportion is exact in any SVG engine.
+  // Red = risk value (left end -> boundary); green = remainder (boundary -> right end).
+  // value 100 -> all red; value 0 -> all green. The arc follows the value.
+  const x0 = (cx - rx).toFixed(2);
+  const x1 = (cx + rx).toFixed(2);
+  const yB = cy.toFixed(2);
+  const bx = px.toFixed(2);
+  const by = py.toFixed(2);
+  const arc = function (xStart, yStart, xEnd, yEnd, color, width, opacity) {
+    return '<path d="M' + xStart + ' ' + yStart + ' A55 55 0 0 1 ' + xEnd + ' ' + yEnd + '" fill="none" stroke="' + color + '" stroke-width="' + width + '" stroke-linecap="round" opacity="' + opacity + '"/>';
+  };
+  const fullArc = function (color, width, opacity) {
+    return arc(x0, yB, x1, yB, color, width, opacity);
+  };
+  const redArc = value <= 0
+    ? ""
+    : value >= 100
+      ? fullArc(safeRight, "8.2", "0.95")
+      : arc(x0, yB, bx, by, safeRight, "8.2", "0.95");
+  const greenArc = value >= 100
+    ? ""
+    : value <= 0
+      ? fullArc(safeLeft, "8.4", "1")
+      : arc(bx, by, x1, yB, safeLeft, "8.4", "1");
 
   return [
     '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="94" viewBox="0 0 150 94">',
@@ -3408,15 +3430,13 @@ function purityGaugeSVG(score, colors, label) {
     "</feMerge>",
     "</filter>",
     "</defs>",
-    '<path d="M20 80 A55 55 0 0 1 130 80" fill="none" stroke="' + safeTrack + '" stroke-width="9" stroke-linecap="round" opacity="0.75"/>',
-    '<path d="M20 80 A55 55 0 0 1 130 80" fill="none" stroke="' + safeRight + '" stroke-width="8.2" stroke-linecap="round" opacity="0.95"/>',
-    '<path d="M20 80 A55 55 0 0 1 130 80" fill="none" stroke="' + safeGlow + '" stroke-width="13" stroke-linecap="round" pathLength="100" stroke-dasharray="' + leftDash + '" opacity="0.16"/>',
-    '<path d="M20 80 A55 55 0 0 1 130 80" fill="none" stroke="' + safeLeft + '" stroke-width="8.4" stroke-linecap="round" pathLength="100" stroke-dasharray="' + leftDash + '" opacity="1"/>',
-    '<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="6.5" fill="' + safeGlow + '" opacity="0.20"/>',
-    '<circle cx="' + px.toFixed(2) + '" cy="' + py.toFixed(2) + '" r="4.2" fill="' + safeLeft + '" filter="url(#softGlow)" opacity="1"/>',
+    fullArc(safeTrack, "9", "0.75"),
+    greenArc,
+    redArc,
+    '<circle cx="' + bx + '" cy="' + by + '" r="6.5" fill="' + safeRight + '" opacity="0.20"/>',
+    '<circle cx="' + bx + '" cy="' + by + '" r="4.2" fill="' + safeRight + '" filter="url(#softGlow)" opacity="1"/>',
     '<text x="75" y="56" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="32" font-weight="850" fill="' + safeText + '">' + Math.round(value) + "</text>",
-    '<text x="75" y="72" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="12" font-weight="760" fill="' + safeMuted + '">/100</text>',
-    '<text x="75" y="88" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="12" font-weight="760" fill="' + safeMuted + '">' + scoreLabelText + '</text>',
+    '<text x="75" y="78" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif" font-size="15" font-weight="760" fill="' + safeMuted + '">' + scoreLabelText + '</text>',
     "</svg>"
   ].join("");
 }
