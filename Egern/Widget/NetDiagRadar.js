@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.24 (2026-11-06)
+ * 版本：v3.25 (2026-11-06)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -1941,7 +1941,7 @@ export default async function (ctx) {
 
             col(
               [
-                scoreGauge(54, 34),
+                scoreGauge(54, 31),
 
                 text(risk, 8, "semibold", riskColor, {
                   maxLines: 1,
@@ -3420,7 +3420,7 @@ function purityGaugeSVG(score, colors, label) {
       : arc(bx, by, x1, yB, safeLeft, "8.4", "1");
 
   return [
-    '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="94" viewBox="0 0 150 94">',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="86" viewBox="0 0 150 86">',
     "<defs>",
     '<filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">',
     '<feGaussianBlur stdDeviation="2.1" result="blur"/>',
