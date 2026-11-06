@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.20 (2026-11-06)
+ * 版本：v3.21 (2026-11-06)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -2578,7 +2578,7 @@ export default async function (ctx) {
     ],
     {
       height: 380,
-      padding: [0, 8],
+      padding: [8, 8],
       gap: 6
     }
   ) : null;
@@ -2615,7 +2615,7 @@ export default async function (ctx) {
 
   return {
     type: "widget",
-    padding: S(8),
+    padding: S(4),
     gap: 0,
     backgroundColor: C.root,
     refreshAfter: refreshAfter,
