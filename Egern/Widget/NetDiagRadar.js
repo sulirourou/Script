@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.27 (2026-11-11)
+ * 版本：v3.28 (2026-11-11)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -26,8 +26,9 @@
  * 接口说明：
  * 代理出口主接口: https://my.ippure.com/v1/info (风险分 fraudScore + 国家/地区/城市 + ISP + ASN + 是否住宅/广播)
  * 代理出口备用接口: https://ipwho.is/ (主接口失败时用; 只给 IP + 国家/地区/城市 + ISP + ASN, 无 fraudScore, 风险分留空按 kind 回退)
- * 本地出口: https://ipwho.is/ (直连, 单一接口; 与 IP-API.js 接口独立, 已去掉 ip-api.com / api.ipapi.is)
- * DNS 解析: EDNS 探测已移除 (原 edns.ip-api.com, ip-api.com 专属无替代); 解析器归属改用 https://ipwho.is/<ip>
+ * 本地出口: http://ip-api.com/json/ + https://ipwho.is/ + https://api.ipapi.is/ (三路并行直连, 先成功者为准)
+ * DNS 解析: http://<随机>.edns.ip-api.com/json (EDNS 解析器) + http://ip-api.com/json/<ip> (解析器归属)
+ * 注: v3.27 曾去掉 ip-api.com / api.ipapi.is 以求与 IP-API.js 接口独立, 但 EDNS 探测无替代接口, DNS 栏变未知, 故 v3.28 恢复 (本组件留作备用, 以功能完整为准)。
  */
 
 export default async function (ctx) {
@@ -792,7 +793,12 @@ export default async function (ctx) {
 
   async function getLocalExit() {
     const results = await Promise.all([
-      getJSONDirect("https://ipwho.is/?_=" + Date.now())
+      getJSONDirect(
+        "http://ip-api.com/json/?lang=zh-CN&fields=status,message,query,country,countryCode,regionName,city,isp,org,as,asname&_=" +
+          Date.now()
+      ),
+      getJSONDirect("https://ipwho.is/?lang=zh-CN&_=" + Date.now()),
+      getJSONDirect("https://api.ipapi.is/?_=" + Date.now())
     ]);
 
     for (let index = 0; index < results.length; index += 1) {
@@ -922,17 +928,50 @@ export default async function (ctx) {
   }
 
   async function probeEDNSResolver() {
-    // EDNS 解析器探测已移除: 原用 http://<随机>.edns.ip-api.com/json,
-    // 该服务是 ip-api.com 专属, 无替代接口 (为与 IP-API.js 接口独立而去掉)。
-    // 去掉后 DNS 解析器无法探测, getDNSVerified 返回 ok:false, DNS 栏显示未知。
+    const host = randomAlphaNum(32) + ".edns.ip-api.com";
+
+    const result = await getJSONDirect(
+      "http://" + host + "/json?_=" + Date.now()
+    );
+
+    if (!result.ok || !result.data) {
+      return {
+        ok: false,
+        ip: "",
+        geo: "",
+        isp: "",
+        org: "",
+        asname: "",
+        as: ""
+      };
+    }
+
+    const dns = result.data.dns || {};
+    const ip = clean(dns.ip);
+    const geo = clean(dns.geo);
+
+    if (!ip) {
+      return {
+        ok: false,
+        ip: "",
+        geo: geo,
+        isp: "",
+        org: "",
+        asname: "",
+        as: ""
+      };
+    }
+
+    const info = await getDNSResolverInfo(ip);
+
     return {
-      ok: false,
-      ip: "",
-      geo: "",
-      isp: "",
-      org: "",
-      asname: "",
-      as: ""
+      ok: true,
+      ip: ip,
+      geo: geo,
+      isp: info.isp,
+      org: info.org,
+      asname: info.asname,
+      as: info.as
     };
   }
 
@@ -949,10 +988,13 @@ export default async function (ctx) {
     }
 
     const result = await getJSONDirect(
-      "https://ipwho.is/" + encodeURIComponent(target) + "?_=" + Date.now()
+      "http://ip-api.com/json/" +
+        encodeURIComponent(target) +
+        "?lang=zh-CN&fields=status,message,query,country,countryCode,regionName,city,isp,org,as,asname&_=" +
+        Date.now()
     );
 
-    if (!result.ok || !result.data || result.data.success === false) {
+    if (!result.ok || !result.data || result.data.status === "fail") {
       return {
         isp: "",
         org: "",
@@ -961,13 +1003,11 @@ export default async function (ctx) {
       };
     }
 
-    const conn = result.data.connection || {};
-    const asn = conn.asn !== undefined && conn.asn !== null && conn.asn !== "" ? "AS" + conn.asn : "";
     return {
-      isp: clean(conn.isp || conn.org || ""),
-      org: clean(conn.org || ""),
-      asname: clean(conn.org || ""),
-      as: asn
+      isp: clean(result.data.isp),
+      org: clean(result.data.org),
+      asname: clean(result.data.asname),
+      as: clean(result.data.as)
     };
   }
 
@@ -4128,8 +4168,6 @@ function parseLocalExit(data, forceLocalMainland) {
     return {};
   }
 
-  const conn = data.connection || {};
-
   const countryCodeValue = countryCode(
     pick(
       data.countryCode,
@@ -4176,10 +4214,10 @@ function parseLocalExit(data, forceLocalMainland) {
     countryCode: isChina ? "CN" : countryCodeValue,
     region: region,
     city: city,
-    isp: clean(pick(data.isp, data.org, data.organization, conn.isp, conn.org)),
-    org: clean(pick(data.org, conn.org)),
-    asname: clean(pick(data.asname, conn.org)),
-    as: clean(pick(data.as, conn.asn !== undefined && conn.asn !== null && conn.asn !== "" ? "AS" + conn.asn : "")),
+    isp: clean(pick(data.isp, data.org, data.organization)),
+    org: clean(data.org),
+    asname: clean(data.asname),
+    as: clean(data.as),
     label: label
   };
 }
