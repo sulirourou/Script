@@ -1,9 +1,16 @@
 /**
  * 🌏 IPPure
- * 版本：v2.4 (2026-11-11)
+ * 版本：v2.5 (2026-11-11)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
+ *
+ * 接口说明 (本组件只用以下接口, 与 IP-API 组件数据源不同):
+ * 代理出口主接口: https://my.ippure.com/v1/info (风险分 fraudScore + 国家/地区/城市 + ISP + ASN + 是否住宅)
+ * 代理出口备用接口: https://ipwho.is/ (主接口两次失败时用; 只给 IP + 国家/地区/城市 + ISP + ASN, 无 fraudScore, 风险分按运营商关键词估算)
+ * 翻译接口: Google Translate gtx + MyMemory (城市/地区名翻成中文, 均免 key)
+ * 地名补缺: http://ip-api.com/json/<ip> (lookupGeo, 翻译给不全时按 IP 查中文地名, 直连不走代理)
+ * 本地出口: https://myip.ipip.net/json (本地 IP + 省市 + 运营商)
  */
 
 const API_MAIN = "https://my.ippure.com/v1/info";
@@ -250,12 +257,62 @@ export default async function(ctx) {
     return true;
   }
 
+  // 备用接口: my.ippure.com 两次都失败时用 ipwho.is 查出口 (与 IP-API 的 ip-api 主接口不同源),
+  // 至少显示节点信息。风险分此时不是 IPPure fraudScore, 按运营商关键词估算 (含 cloud/hosting 等 +40)。
+  async function fetchProxyFallback() {
+    const opts = { timeout: TIMEOUT_PROXY, headers: { 'User-Agent': UA } };
+    if (POLICY) opts.policy = POLICY;
+    let j = null;
+    try {
+      const r = await ctx.http.get("https://ipwho.is/", opts);
+      j = await r.json();
+    } catch (e) { return false; }
+    if (!j || !j.success || !j.ip) return false;
+    const conn = j.connection || {};
+    proxyData.ip = j.ip;
+    // 标题: 国家 地区 城市 (地区优先用英文名查表取全名, 城市先查表再在线翻译)
+    let c = "", r = "", d = "";
+    if (j.region) {
+      const cc = (j.country_code || "").toUpperCase();
+      r = trimAdmin((cc && j.region_code && regionCodeCn[cc + ":" + String(j.region_code).toUpperCase()]) ||
+          regionNameCn[String(j.region).trim().toLowerCase()] || "");
+    }
+    if (j.country) c = countryCodeCn[(j.country_code || "").toUpperCase()] || "";
+    if (!c && j.country) {
+      const [tr] = await translateBatch([j.country], "zh-Hans");
+      if (tr && !/[a-zA-Z]/.test(tr)) c = trimAdmin(tr);
+    }
+    if (!r && j.region) {
+      const [tr] = await translateBatch([j.region], "zh-Hans");
+      if (tr && !/[a-zA-Z]/.test(tr)) r = trimAdmin(tr);
+    }
+    const cityRaw = String(j.city || "").trim();
+    d = isPureCn(cityRaw) ? trimAdmin(cityRaw) : (cityNameCn[cityRaw.toLowerCase()] || "");
+    if (!d && cityRaw && /[a-zA-Z]/.test(cityRaw)) {
+      const [tr] = await translateBatch([cityRaw], "zh-Hans");
+      if (tr && !/[a-zA-Z]/.test(tr)) d = trimAdmin(tr);
+    }
+    proxyData.title = getCnTitle(c, r, d);
+    proxyData.detail = getEnDetail(j.country, j.region, j.city);
+    const ispName = conn.isp || conn.org || "";
+    const asn = (conn.asn !== undefined && conn.asn !== null && conn.asn !== "") ? conn.asn : "";
+    proxyData.isp = (ispName && asn) ? `${ispName} (AS${asn})` : `${ispName}`.trim() || "未知";
+    proxyData.flag = flagEmoji(j.country_code);
+    const orgAsText = `${conn.org || ""} ${conn.isp || ""}`.toLowerCase();
+    const isHostLike = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b/.test(orgAsText);
+    proxyData.isDC = isHostLike;
+    proxyData.risk = isHostLike ? 40 : 0;
+    proxyData.success = true;
+    return true;
+  }
+
   async function fetchProxy() {
     try { if (await fetchProxyOnce()) { saveProxyCache(); return; } } catch (e) {}
     try {
       await sleep(800);
       if (await fetchProxyOnce()) { saveProxyCache(); return; }
     } catch (e) {}
+    try { if (await fetchProxyFallback()) { saveProxyCache(); return; } } catch (e) {}
     if (!loadProxyCache()) proxyData.ip = "获取失败";
   }
 

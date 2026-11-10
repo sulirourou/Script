@@ -1,9 +1,15 @@
 /**
  * 🌏 IP-API
- * 版本：v2.1 (2026-11-11)
+ * 版本：v2.2 (2026-11-11)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
+ *
+ * 接口说明 (本组件只用以下接口, 与 IPPure 组件数据源不同):
+ * 代理出口主接口: http://ip-api.com/json/ (英文 + 中文各一次; 国家/地区/城市 + ISP + ASN + hosting/proxy 标记, 风险分按 proxy +50 / 机房 +40 估算)
+ * 代理出口备用接口: https://api.ipapi.is/ (主接口全失败时用; 只给 IP + 国家/地区/城市 + ASN, 无 hosting/proxy 标记, 风险分按运营商关键词估算)
+ * 翻译接口: Google Translate gtx + MyMemory (城市名翻成中文, 均免 key)
+ * 本地出口: https://myip.ipip.net/json (本地 IP + 省市 + 运营商)
  */
 
 const API_BASE = "http://ip-api.com/json/";
@@ -232,6 +238,58 @@ export default async function(ctx) {
     }
   }
 
+  // 备用接口: ip-api.com 三轮都失败时用 api.ipapi.is 查出口 (与 IPPure 的 my.ippure.com 主接口不同源),
+  // 至少显示节点信息。api.ipapi.is 只给 IP + 国家/地区/城市 + ASN, 无 hosting/proxy 标记,
+  // 风险分按 ASN/运营商名关键词估算 (含 cloud/hosting 等 +40)。
+  async function fetchProxyFallback() {
+    // 英文国名 -> 国家代码 (api.ipapi.is 不返回 countryCode, 国旗需由国名反查)
+    const nameCode = { "united states": "US", "us": "US", "china": "CN", "hong kong": "HK", "taiwan": "TW", "macao": "MO", "macau": "MO", "japan": "JP", "korea": "KR", "south korea": "KR", "singapore": "SG", "united kingdom": "GB", "uk": "GB", "germany": "DE", "france": "FR", "canada": "CA", "australia": "AU", "netherlands": "NL", "switzerland": "CH", "sweden": "SE", "norway": "NO", "denmark": "DK", "finland": "FI", "italy": "IT", "spain": "ES", "portugal": "PT", "ireland": "IE", "austria": "AT", "belgium": "BE", "poland": "PL", "czech republic": "CZ", "czechia": "CZ", "hungary": "HU", "greece": "GR", "turkey": "TR", "russia": "RU", "ukraine": "UA", "india": "IN", "thailand": "TH", "vietnam": "VN", "malaysia": "MY", "indonesia": "ID", "philippines": "PH", "new zealand": "NZ", "mexico": "MX", "brazil": "BR", "argentina": "AR", "chile": "CL", "colombia": "CO", "peru": "PE", "south africa": "ZA", "egypt": "EG", "nigeria": "NG", "kenya": "KE", "israel": "IL", "united arab emirates": "AE", "saudi arabia": "SA", "qatar": "QA", "kuwait": "KW", "iran": "IR", "iraq": "IQ", "pakistan": "PK", "bangladesh": "BD", "sri lanka": "LK", "myanmar": "MM", "cambodia": "KH", "laos": "LA", "mongolia": "MN", "nepal": "NP", "kazakhstan": "KZ", "uzbekistan": "UZ" };
+    const opts = { timeout: TIMEOUT_PROXY, headers: { 'User-Agent': UA } };
+    if (POLICY) opts.policy = POLICY;
+    let j = null;
+    try {
+      const r = await ctx.http.get("https://api.ipapi.is/", opts);
+      j = await r.json();
+    } catch (e) { return false; }
+    if (!j || !j.ip) return false;
+    proxyData.ip = j.ip;
+    // 标题: 国家 地区 城市 (地区优先用英文名查表取全名, 城市先查表再在线翻译)
+    let c = "", r = "", d = "";
+    let cityEn = String(j.city || "").trim();
+    const cc = nameCode[String(j.country || "").trim().toLowerCase()] || "";
+    if (cc) c = countryCodeCn[cc] || "";
+    if (!c && j.country) {
+      const [tr] = await translateBatch([j.country], "zh-Hans");
+      if (tr && !/[a-zA-Z]/.test(tr)) c = trimAdmin(tr);
+    }
+    if (j.region) {
+      r = trimAdmin(regionNameCn[String(j.region).trim().toLowerCase()] || "");
+      if (!r) {
+        const [tr] = await translateBatch([j.region], "zh-Hans");
+        if (tr && !/[a-zA-Z]/.test(tr)) r = trimAdmin(tr);
+      }
+    }
+    d = cityCn(cityEn);
+    if (!d && cityEn && /[a-zA-Z]/.test(cityEn)) {
+      const [tr] = await translateBatch([cityEn], "zh-Hans");
+      if (tr && !/[a-zA-Z]/.test(tr)) d = trimAdmin(tr);
+    }
+    proxyData.title = getCnTitle(c, r, d) || (j.country ? getCnTitle(j.country, "", "") : "") || "";
+    proxyData.detail = getEnDetail(j.country, j.region, j.city);
+    // asn 形如 "AS13335 Cloudflare, Inc.", 拆出 AS 号与运营商名
+    const asnStr = String(j.asn || "");
+    const m = asnStr.match(/AS(\d+)\s*(.*)/i);
+    const asnNum = m ? m[1] : "";
+    const orgName = m ? (m[2] || "").trim() : "";
+    proxyData.isp = (orgName && asnNum) ? `${orgName} (AS${asnNum})` : (asnStr || "未知");
+    proxyData.flag = flagEmoji(cc);
+    const isHostLike = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b/i.test(`${orgName} ${asnStr}`);
+    proxyData.isDC = isHostLike;
+    proxyData.risk = isHostLike ? 40 : 0;
+    proxyData.success = true;
+    return true;
+  }
+
   async function fetchProxy() {
     const urlEn = `${API_BASE}${FIELDS}`;
     const urlCn = `${API_BASE}${FIELDS}&lang=zh-CN`;
@@ -267,6 +325,9 @@ export default async function(ctx) {
       note(rCn3);
       if (rCn3.j && await fillSmart(null, rCn3.j, false)) { saveProxyCache(); return; }
     }
+
+    // 备用接口: 主接口三轮都失败 -> 用 api.ipapi.is 查出口
+    try { if (await fetchProxyFallback()) { saveProxyCache(); return; } } catch (e) {}
 
     // 全失败: 缓存顶上; 无缓存显示失败 + 原因
     if (!loadProxyCache()) {
