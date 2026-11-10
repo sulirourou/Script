@@ -1,6 +1,6 @@
 /**
  * 🌏 IP-API
- * 版本：v2.0 (2026-11-11)
+ * 版本：v2.1 (2026-11-11)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -21,9 +21,12 @@ export default async function(ctx) {
 
   const countryMap = { "united states": "美国", "us": "美国", "singapore": "新加坡", "japan": "日本", "hong kong": "香港", "taiwan": "台湾", "united kingdom": "英国", "uk": "英国", "korea": "韩国", "south korea": "韩国" };
 
-  // 省/市/州名去掉末尾的省/市/州 (广东省 -> 广东, 广州市 -> 广州, 加利福尼亚州 -> 加利福尼亚)
+  // 省/市/州名去掉末尾的省/市/州 (广东省 -> 广东, 广州市 -> 广州, 加利福尼亚州 -> 加利福尼亚),
+  // 但至少留两个字: 中文接口有时只给缩写 (加州), 去后缀会截成单个字 (加), 故不去
   function trimAdmin(s) {
-    return String(s || "").trim().replace(/(省|市|州)$/, "");
+    const t = String(s || "").trim();
+    if (/[省市州]$/.test(t) && t.length > 2) return t.slice(0, -1);
+    return t;
   }
 
   const countryCodeCn = { US: "美国", CN: "中国", HK: "香港", TW: "台湾", MO: "澳门", JP: "日本", KR: "韩国", SG: "新加坡", GB: "英国", UK: "英国", DE: "德国", FR: "法国", CA: "加拿大", AU: "澳大利亚", NL: "荷兰", CH: "瑞士", SE: "瑞典", NO: "挪威", DK: "丹麦", FI: "芬兰", IT: "意大利", ES: "西班牙", PT: "葡萄牙", IE: "爱尔兰", AT: "奥地利", BE: "比利时", PL: "波兰", CZ: "捷克", HU: "匈牙利", GR: "希腊", TR: "土耳其", RU: "俄罗斯", UA: "乌克兰", IN: "印度", TH: "泰国", VN: "越南", MY: "马来西亚", ID: "印度尼西亚", PH: "菲律宾", NZ: "新西兰", MX: "墨西哥", BR: "巴西", AR: "阿根廷", CL: "智利", CO: "哥伦比亚", PE: "秘鲁", ZA: "南非", EG: "埃及", NG: "尼日利亚", KE: "肯尼亚", IL: "以色列", AE: "阿联酋", SA: "沙特阿拉伯", QA: "卡塔尔", KW: "科威特", IR: "伊朗", IQ: "伊拉克", PK: "巴基斯坦", BD: "孟加拉国", LK: "斯里兰卡", MM: "缅甸", KH: "柬埔寨", LA: "老挝", MN: "蒙古", NP: "尼泊尔", KZ: "哈萨克斯坦", UZ: "乌兹别克斯坦" };
@@ -146,14 +149,21 @@ export default async function(ctx) {
   async function buildProxyTitle(cn, en) {
     let c = "", r = "", d = "";
     let cityEn = "";
-    if (cn) { c = cn.country || ""; r = trimAdmin(cn.regionName); d = cityCn(cn.city); cityEn = String(cn.city || "").trim(); }
+    // 地区: 优先用英文地区名查内置表取全名 (California -> 加利福尼亚州 -> 加利福尼亚);
+    // 中文接口有时只给缩写 (如 加州), 直接用它会与全名不一致, 故只作英文查不到时的回退
+    if (en && en.regionName) {
+      const cc = (en.countryCode || "").toUpperCase();
+      r = trimAdmin((cc && en.region && regionCodeCn[cc + ":" + String(en.region).toUpperCase()]) ||
+          regionNameCn[String(en.regionName).trim().toLowerCase()] || "");
+    }
+    if (cn) {
+      if (!c) c = cn.country || "";
+      if (!r) r = trimAdmin(cn.regionName);
+      d = cityCn(cn.city);
+      cityEn = String(cn.city || "").trim();
+    }
     if (en) {
       if (!c) c = countryCodeCn[(en.countryCode || "").toUpperCase()] || "";
-      if (!r) {
-        const cc = (en.countryCode || "").toUpperCase();
-        r = trimAdmin((cc && en.region && regionCodeCn[cc + ":" + String(en.region).toUpperCase()]) ||
-            regionNameCn[String(en.regionName || "").trim().toLowerCase()] || "");
-      }
       if (!d) d = cityCn(en.city);
       if (!cityEn) cityEn = String(en.city || "").trim();
     }

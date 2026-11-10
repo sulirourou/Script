@@ -1,6 +1,6 @@
 /**
  * 🌏 IPPure
- * 版本：v2.1 (2026-11-10)
+ * 版本：v2.2 (2026-11-11)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -104,9 +104,12 @@ export default async function(ctx) {
     return res.join(" ").trim() || "未知";
   }
 
-  // 省/市名去掉末尾的省/市两个字 (广东省 -> 广东, 广州市 -> 广州)
+  // 省/市/州名去掉末尾的省/市/州 (广东省 -> 广东, 广州市 -> 广州, 加利福尼亚州 -> 加利福尼亚),
+  // 但至少留两个字: 中文地名有时只给缩写 (加州), 去后缀会截成单个字 (加), 故不去
   function trimAdmin(s) {
-    return String(s || "").trim().replace(/(省|市)$/, "");
+    const t = String(s || "").trim();
+    if (/[省市州]$/.test(t) && t.length > 2) return t.slice(0, -1);
+    return t;
   }
 
   // 2. 在线翻译 (双接口, 均免 key): 谷歌 gtx 优先 (地名质量最好), 逐条失败
@@ -227,8 +230,8 @@ export default async function(ctx) {
       regionCn = localizedRegion(j.countryCode, region, j.regionCode, regionTr);
       if (!regionCn) regionCn = localizedRegion(j.countryCode, city, "", cityTr);
     }
-    // 地区去行政后缀 (州/省/市), 城市取翻译结果, 翻译不通时查内置城市表, 与 IP-API 统一为 国家 地区 城市
-    regionCn = String(regionCn || "").trim().replace(/(省|市|州)$/, "");
+    // 地区去行政后缀 (州/省/市, 但缩写如 加州 不去), 城市取翻译结果, 翻译不通时查内置城市表, 与 IP-API 统一为 国家 地区 城市
+    regionCn = trimAdmin(regionCn);
     let cityCn = isPureCn(cityTr) ? cityTr.trim() : geoCityCn;
     if (!cityCn) cityCn = cityNameCn[String(city || "").trim().toLowerCase()] || "";
     if (cityCn && (cityCn === regionCn || cityCn === countryCn)) cityCn = "";
