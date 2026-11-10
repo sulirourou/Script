@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.28 (2026-11-11)
+ * 版本：v3.29 (2026-11-11)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -29,6 +29,7 @@
  * 本地出口: http://ip-api.com/json/ + https://ipwho.is/ + https://api.ipapi.is/ (三路并行直连, 先成功者为准)
  * DNS 解析: http://<随机>.edns.ip-api.com/json (EDNS 解析器) + http://ip-api.com/json/<ip> (解析器归属)
  * 注: v3.27 曾去掉 ip-api.com / api.ipapi.is 以求与 IP-API.js 接口独立, 但 EDNS 探测无替代接口, DNS 栏变未知, 故 v3.28 恢复 (本组件留作备用, 以功能完整为准)。
+ * v3.29 修复: mergeExitSources 把 ipwho.is 兜底的 risk:null 误算成 0 分 (Number(null)===0 是有限数), 机房 IP 也显示 0 分; 兜底机房关键词补 Vultr/DigitalOcean/Linode 等。
  */
 
 export default async function (ctx) {
@@ -556,7 +557,7 @@ export default async function (ctx) {
     const asn = conn.asn !== undefined && conn.asn !== null && conn.asn !== "" ? conn.asn : "";
     const isp = asOrg ? (asOrg + (asn !== "" ? " (AS" + asn + ")" : "")) : "未知组织";
     const cloud = cloudProviderFromText(asOrg + " " + clean(conn.org || ""));
-    const hostLike = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b/i.test((asOrg + " " + clean(conn.org || "")).toLowerCase()) || cloud.hit;
+    const hostLike = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b|vultr|digitalocean|linode|akamai|\bovh\b|hetzner|contabo|netlab|choopa|colocrossing|psychz|quadranet|leaseweb/i.test((asOrg + " " + clean(conn.org || "")).toLowerCase()) || cloud.hit;
     const flags = {
       datacenter: hostLike,
       hosting: hostLike,
@@ -3979,7 +3980,9 @@ function mergeExitSources(sources) {
     if (flags.mobile) evidence.mobileCount += 1;
     if (flags.residential) evidence.residentialCount += 1;
 
-    if (Number.isFinite(Number(flags.risk))) {
+    // 注意: Number(null) === 0 是有限数, 会把"无 fraudScore"(null) 误算成 0 分。
+    // 必须先排除 null/undefined, 否则 ipwho.is 兜底 (risk:null) 会让机房 IP 也显示 0 分。
+    if (flags.risk !== null && flags.risk !== undefined && Number.isFinite(Number(flags.risk))) {
       evidence.riskCount += 1;
       evidence.riskMax = Math.max(
         Number(evidence.riskMax || 0),
@@ -4602,7 +4605,8 @@ function purityScore(exit) {
   // 同步 ippure.com 官网方法：官网直接显示 IPPure系数 = fraudScore 本身（越大越危险），
   // 不要再用 100 - fraudScore 换算成纯净分，否则官网 51 会变成 49。
   // 只有 IPv6 / 无 fraudScore 时才回退到下面旧的按类型打分。
-  const officialRisk = Number(flags.risk);
+  // 注意: Number(null) === 0 是有限数, 必须先排除 null/undefined, 否则无 fraudScore 也会显示 0 分。
+  const officialRisk = (flags.risk !== null && flags.risk !== undefined) ? Number(flags.risk) : NaN;
   if (Number.isFinite(officialRisk)) {
     const officialScore = Math.max(0, Math.min(100, Math.round(officialRisk)));
     return {
@@ -4631,7 +4635,8 @@ function purityScore(exit) {
   const vpnCount = Number(evidence.vpnCount || 0);
   const torCount = Number(evidence.torCount || 0);
   const abuserCount = Number(evidence.abuserCount || 0);
-  const riskValue = Number(flags.risk);
+  // 同上: null 不能当 0 用, 否则无 fraudScore 也会进风险扣分分支。
+  const riskValue = (flags.risk !== null && flags.risk !== undefined) ? Number(flags.risk) : NaN;
 
   const proxyVpnEvidenceCount = proxyCount + vpnCount;
 
@@ -4698,7 +4703,8 @@ function riskLevel(exit, purity) {
   const flags = (exit && exit.flags) || {};
   const evidence = flags.evidence || {};
   const score = Number(purity && purity.score);
-  const riskValue = Number(flags.risk);
+  // 同上: null 不能当 0 用, 否则无 fraudScore 会误判为低风险。
+  const riskValue = (flags.risk !== null && flags.risk !== undefined) ? Number(flags.risk) : NaN;
 
   const proxyVpnEvidenceCount =
     Number(evidence.proxyCount || 0) +

@@ -1,6 +1,6 @@
 /**
  * 🌏 IP-API
- * 版本：v2.2 (2026-11-11)
+ * 版本：v2.3 (2026-11-11)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -205,7 +205,7 @@ export default async function(ctx) {
     proxyData.flag = flagEmoji(main.countryCode);
     // 关键词补漏: org/as 含云/机房关键词时也判机房 (ip-api 对谷歌云等漏标 hosting)
     const orgAsText = `${main.org || ""} ${main.as || ""}`.toLowerCase();
-    const dcByKeyword = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b/.test(orgAsText);
+    const dcByKeyword = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b|vultr|digitalocean|linode|akamai|\bovh\b|hetzner|contabo|netlab|choopa|colocrossing|psychz|quadranet|leaseweb/.test(orgAsText);
     const isHostLike = !!(main.hosting || dcByKeyword);
     proxyData.isDC = !!(isHostLike || main.proxy);
     let score = 0;
@@ -283,7 +283,7 @@ export default async function(ctx) {
     const orgName = m ? (m[2] || "").trim() : "";
     proxyData.isp = (orgName && asnNum) ? `${orgName} (AS${asnNum})` : (asnStr || "未知");
     proxyData.flag = flagEmoji(cc);
-    const isHostLike = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b/i.test(`${orgName} ${asnStr}`);
+    const isHostLike = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b|vultr|digitalocean|linode|akamai|\bovh\b|hetzner|contabo|netlab|choopa|colocrossing|psychz|quadranet|leaseweb/i.test(`${orgName} ${asnStr}`);
     proxyData.isDC = isHostLike;
     proxyData.risk = isHostLike ? 40 : 0;
     proxyData.success = true;

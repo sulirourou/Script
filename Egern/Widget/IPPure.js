@@ -1,6 +1,6 @@
 /**
  * 🌏 IPPure
- * 版本：v2.6 (2026-11-11)
+ * 版本：v2.7 (2026-11-11)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -259,7 +259,15 @@ export default async function(ctx) {
     const asn = (j.asn !== undefined && j.asn !== null && j.asn !== "") ? j.asn : "";
     proxyData.isp = (asOrg || asn) ? `${asOrg} (AS${asn})`.trim() : "未知";
     proxyData.flag = flagEmoji(j.countryCode);
-    proxyData.risk = j.fraudScore || 0;
+    // fraudScore 缺失 (如 IPv6 不返回该字段) 时不能默认 0, 否则机房 IP 也显示 0 分。
+    // 缺失时按运营商关键词估算 (机房 +40, 否则 0), 与备用接口同一规则。
+    const fs = (j.fraudScore !== undefined && j.fraudScore !== null) ? Number(j.fraudScore) : NaN;
+    if (Number.isFinite(fs)) {
+      proxyData.risk = Math.max(0, Math.min(100, Math.round(fs)));
+    } else {
+      const orgText = `${j.asOrganization || ""}`.toLowerCase();
+      proxyData.risk = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b|vultr|digitalocean|linode|akamai|\bovh\b|hetzner|contabo|netlab|choopa|colocrossing|psychz|quadranet|leaseweb/.test(orgText) ? 40 : 0;
+    }
     // isResidential 缺失时旧版 !undefined 会误判商业/机房, 改为缺失按住宅
     proxyData.isDC = (typeof j.isResidential === "boolean") ? !j.isResidential : false;
     proxyData.success = true;
@@ -308,7 +316,7 @@ export default async function(ctx) {
     proxyData.isp = (ispName && asn) ? `${ispName} (AS${asn})` : `${ispName}`.trim() || "未知";
     proxyData.flag = flagEmoji(j.country_code);
     const orgAsText = `${conn.org || ""} ${conn.isp || ""}`.toLowerCase();
-    const isHostLike = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b/.test(orgAsText);
+    const isHostLike = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b|vultr|digitalocean|linode|akamai|\bovh\b|hetzner|contabo|netlab|choopa|colocrossing|psychz|quadranet|leaseweb/.test(orgAsText);
     proxyData.isDC = isHostLike;
     proxyData.risk = isHostLike ? 40 : 0;
     proxyData.success = true;
