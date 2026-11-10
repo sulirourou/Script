@@ -1,6 +1,6 @@
 /**
  * 🌏 IPPure
- * 版本：v1.9 (2026-11-04)
+ * 版本：v2.0 (2026-11-10)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -200,17 +200,19 @@ export default async function(ctx) {
     let region = j.region || j.regionName || "";
     let city = j.city || "";
 
-    // 第一行 = 国家 + 地区 (均为中文): 首选在线翻译 (谷歌 gtx -> MyMemory),
+    // 第一行 = 国家 + 地区 + 城市 (均为中文): 首选在线翻译 (谷歌 gtx -> MyMemory),
     // 翻译给不全时按 IP 查到的中文地名补缺, 最后才用内置地名表
     const [countryTr, regionTr, cityTr] = await translateBatch([country, region, city], "zh-Hans");
     let countryCn = isPureCn(countryTr) ? countryTr.trim() : "";
     let regionCn = isPureCn(regionTr) ? regionTr.trim() : (isPureCn(cityTr) ? cityTr.trim() : "");
     if (regionCn) regionCn = completeRegion(j.countryCode, isPureCn(regionTr) ? region : city, isPureCn(regionTr) ? j.regionCode : "", regionCn);
+    let geoCityCn = "";
     if (!countryCn || !regionCn) {
       const geoCn = await lookupGeo(j.ip, "zh-CN");
       if (geoCn && isPureCn(geoCn.country)) {
         if (!countryCn) countryCn = geoCn.country;
         if (!regionCn) regionCn = trimAdmin(isPureCn(geoCn.region) ? geoCn.region : (isPureCn(geoCn.city) ? geoCn.city : ""));
+        if (isPureCn(geoCn.city)) geoCityCn = trimAdmin(geoCn.city);
       }
     }
     if (!countryCn) countryCn = localizedCountry(country, j.countryCode, countryTr);
@@ -218,7 +220,11 @@ export default async function(ctx) {
       regionCn = localizedRegion(j.countryCode, region, j.regionCode, regionTr);
       if (!regionCn) regionCn = localizedRegion(j.countryCode, city, "", cityTr);
     }
-    const title = [countryCn, regionCn].filter(Boolean).join(" ");
+    // 地区去行政后缀 (州/省/市), 城市取翻译结果, 与 IP-API 统一为 国家 地区 城市
+    regionCn = String(regionCn || "").trim().replace(/(省|市|州)$/, "");
+    let cityCn = isPureCn(cityTr) ? cityTr.trim() : geoCityCn;
+    if (cityCn && (cityCn === regionCn || cityCn === countryCn)) cityCn = "";
+    const title = [countryCn, regionCn, cityCn].filter(Boolean).join(" ");
     proxyData.title = title || "未知节点";
     proxyData.detail = getEnDetail(country, region, city);
 

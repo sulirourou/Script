@@ -1,6 +1,6 @@
 /**
  * 🌏 IP-API
- * 版本：v1.8 (2026-11-04)
+ * 版本：v1.9 (2026-11-10)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -20,9 +20,9 @@ export default async function(ctx) {
 
   const countryMap = { "united states": "美国", "us": "美国", "singapore": "新加坡", "japan": "日本", "hong kong": "香港", "taiwan": "台湾", "united kingdom": "英国", "uk": "英国", "korea": "韩国", "south korea": "韩国" };
 
-  // 省/市名去掉末尾的省/市两个字 (广东省 -> 广东, 广州市 -> 广州)
+  // 省/市/州名去掉末尾的省/市/州 (广东省 -> 广东, 广州市 -> 广州, 加利福尼亚州 -> 加利福尼亚)
   function trimAdmin(s) {
-    return String(s || "").trim().replace(/(省|市)$/, "");
+    return String(s || "").trim().replace(/(省|市|州)$/, "");
   }
 
   const countryCodeCn = { US: "美国", CN: "中国", HK: "香港", TW: "台湾", MO: "澳门", JP: "日本", KR: "韩国", SG: "新加坡", GB: "英国", UK: "英国", DE: "德国", FR: "法国", CA: "加拿大", AU: "澳大利亚", NL: "荷兰", CH: "瑞士", SE: "瑞典", NO: "挪威", DK: "丹麦", FI: "芬兰", IT: "意大利", ES: "西班牙", PT: "葡萄牙", IE: "爱尔兰", AT: "奥地利", BE: "比利时", PL: "波兰", CZ: "捷克", HU: "匈牙利", GR: "希腊", TR: "土耳其", RU: "俄罗斯", UA: "乌克兰", IN: "印度", TH: "泰国", VN: "越南", MY: "马来西亚", ID: "印度尼西亚", PH: "菲律宾", NZ: "新西兰", MX: "墨西哥", BR: "巴西", AR: "阿根廷", CL: "智利", CO: "哥伦比亚", PE: "秘鲁", ZA: "南非", EG: "埃及", NG: "尼日利亚", KE: "肯尼亚", IL: "以色列", AE: "阿联酋", SA: "沙特阿拉伯", QA: "卡塔尔", KW: "科威特", IR: "伊朗", IQ: "伊拉克", PK: "巴基斯坦", BD: "孟加拉国", LK: "斯里兰卡", MM: "缅甸", KH: "柬埔寨", LA: "老挝", MN: "蒙古", NP: "尼泊尔", KZ: "哈萨克斯坦", UZ: "乌兹别克斯坦" };
@@ -40,6 +40,21 @@ export default async function(ctx) {
     "alabama": "阿拉巴马州", "alaska": "阿拉斯加州", "arizona": "亚利桑那州", "arkansas": "阿肯色州", "california": "加利福尼亚州", "colorado": "科罗拉多州", "connecticut": "康涅狄格州", "delaware": "特拉华州", "florida": "佛罗里达州", "georgia": "佐治亚州", "hawaii": "夏威夷州", "idaho": "爱达荷州", "illinois": "伊利诺伊州", "indiana": "印第安纳州", "iowa": "艾奥瓦州", "kansas": "堪萨斯州", "kentucky": "肯塔基州", "louisiana": "路易斯安那州", "maine": "缅因州", "maryland": "马里兰州", "massachusetts": "马萨诸塞州", "michigan": "密歇根州", "minnesota": "明尼苏达州", "mississippi": "密西西比州", "missouri": "密苏里州", "montana": "蒙大拿州", "nebraska": "内布拉斯加州", "nevada": "内华达州", "new hampshire": "新罕布什尔州", "new jersey": "新泽西州", "new mexico": "新墨西哥州", "new york": "纽约州", "north carolina": "北卡罗来纳州", "north dakota": "北达科他州", "ohio": "俄亥俄州", "oklahoma": "俄克拉荷马州", "oregon": "俄勒冈州", "pennsylvania": "宾夕法尼亚州", "rhode island": "罗得岛州", "south carolina": "南卡罗来纳州", "south dakota": "南达科他州", "tennessee": "田纳西州", "texas": "得克萨斯州", "utah": "犹他州", "vermont": "佛蒙特州", "virginia": "弗吉尼亚州", "washington": "华盛顿州", "west virginia": "西弗吉尼亚州", "wisconsin": "威斯康星州", "wyoming": "怀俄明州", "district of columbia": "哥伦比亚特区", "puerto rico": "波多黎各", "guam": "关岛",
     "beijing": "北京市", "tianjin": "天津市", "hebei": "河北省", "shanxi": "山西省", "inner mongolia": "内蒙古自治区", "liaoning": "辽宁省", "jilin": "吉林省", "heilongjiang": "黑龙江省", "shanghai": "上海市", "jiangsu": "江苏省", "zhejiang": "浙江省", "anhui": "安徽省", "fujian": "福建省", "jiangxi": "江西省", "shandong": "山东省", "henan": "河南省", "hubei": "湖北省", "hunan": "湖南省", "guangdong": "广东省", "guangxi": "广西壮族自治区", "hainan": "海南省", "chongqing": "重庆市", "sichuan": "四川省", "guizhou": "贵州省", "yunnan": "云南省", "tibet": "西藏自治区", "shaanxi": "陕西省", "gansu": "甘肃省", "qinghai": "青海省", "ningxia": "宁夏回族自治区", "xinjiang": "新疆维吾尔自治区"
   };
+
+  // 城市中文表: ip-api 中文接口不翻译外国城市名 (San Jose 仍返回英文),
+  // 标题要显示中文城市名时查这张表; 查不到时城市名留空 (不硬拼英文)
+  const cityNameCn = {
+    "san jose": "圣何塞", "los angeles": "洛杉矶", "san francisco": "旧金山", "new york": "纽约", "seattle": "西雅图", "chicago": "芝加哥", "dallas": "达拉斯", "houston": "休斯顿", "atlanta": "亚特兰大", "miami": "迈阿密", "boston": "波士顿", "denver": "丹佛", "phoenix": "菲尼克斯", "las vegas": "拉斯维加斯", "portland": "波特兰", "austin": "奥斯汀", "san diego": "圣迭戈", "sacramento": "萨克拉门托", "oakland": "奥克兰", "san antonio": "圣安东尼奥", "columbus": "哥伦布", "charlotte": "夏洛特", "detroit": "底特律", "nashville": "纳什维尔", "baltimore": "巴尔的摩", "memphis": "孟菲斯", "milwaukee": "密尔沃基", "tucson": "图森", "kansas city": "堪萨斯城", "tampa": "坦帕", "new orleans": "新奥尔良", "cleveland": "克利夫兰", "pittsburgh": "匹兹堡", "salt lake city": "盐湖城", "honolulu": "檀香山", "saint paul": "圣保罗", "st. paul": "圣保罗", "riverside": "河滨", "fresno": "弗雷斯诺", "mesa": "梅萨", "omaha": "奥马哈", "tulsa": "塔尔萨", "arlington": "阿灵顿", "wichita": "威奇托", "bakersfield": "贝克斯菲尔德", "aurora": "奥罗拉", "anaheim": "阿纳海姆", "stockton": "斯托克顿", "lexington": "列克星敦", "anchorage": "安克雷奇", "cincinnati": "辛辛那提", "greensboro": "格林斯伯勒", "plano": "普莱诺", "newark": "纽瓦克", "lincoln": "林肯", "durham": "达勒姆", "toledo": "托莱多", "fort wayne": "韦恩堡", "laredo": "拉雷多", "jersey city": "泽西市", "chandler": "钱德勒", "madison": "麦迪逊", "lubbock": "拉伯克", "scottsdale": "斯科茨代尔", "reno": "里诺", "buffalo": "布法罗", "gilbert": "吉尔伯特", "glendale": "格伦代尔", "north las vegas": "北拉斯维加斯", "fremont": "弗里蒙特", "garland": "加兰", "irvine": "尔湾", "hialeah": "海厄利亚", "richmond": "里士满", "boise": "博伊西", "spokane": "斯波坎", "birmingham": "伯明翰", "modesto": "莫德斯托", "des moines": "得梅因", "rochester": "罗彻斯特", "tacoma": "塔科马", "fontana": "丰塔纳", "oxnard": "奥克斯纳德", "fayetteville": "费耶特维尔", "moreno valley": "莫雷诺谷", "amarillo": "阿马里洛", "yonkers": "扬克斯", "montgomery": "蒙哥马利", "akron": "阿克伦", "little rock": "小石城", "augusta": "奥古斯塔", "grand rapids": "大急流城", "mobile": "莫比尔",
+    "tokyo": "东京", "osaka": "大阪", "nagoya": "名古屋", "kyoto": "京都", "kobe": "神户", "yokohama": "横滨", "seoul": "首尔", "busan": "釜山", "incheon": "仁川", "singapore": "新加坡", "hong kong": "香港", "taipei": "台北", "kaohsiung": "高雄", "london": "伦敦", "paris": "巴黎", "frankfurt": "法兰克福", "amsterdam": "阿姆斯特丹", "berlin": "柏林", "madrid": "马德里", "barcelona": "巴塞罗那", "rome": "罗马", "milan": "米兰", "moscow": "莫斯科", "sydney": "悉尼", "melbourne": "墨尔本", "brisbane": "布里斯班", "perth": "珀斯", "auckland": "奥克兰", "toronto": "多伦多", "vancouver": "温哥华", "montreal": "蒙特利尔", "calgary": "卡尔加里", "ottawa": "渥太华", "mumbai": "孟买", "delhi": "德里", "new delhi": "新德里", "bangalore": "班加罗尔", "bangkok": "曼谷", "kuala lumpur": "吉隆坡", "jakarta": "雅加达", "manila": "马尼拉", "ho chi minh city": "胡志明市", "hanoi": "河内", "dubai": "迪拜", "abu dhabi": "阿布扎比", "doha": "多哈", "riyadh": "利雅得", "tel aviv": "特拉维夫", "istanbul": "伊斯坦布尔", "cairo": "开罗", "johannesburg": "约翰内斯堡", "cape town": "开普敦", "mexico city": "墨西哥城", "sao paulo": "圣保罗", "rio de janeiro": "里约热内卢", "buenos aires": "布宜诺斯艾利斯", "santiago": "圣地亚哥", "lima": "利马", "bogota": "波哥大"
+  };
+
+  // 城市名转中文: 已是中文的去后缀直接用, 英文的查 cityNameCn 表, 查不到留空
+  function cityCn(name) {
+    const raw = String(name || "").trim();
+    if (!raw) return "";
+    if (!/[a-zA-Z]/.test(raw)) return trimAdmin(raw);
+    return cityNameCn[raw.toLowerCase()] || "";
+  }
 
   function getCnTitle(c, r, d) {
     let res = [];
@@ -93,14 +108,15 @@ export default async function(ctx) {
   // 不再只剩国家; 词表也没有时才退回英文国家名映射
   function buildProxyTitle(cn, en) {
     let c = "", r = "", d = "";
-    if (cn) { c = cn.country || ""; r = trimAdmin(cn.regionName); d = trimAdmin(cn.city); }
+    if (cn) { c = cn.country || ""; r = trimAdmin(cn.regionName); d = cityCn(cn.city); }
     if (en) {
       if (!c) c = countryCodeCn[(en.countryCode || "").toUpperCase()] || "";
       if (!r) {
         const cc = (en.countryCode || "").toUpperCase();
-        r = (cc && en.region && regionCodeCn[cc + ":" + String(en.region).toUpperCase()]) ||
-            regionNameCn[String(en.regionName || "").trim().toLowerCase()] || "";
+        r = trimAdmin((cc && en.region && regionCodeCn[cc + ":" + String(en.region).toUpperCase()]) ||
+            regionNameCn[String(en.regionName || "").trim().toLowerCase()] || "");
       }
+      if (!d) d = cityCn(en.city);
     }
     return getCnTitle(c, r, d) || (en ? getCnTitle(en.country, "", "") : "") || "";
   }
@@ -116,7 +132,12 @@ export default async function(ctx) {
     proxyData.detail = en ? getEnDetail(en.country, en.regionName, en.city) : "Unknown Location";
     let ispName = main.isp || "";
     let asInfo = main.as || "";
-    if (ispName && asInfo.toLowerCase().includes(ispName.split(' ')[0].toLowerCase())) {
+    // 统一格式: ISP 名 (AS号), 如 Oracle Corporation (AS31898); 与 IPPure 一致
+    const asnMatch = String(asInfo || "").match(/AS(\d+)/i);
+    const asnPart = asnMatch ? `(AS${asnMatch[1]})` : "";
+    if (ispName && asnPart) {
+      proxyData.isp = `${ispName} ${asnPart}`;
+    } else if (ispName && asInfo.toLowerCase().includes(ispName.split(' ')[0].toLowerCase())) {
       proxyData.isp = asInfo;
     } else {
       proxyData.isp = `${ispName} ${asInfo}`.trim() || "未知";
