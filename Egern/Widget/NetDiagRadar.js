@@ -1,6 +1,6 @@
 /**
  * 📡 网络诊断雷达
- * 版本：v3.25 (2026-11-06)
+ * 版本：v3.26 (2026-11-11)
  * 环境变量：
  * 名称：POLICY
  * 值：策略组名（可选，最高优先级；指定后出口、延迟、UDP/QUIC、流媒体、AI 全部统一走 POLICY）
@@ -22,6 +22,12 @@
  * - 匹配成功后缓存本轮结果
  * - 匹配不到时该服务不传 policy，走 Widget 默认请求方式
  * - 服务小国旗来自该服务实际使用策略的出口地区，不再复用顶部当前代理出口
+ *
+ * 接口说明：
+ * 代理出口主接口: https://my.ippure.com/v1/info (风险分 fraudScore + 国家/地区/城市 + ISP + ASN + 是否住宅/广播)
+ * 代理出口备用接口: https://ipwho.is/ (主接口失败时用; 只给 IP + 国家/地区/城市 + ISP + ASN, 无 fraudScore, 风险分留空按 kind 回退)
+ * 本地出口: http://ip-api.com/json/ + https://ipwho.is/ + https://api.ipapi.is/ (三路并行直连, 先成功者为准)
+ * DNS 解析: http://<随机>.edns.ip-api.com/json (EDNS 解析器) + http://ip-api.com/json/<ip> (解析器归属)
  */
 
 export default async function (ctx) {
@@ -448,7 +454,8 @@ export default async function (ctx) {
     if (!policyExitCache[key]) {
       policyExitCache[key] = (async function () {
         const urls = [
-          "https://my.ippure.com/v1/info?_=" + Date.now()
+          "https://my.ippure.com/v1/info?_=" + Date.now(),
+          "https://ipwho.is/?_=" + Date.now()
         ];
 
         for (let index = 0; index < urls.length; index += 1) {
@@ -532,6 +539,47 @@ export default async function (ctx) {
       cloudProvider: cloud.name,
       kind: classifyExitKind(flags),
       sourceType: sourceType,
+      flags: flags
+    };
+  }
+
+  // 代理出口备用接口 ipwho.is 的解析 (与 IPPure.js 的备用接口同源):
+  // ip / country / country_code / region / city / connection{asn, org, isp}。
+  // 无 fraudScore / isResidential, 风险分留空 (仪表按 kind 回退), 机房按运营商关键词判。
+  function parseIpwhoExit(data) {
+    if (!data || typeof data !== "object" || !data.ip || data.success === false) {
+      return {};
+    }
+    const conn = data.connection || {};
+    const asOrg = clean(conn.isp || conn.org || "");
+    const asn = conn.asn !== undefined && conn.asn !== null && conn.asn !== "" ? conn.asn : "";
+    const isp = asOrg ? (asOrg + (asn !== "" ? " (AS" + asn + ")" : "")) : "未知组织";
+    const cloud = cloudProviderFromText(asOrg + " " + clean(conn.org || ""));
+    const hostLike = /cloud|hosting|datacenter|data center|\bvps\b|\bidc\b/i.test((asOrg + " " + clean(conn.org || "")).toLowerCase()) || cloud.hit;
+    const flags = {
+      datacenter: hostLike,
+      hosting: hostLike,
+      cloud: cloud.hit,
+      proxy: false,
+      vpn: false,
+      tor: false,
+      abuser: false,
+      mobile: false,
+      residential: false,
+      broadcast: false,
+      risk: null
+    };
+    return {
+      source: "ipwho",
+      ip: clean(data.ip),
+      city: clean(pick(data.city, data.region, "未知城市")),
+      region: clean(data.region),
+      country: clean(data.country),
+      countryCode: countryCode(data.country_code),
+      isp: cloud.name || isp,
+      cloudProvider: cloud.name,
+      kind: classifyExitKind(flags),
+      sourceType: "",
       flags: flags
     };
   }
@@ -718,20 +766,28 @@ export default async function (ctx) {
       "https://my.ippure.com/v1/info?_=" + Date.now()
     );
 
-    if (!result.ok || !result.data || !clean(result.data.ip)) {
-      return {
-        ip: "未识别",
-        city: "出口检测失败",
-        region: "",
-        country: "",
-        countryCode: "",
-        isp: "未知组织",
-        kind: "未知网络",
-        flags: {}
-      };
+    if (result.ok && result.data && clean(result.data.ip)) {
+      return mergeExitSources([parseIPPureExit(result.data)]);
     }
 
-    return mergeExitSources([parseIPPureExit(result.data)]);
+    // 备用接口: 主接口失败时用 ipwho.is 查出口 (与 IPPure.js 的备用接口同源)
+    const fallback = await getJSON(
+      "https://ipwho.is/?_=" + Date.now()
+    );
+    if (fallback.ok && fallback.data && clean(fallback.data.ip)) {
+      return mergeExitSources([parseIpwhoExit(fallback.data)]);
+    }
+
+    return {
+      ip: "未识别",
+      city: "出口检测失败",
+      region: "",
+      country: "",
+      countryCode: "",
+      isp: "未知组织",
+      kind: "未知网络",
+      flags: {}
+    };
   }
 
   async function getLocalExit() {
