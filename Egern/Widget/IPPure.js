@@ -1,6 +1,6 @@
 /**
  * 🌏 IPPure
- * 版本：v2.5 (2026-11-11)
+ * 版本：v2.6 (2026-11-11)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -9,7 +9,7 @@
  * 代理出口主接口: https://my.ippure.com/v1/info (风险分 fraudScore + 国家/地区/城市 + ISP + ASN + 是否住宅)
  * 代理出口备用接口: https://ipwho.is/ (主接口两次失败时用; 只给 IP + 国家/地区/城市 + ISP + ASN, 无 fraudScore, 风险分按运营商关键词估算)
  * 翻译接口: Google Translate gtx + MyMemory (城市/地区名翻成中文, 均免 key)
- * 地名补缺: http://ip-api.com/json/<ip> (lookupGeo, 翻译给不全时按 IP 查中文地名, 直连不走代理)
+ * 地名补缺: https://ipwho.is/<ip> (lookupGeo, 翻译给不全时按 IP 查地名再翻译成中文, 直连不走代理)
  * 本地出口: https://myip.ipip.net/json (本地 IP + 省市 + 运营商)
  */
 
@@ -180,13 +180,14 @@ export default async function(ctx) {
     } catch (e) { return false; }
   }
 
-  // 3. 按 IP 查本地化地名: ip-api 支持指定任意 IP + lang 返回对应语言地名
-  // (与 IP-API 组件同源)。代理标题要中文名 (zh-CN), 本地详情要全英文名 (en)。
-  // 这是按 IP 查数据库, 不经过代理出口, 不影响 IPPure 主数据; 结果按 IP
-  // 缓存 24h。在线翻译给不全地名时由本函数补缺, 查不到返回 null。
+  // 3. 按 IP 查地名: ipwho.is 支持指定任意 IP 返回对应地名 (与 IP-API 的 ip-api 不同源)。
+  // ipwho.is 只给英文名, zh-CN 时再在线翻译成中文, 翻译不通时用内置表兜底。
+  // 代理标题要中文名 (zh-CN), 本地详情要全英文名 (en)。这是按 IP 查数据库,
+  // 不经过代理出口, 不影响 IPPure 主数据; 结果按 IP 缓存 24h。
+  // 在线翻译给不全地名时由本函数补缺, 查不到返回 null。
   async function lookupGeo(ip, lang) {
     if (!ip) return null;
-    const key = "ippure_geo_v1:" + lang + ":" + ip;
+    const key = "ippure_geo_v2:" + lang + ":" + ip;
     try {
       const raw = ctx.storage.getString(key);
       if (raw) {
@@ -195,10 +196,18 @@ export default async function(ctx) {
       }
     } catch (e) {}
     try {
-      const r = await ctx.http.get(`http://ip-api.com/json/${ip}?lang=${lang}&fields=status,country,regionName,city`, { timeout: 4000, headers: { 'User-Agent': UA } });
+      const r = await ctx.http.get(`https://ipwho.is/${ip}`, { timeout: 4000, headers: { 'User-Agent': UA } });
       const g = await r.json();
-      if (!g || g.status !== "success" || !g.country) return null;
-      const d = { country: g.country || "", region: g.regionName || "", city: g.city || "" };
+      if (!g || !g.success || !g.country) return null;
+      let d = { country: g.country || "", region: g.region || "", city: g.city || "" };
+      if (lang === "zh-CN") {
+        const [cTr, rTr, ciTr] = await translateBatch([d.country, d.region, d.city], "zh-Hans");
+        d = {
+          country: (cTr && !/[a-zA-Z]/.test(cTr)) ? cTr.trim() : (countryCodeCn[(g.country_code || "").toUpperCase()] || ""),
+          region: (rTr && !/[a-zA-Z]/.test(rTr)) ? trimAdmin(rTr) : (regionNameCn[String(g.region || "").trim().toLowerCase()] || ""),
+          city: (ciTr && !/[a-zA-Z]/.test(ciTr)) ? trimAdmin(ciTr) : (cityNameCn[String(g.city || "").trim().toLowerCase()] || ""),
+        };
+      }
       try { ctx.storage.setString(key, JSON.stringify({ t: Date.now(), d })); } catch (e) {}
       return d;
     } catch (e) { return null; }
