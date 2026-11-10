@@ -1,6 +1,6 @@
 /**
  * 🌏 IP-API
- * 版本：v1.9 (2026-11-10)
+ * 版本：v2.0 (2026-11-11)
  * 环境变量 (可选):
  * 名称：POLICY
  * 值：自定义策略组节点名称，例如 美国节点；不填则按默认路由查询
@@ -11,6 +11,7 @@ const FIELDS = "?fields=status,message,country,countryCode,regionName,city,isp,o
 const API_LOCAL_IP = "https://myip.ipip.net/json";
 const TIMEOUT = 5000;
 const TIMEOUT_PROXY = 6000;
+const TIMEOUT_TRANS = 3000;
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36';
 
 export default async function(ctx) {
@@ -103,12 +104,49 @@ export default async function(ctx) {
   }
 
   // en/cn 任一成功即可填充: cn 优先作标题源 (中文地名), en 优先作详情源
-  // 代理标题: 中文结果优先, 省/市名去后缀 (与本地标题同一规则, 国内出口同样适用);
+  // 在线翻译 (双接口, 均免 key): 谷歌 gtx 优先, 失败落 MyMemory; 两者都失败回退原文。
+  // 城市名翻译用: 内置表查不到的城市 (如 The Dalles) 靠它翻译, 换节点不用改表。
+  async function googleTranslate(text, to) {
+    const tl = to === "en" ? "en" : "zh-CN";
+    const r = await ctx.http.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`, { timeout: TIMEOUT_TRANS, headers: { 'User-Agent': UA } });
+    const j = await r.json();
+    if (!Array.isArray(j) || !Array.isArray(j[0])) return "";
+    return j[0].map(seg => (seg && seg[0]) || "").join("");
+  }
+
+  async function myMemoryTranslate(text, to) {
+    const pair = to === "en" ? "zh-CN|en" : "en|zh-CN";
+    const r = await ctx.http.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(pair)}`, { timeout: TIMEOUT_TRANS, headers: { 'User-Agent': UA } });
+    const j = await r.json();
+    if (!j || !j.responseData || String(j.responseStatus) !== "200" || j.responseData.quotaFinished) return "";
+    return j.responseData.translatedText || "";
+  }
+
+  async function translateBatch(texts, to) {
+    const list = texts.map(t => t || "");
+    const settled = await Promise.allSettled(list.map(async (t) => {
+      if (!t || t === "Unknown") return "";
+      const hasCjk = /[\u4e00-\u9fff]/.test(t);
+      if (to !== "en" && hasCjk && !/[A-Za-z]/.test(t)) return t;
+      if (to === "en" && !hasCjk) return t;
+      try { const g = await googleTranslate(t, to); if (g) return g; } catch (e) {}
+      try { const m = await myMemoryTranslate(t, to); if (m) return m; } catch (e) {}
+      return t;
+    }));
+    return list.map((t, i) => {
+      const v = settled[i].status === "fulfilled" ? settled[i].value : "";
+      if (!t || t === "Unknown") return v || "";
+      return v || t;
+    });
+  }
+
+  // 代理标题: 中文结果优先, 省/市/州名去后缀 (与本地标题同一规则, 国内出口同样适用);
   // 中文请求全挂时, 用英文结果的国家代码/地区代码/地区名查内置词表恢复中文名,
   // 不再只剩国家; 词表也没有时才退回英文国家名映射
-  function buildProxyTitle(cn, en) {
+  async function buildProxyTitle(cn, en) {
     let c = "", r = "", d = "";
-    if (cn) { c = cn.country || ""; r = trimAdmin(cn.regionName); d = cityCn(cn.city); }
+    let cityEn = "";
+    if (cn) { c = cn.country || ""; r = trimAdmin(cn.regionName); d = cityCn(cn.city); cityEn = String(cn.city || "").trim(); }
     if (en) {
       if (!c) c = countryCodeCn[(en.countryCode || "").toUpperCase()] || "";
       if (!r) {
@@ -117,17 +155,23 @@ export default async function(ctx) {
             regionNameCn[String(en.regionName || "").trim().toLowerCase()] || "");
       }
       if (!d) d = cityCn(en.city);
+      if (!cityEn) cityEn = String(en.city || "").trim();
+    }
+    // 城市名是英文且内置表查不到时, 在线翻译 (任意城市都适用, 换节点不用改表)
+    if (!d && cityEn && /[a-zA-Z]/.test(cityEn)) {
+      const [tr] = await translateBatch([cityEn], "zh-Hans");
+      if (tr && !/[a-zA-Z]/.test(tr)) d = trimAdmin(tr);
     }
     return getCnTitle(c, r, d) || (en ? getCnTitle(en.country, "", "") : "") || "";
   }
 
-  function fillProxy(jEn, jCn) {
+  async function fillProxy(jEn, jCn) {
     const en = (jEn && jEn.status === "success") ? jEn : null;
     const cn = (jCn && jCn.status === "success") ? jCn : null;
     if (!en && !cn) return false;
     const main = en || cn;
     proxyData.ip = main.query;
-    proxyData.title = buildProxyTitle(cn, en);
+    proxyData.title = await buildProxyTitle(cn, en);
     // 详情行只用英文结果拼: 英文缺失时宁可占位, 不拿中文结果顶替 (与本地块同一规则)
     proxyData.detail = en ? getEnDetail(en.country, en.regionName, en.city) : "Unknown Location";
     let ispName = main.isp || "";
@@ -192,7 +236,7 @@ export default async function(ctx) {
         note(rEn2);
         if (rEn2.j) enJ = rEn2.j;
       }
-      return fillProxy(enJ, cnJ);
+      return await fillProxy(enJ, cnJ);
     };
 
     // 第 1 轮: 中英并行 (任一成功即可)
